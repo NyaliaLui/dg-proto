@@ -3,18 +3,33 @@
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { Character } from '@/app/components/Character';
+import { World } from '@/app/components/World';
 import { useKeyboardControls } from '@/app/components/hooks/useKeyboardControls';
 import { Controls } from '@/app/components/Controls';
+import { ENVIRONMENT_DEFAULTS } from '@/app/constants';
 
 export default function Home() {
   const { keys, updateKey } = useKeyboardControls();
   return (
     <div className="flex h-screen w-full bg-zinc-900">
-      <Canvas camera={{ position: [0, 0, 5], fov: 75 }}>
-        <ambientLight intensity={0.5} />
-        <directionalLight position={[5, 5, 5]} intensity={1} />
+      <Canvas
+        shadows={ENVIRONMENT_DEFAULTS.enableShadows}
+        camera={{
+          position: ENVIRONMENT_DEFAULTS.camera.position,
+          fov: ENVIRONMENT_DEFAULTS.camera.fov,
+        }}
+      >
+        <ambientLight intensity={ENVIRONMENT_DEFAULTS.ambientLight.intensity} />
+        <directionalLight
+          position={ENVIRONMENT_DEFAULTS.directionalLight.position}
+          intensity={ENVIRONMENT_DEFAULTS.directionalLight.intensity}
+        />
         <Character keys={keys} />
-        <OrbitControls enableZoom={true} enablePan={true} />
+        <World />
+        <OrbitControls
+          enableZoom={ENVIRONMENT_DEFAULTS.orbitControls.enableZoom}
+          enablePan={ENVIRONMENT_DEFAULTS.orbitControls.enablePan}
+        />
       </Canvas>
       <Controls updateKey={updateKey} />
     </div>

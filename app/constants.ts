@@ -1,3 +1,5 @@
+import { Vector3 } from 'three';
+
 export const CHARACTER_DEFAULTS = {
   MOVE_SPEED: 3,
 };
@@ -18,5 +20,30 @@ export const CONTROLS_DEFAULTS = {
     STICK_RADIUS: 40,
     KNOB_RADIUS: 12,
     DEAD_ZONE: 0.1,
+  },
+};
+
+export const ENVIRONMENT_DEFAULTS = {
+  enableShadows: true,
+  ambientLight: {
+    intensity: 0.5,
+  },
+  directionalLight: {
+    position: new Vector3(5, 5, 5),
+    intensity: 1,
+  },
+  camera: {
+    position: new Vector3(0, 0, 5),
+    fov: 75,
+  },
+  orbitControls: {
+    enablePan: false,
+    enableZoom: false,
+  },
+  groundDim: 100,
+  groundRotation: -Math.PI / 2,
+  texture: {
+    ground: '/textures/grass.jpg',
+    sky: '/textures/sky.jpg',
   },
 };
