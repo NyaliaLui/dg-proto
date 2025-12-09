@@ -1,0 +1,4 @@
+.github/
+cypress/support/
+package-lock.json
+*.md
