@@ -4,14 +4,33 @@ import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
-export function Character() {
+import { CHARACTER_DEFAULTS } from '@/app/constants';
+import { KeyState } from '@/app/components/hooks/useKeyboardControls';
+
+interface CharacterProps {
+  keys: KeyState;
+}
+
+export function Character({ keys }: CharacterProps) {
   const groupRef = useRef<THREE.Group>(null);
 
-  // Optional: add subtle idle animation
-  useFrame((state) => {
+  useFrame((_state, delta) => {
     if (groupRef.current) {
-      groupRef.current.rotation.y =
-        Math.sin(state.clock.elapsedTime * 0.3) * 0.1;
+      const moveSpeed = CHARACTER_DEFAULTS.MOVE_SPEED * delta; // Movement speed
+
+      // WASD movement
+      if (keys.w) {
+        groupRef.current.position.z -= moveSpeed; // Move forward
+      }
+      if (keys.s) {
+        groupRef.current.position.z += moveSpeed; // Move backward
+      }
+      if (keys.a) {
+        groupRef.current.position.x -= moveSpeed; // Move left
+      }
+      if (keys.d) {
+        groupRef.current.position.x += moveSpeed; // Move right
+      }
     }
   });
 
