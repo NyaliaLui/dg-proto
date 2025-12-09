@@ -2,7 +2,7 @@
 
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
-import { SpinningCube } from '@/app/components/SpinningCube';
+import { Character } from '@/app/components/Character';
 
 export default function Home() {
   return (
@@ -10,7 +10,7 @@ export default function Home() {
       <Canvas camera={{ position: [0, 0, 5], fov: 75 }}>
         <ambientLight intensity={0.5} />
         <directionalLight position={[5, 5, 5]} intensity={1} />
-        <SpinningCube />
+        <Character />
         <OrbitControls enableZoom={true} enablePan={true} />
       </Canvas>
     </div>
