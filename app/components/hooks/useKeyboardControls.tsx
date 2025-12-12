@@ -67,32 +67,47 @@ function useKeyboardControls() {
     (event: KeyboardEvent) => {
       const key = event.key.toLowerCase();
 
-      switch (key) {
-        case 'w':
-          updateKey('w', false);
-          break;
-        case 'a':
-          updateKey('a', false);
-          break;
-        case 's':
-          updateKey('s', false);
-          break;
-        case 'd':
-          updateKey('d', false);
-          break;
-        case 'q':
-          updateKey('q', false);
-          break;
-        case 'e':
-          updateKey('e', false);
-          break;
-        case 'p':
-          updateKey('p', false);
-          break;
-        case ' ':
-          updateKey('space', false);
-          break;
-      }
+      const keyUps = {
+        handleMove: (k: string) => {
+          switch (k) {
+            case 'w':
+              updateKey('w', false);
+              break;
+            case 'a':
+              updateKey('a', false);
+              break;
+            case 's':
+              updateKey('s', false);
+              break;
+            case 'd':
+              updateKey('d', false);
+              break;
+          }
+        },
+        handleMechanics: (k: string) => {
+          switch (k) {
+            case 'q':
+              updateKey('q', false);
+              break;
+            case 'e':
+              updateKey('e', false);
+              break;
+            case 'p':
+              updateKey('p', false);
+              break;
+            case ' ':
+              updateKey('space', false);
+              break;
+          }
+        },
+      };
+
+      keyUps.handleMove(key);
+      setTimeout(
+        keyUps.handleMechanics,
+        CONTROLS_DEFAULTS.MECHANICS_TIMEOUT,
+        key,
+      );
     },
     [updateKey],
   );

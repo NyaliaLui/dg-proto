@@ -5,10 +5,12 @@ export const CHARACTER_DEFAULTS = {
   MODELS: {
     IDLE: '/models/Idle.fbx',
     WALK: '/models/Walking.fbx',
+    NORMAL: '/models/Jab.fbx',
   },
 };
 
 export const CONTROLS_DEFAULTS = {
+  MECHANICS_TIMEOUT: 1300,
   KEYBOARD: {
     w: false,
     a: false,

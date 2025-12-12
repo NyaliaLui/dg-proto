@@ -4,6 +4,7 @@ import { useRef } from 'react';
 import { SetKeyStateFn } from '@/app/components/hooks/useKeyboardControls';
 import { useAnalogControls } from '@/app/components/hooks/useAnalogControls';
 import { CONTROLS_TEST_IDS } from '@/app/test-ids';
+import { CONTROLS_DEFAULTS } from '../constants';
 
 export type { AnalogStickProps, OnscreenKeysProps, ControlsProps };
 export { AnalogStick, OnscreenKeys, Controls };
@@ -62,6 +63,13 @@ function OnscreenKeys({ updateKey }: OnscreenKeysProps) {
   const largeButtonClass =
     'w-16 h-16 bg-gray-700 bg-opacity-80 border-1 border-gray-500 rounded-full flex items-center justify-center cursor-pointer select-none active:bg-gray-600 transition-colors text-white font-semibold text-sm';
 
+  // Helper function to handle mechanics key release with timeout
+  const handleMechanics = (key: 'q' | 'e' | 'p' | 'space') => {
+    setTimeout(() => {
+      updateKey(key, false);
+    }, CONTROLS_DEFAULTS.MECHANICS_TIMEOUT);
+  };
+
   return (
     <div
       className="flex flex-col gap-2"
@@ -75,10 +83,10 @@ function OnscreenKeys({ updateKey }: OnscreenKeysProps) {
           data-testid={CONTROLS_TEST_IDS.JUMP_BUTTON}
           aria-label="Jump"
           onMouseDown={() => updateKey('space', true)}
-          onMouseUp={() => updateKey('space', false)}
-          onMouseLeave={() => updateKey('space', false)}
+          onMouseUp={() => handleMechanics('space')}
+          onMouseLeave={() => handleMechanics('space')}
           onTouchStart={() => updateKey('space', true)}
-          onTouchEnd={() => updateKey('space', false)}
+          onTouchEnd={() => handleMechanics('space')}
         >
           Jump
         </button>
@@ -91,10 +99,10 @@ function OnscreenKeys({ updateKey }: OnscreenKeysProps) {
           data-testid={CONTROLS_TEST_IDS.SPECIAL_BUTTON}
           aria-label="Special"
           onMouseDown={() => updateKey('e', true)}
-          onMouseUp={() => updateKey('e', false)}
-          onMouseLeave={() => updateKey('e', false)}
+          onMouseUp={() => handleMechanics('e')}
+          onMouseLeave={() => handleMechanics('e')}
           onTouchStart={() => updateKey('e', true)}
-          onTouchEnd={() => updateKey('e', false)}
+          onTouchEnd={() => handleMechanics('e')}
         >
           Special
         </button>
@@ -103,10 +111,10 @@ function OnscreenKeys({ updateKey }: OnscreenKeysProps) {
           data-testid={CONTROLS_TEST_IDS.NORMAL_BUTTON}
           aria-label="Normal"
           onMouseDown={() => updateKey('q', true)}
-          onMouseUp={() => updateKey('q', false)}
-          onMouseLeave={() => updateKey('q', false)}
+          onMouseUp={() => handleMechanics('q')}
+          onMouseLeave={() => handleMechanics('q')}
           onTouchStart={() => updateKey('q', true)}
-          onTouchEnd={() => updateKey('q', false)}
+          onTouchEnd={() => handleMechanics('q')}
         >
           Normal
         </button>
@@ -115,10 +123,10 @@ function OnscreenKeys({ updateKey }: OnscreenKeysProps) {
           data-testid={CONTROLS_TEST_IDS.ITEM_BUTTON}
           aria-label="Item"
           onMouseDown={() => updateKey('p', true)}
-          onMouseUp={() => updateKey('p', false)}
-          onMouseLeave={() => updateKey('p', false)}
+          onMouseUp={() => handleMechanics('p')}
+          onMouseLeave={() => handleMechanics('p')}
           onTouchStart={() => updateKey('p', true)}
-          onTouchEnd={() => updateKey('p', false)}
+          onTouchEnd={() => handleMechanics('p')}
         >
           Item
         </button>
