@@ -4,6 +4,7 @@ import { useRef, useEffect, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useFBX } from '@react-three/drei';
 import * as THREE from 'three';
+import { SkeletonUtils } from 'three-stdlib';
 
 import { CHARACTER_DEFAULTS } from '@/app/constants';
 import { KeyState } from '@/app/components/hooks/useKeyboardControls';
@@ -26,10 +27,18 @@ export function Character({ keys }: CharacterProps) {
   const walkFbx = useFBX(CHARACTER_DEFAULTS.MODELS.WALK);
   const normalFbx = useFBX(CHARACTER_DEFAULTS.MODELS.NORMAL);
 
+  // Clone models so they can be used independently
+  const idleClone = useMemo(() => SkeletonUtils.clone(idleFbx), [idleFbx]);
+  const walkClone = useMemo(() => SkeletonUtils.clone(walkFbx), [walkFbx]);
+  const normalClone = useMemo(
+    () => SkeletonUtils.clone(normalFbx),
+    [normalFbx],
+  );
+
   const mixer = useRef<THREE.AnimationMixer | null>(null);
 
   // Switch between animations based on state
-  const currentFbx = keys.q ? normalFbx : moving ? walkFbx : idleFbx;
+  const currentFbx = keys.q ? normalClone : moving ? walkClone : idleClone;
 
   useEffect(() => {
     // Clean up previous mixer
@@ -89,7 +98,7 @@ export function Character({ keys }: CharacterProps) {
 
   return (
     <group ref={groupRef} position={[-1, 0, 0]}>
-      <primitive object={currentFbx} scale={0.01} />
+      <primitive object={currentFbx} scale={CHARACTER_DEFAULTS.SCALE} />
     </group>
   );
 }

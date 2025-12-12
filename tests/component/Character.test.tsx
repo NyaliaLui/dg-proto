@@ -18,6 +18,12 @@ jest.mock('@react-three/drei', () => {
   };
 });
 
+jest.mock('three-stdlib', () => ({
+  SkeletonUtils: {
+    clone: jest.fn((obj) => obj),
+  },
+}));
+
 describe('Character Component', () => {
   const mockKeys = CONTROLS_DEFAULTS.KEYBOARD;
 

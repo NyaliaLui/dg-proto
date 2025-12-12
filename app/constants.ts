@@ -7,6 +7,7 @@ export const CHARACTER_DEFAULTS = {
     WALK: '/models/Walking.fbx',
     NORMAL: '/models/Jab.fbx',
   },
+  SCALE: 0.01,
 };
 
 export const CONTROLS_DEFAULTS = {
