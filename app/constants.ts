@@ -2,6 +2,10 @@ import { Vector3 } from 'three';
 
 export const CHARACTER_DEFAULTS = {
   MOVE_SPEED: 3,
+  MODELS: {
+    IDLE: '/models/Idle.fbx',
+    WALK: '/models/Walking.fbx',
+  },
 };
 
 export const CONTROLS_DEFAULTS = {
@@ -33,12 +37,13 @@ export const ENVIRONMENT_DEFAULTS = {
     intensity: 1,
   },
   camera: {
-    position: new Vector3(0, 0, 5),
+    position: new Vector3(0, 2, 5),
     fov: 75,
   },
   orbitControls: {
-    enablePan: false,
-    enableZoom: false,
+    enablePan: true,
+    enableZoom: true,
+    enableRotate: true,
   },
   groundDim: 100,
   groundRotation: -Math.PI / 2,

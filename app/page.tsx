@@ -29,6 +29,7 @@ export default function Home() {
         <OrbitControls
           enableZoom={ENVIRONMENT_DEFAULTS.orbitControls.enableZoom}
           enablePan={ENVIRONMENT_DEFAULTS.orbitControls.enablePan}
+          enableRotate={ENVIRONMENT_DEFAULTS.orbitControls.enableRotate}
         />
       </Canvas>
       <Controls updateKey={updateKey} />

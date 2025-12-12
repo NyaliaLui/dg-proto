@@ -1,7 +1,8 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { useFBX } from '@react-three/drei';
 import * as THREE from 'three';
 
 import { CHARACTER_DEFAULTS } from '@/app/constants';
@@ -13,70 +14,81 @@ interface CharacterProps {
 
 export function Character({ keys }: CharacterProps) {
   const groupRef = useRef<THREE.Group>(null);
+  const lastRotationRef = useRef<number>(Math.PI / 2);
+
+  // Determine if character is moving
+  const moving = useMemo(() => {
+    return keys.w || keys.s || keys.a || keys.d;
+  }, [keys.w, keys.s, keys.a, keys.d]);
+
+  // Load both models
+  const idleFbx = useFBX(CHARACTER_DEFAULTS.MODELS.IDLE);
+  const walkFbx = useFBX(CHARACTER_DEFAULTS.MODELS.WALK);
+
+  const mixer = useRef<THREE.AnimationMixer | null>(null);
+
+  // Switch between idle and walk based on movement
+  const currentFbx = moving ? walkFbx : idleFbx;
+
+  useEffect(() => {
+    // Clean up previous mixer
+    if (mixer.current) {
+      mixer.current.stopAllAction();
+      mixer.current = null;
+    }
+
+    // Set up new mixer with current model
+    if (currentFbx && currentFbx.animations.length > 0) {
+      mixer.current = new THREE.AnimationMixer(currentFbx);
+      const action = mixer.current.clipAction(currentFbx.animations[0]);
+      action.play();
+    }
+
+    return () => {
+      if (mixer.current) {
+        mixer.current.stopAllAction();
+      }
+    };
+  }, [currentFbx]);
 
   useFrame((_state, delta) => {
-    if (groupRef.current) {
-      const moveSpeed = CHARACTER_DEFAULTS.MOVE_SPEED * delta; // Movement speed
+    if (mixer.current) {
+      mixer.current.update(delta);
+    }
 
-      // WASD movement
+    if (groupRef.current) {
+      const moveSpeed = CHARACTER_DEFAULTS.MOVE_SPEED * delta;
+
+      // WASD movement with rotation to face direction (right-handed coordinate system)
       if (keys.w) {
-        groupRef.current.position.z -= moveSpeed; // Move forward
+        groupRef.current.position.z -= moveSpeed; // Move forward (toward -Z)
+        groupRef.current.rotation.y = Math.PI; // Face forward (-Z direction)
       }
       if (keys.s) {
-        groupRef.current.position.z += moveSpeed; // Move backward
+        groupRef.current.position.z += moveSpeed; // Move backward (toward +Z)
+        groupRef.current.rotation.y = 0; // Face backward (+Z direction, toward camera)
       }
       if (keys.a) {
-        groupRef.current.position.x -= moveSpeed; // Move left
+        groupRef.current.position.x -= moveSpeed; // Move left (toward -X)
+        groupRef.current.rotation.y = -Math.PI / 2; // Face left (-X direction)
+        lastRotationRef.current = -Math.PI / 2;
       }
       if (keys.d) {
-        groupRef.current.position.x += moveSpeed; // Move right
+        groupRef.current.position.x += moveSpeed; // Move right (toward +X)
+        groupRef.current.rotation.y = Math.PI / 2; // Face right (+X direction)
+        lastRotationRef.current = Math.PI / 2;
+      }
+
+      // When idle, maintain last rotation
+      if (!moving) {
+        groupRef.current.rotation.y = lastRotationRef.current;
       }
     }
   });
 
   return (
-    <group ref={groupRef} position={[0, -1, 0]}>
-      {/* Head */}
-      <mesh position={[0, 1.5, 0]}>
-        <sphereGeometry args={[0.3, 32, 32]} />
-        <meshStandardMaterial color="#ff0000" />
-      </mesh>
-
-      {/* Neck */}
-      <mesh position={[0, 1.2, 0]}>
-        <cylinderGeometry args={[0.15, 0.15, 0.3, 16]} />
-        <meshStandardMaterial color="#ff0000" />
-      </mesh>
-
-      {/* Body */}
-      <mesh position={[0, 0.7, 0]}>
-        <boxGeometry args={[0.6, 0.8, 0.4]} />
-        <meshStandardMaterial color="#ff0000" />
-      </mesh>
-
-      {/* Left Arm */}
-      <mesh position={[-0.45, 0.6, 0]}>
-        <boxGeometry args={[0.2, 0.7, 0.2]} />
-        <meshStandardMaterial color="#ff0000" />
-      </mesh>
-
-      {/* Right Arm */}
-      <mesh position={[0.45, 0.6, 0]}>
-        <boxGeometry args={[0.2, 0.7, 0.2]} />
-        <meshStandardMaterial color="#ff0000" />
-      </mesh>
-
-      {/* Left Leg */}
-      <mesh position={[-0.2, -0.1, 0]}>
-        <boxGeometry args={[0.25, 0.8, 0.25]} />
-        <meshStandardMaterial color="#ff0000" />
-      </mesh>
-
-      {/* Right Leg */}
-      <mesh position={[0.2, -0.1, 0]}>
-        <boxGeometry args={[0.25, 0.8, 0.25]} />
-        <meshStandardMaterial color="#ff0000" />
-      </mesh>
+    <group ref={groupRef} position={[-1, 0, 0]}>
+      <primitive object={currentFbx} scale={0.01} />
     </group>
   );
 }
