@@ -1,15 +1,35 @@
 'use client';
 
-import { useRef, useEffect, useMemo } from 'react';
+import {
+  useRef,
+  useEffect,
+  useMemo,
+  useState,
+  forwardRef,
+  useImperativeHandle,
+} from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useFBX } from '@react-three/drei';
 import * as THREE from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 
 import { CHARACTER_DEFAULTS } from '@/app/constants';
+import { calculateBoundingBox } from '@/app/collision';
+import { BoundsVisualizer } from '@/app/components/BoundsVisualizer';
 
-export function NPC() {
+export interface NPCHandle {
+  getBoundingBox: () => THREE.Box3 | null;
+  getRef: () => React.RefObject<THREE.Group | null>;
+}
+
+export const NPC = forwardRef<NPCHandle>((props, ref) => {
   const groupRef = useRef<THREE.Group>(null);
+  const [boundingBox, setBoundingBox] = useState<THREE.Box3 | null>(null);
+
+  useImperativeHandle(ref, () => ({
+    getBoundingBox: () => boundingBox,
+    getRef: () => groupRef,
+  }));
 
   // Load all models
   const idleFbx = useFBX(CHARACTER_DEFAULTS.MODELS.IDLE);
@@ -50,11 +70,24 @@ export function NPC() {
     if (mixer.current) {
       mixer.current.update(delta);
     }
+
+    // Update bounding box
+    if (groupRef.current) {
+      const box = calculateBoundingBox(groupRef.current);
+      setBoundingBox(box);
+    }
   });
 
   return (
-    <group ref={groupRef} position={[1, 0, 0]}>
-      <primitive object={currentFbx} scale={CHARACTER_DEFAULTS.SCALE} />
-    </group>
+    <>
+      <group ref={groupRef} position={[1, 0, 0]}>
+        <primitive object={currentFbx} scale={CHARACTER_DEFAULTS.SCALE} />
+      </group>
+
+      {/* Visualize NPC bounding box */}
+      <BoundsVisualizer box={boundingBox} color="#0000ff" />
+    </>
   );
-}
+});
+
+NPC.displayName = 'NPC';
