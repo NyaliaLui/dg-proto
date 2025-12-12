@@ -16,7 +16,7 @@ interface BoundsVisualizerProps {
 export function BoundsVisualizer({
   box,
   color = '#00ff00',
-  isColliding = false
+  isColliding = false,
 }: BoundsVisualizerProps) {
   const meshRef = useRef<THREE.LineSegments>(null);
 

@@ -18,8 +18,11 @@ export function checkCollision(box1: THREE.Box3, box2: THREE.Box3): boolean {
 export function calculateBoundingBox(object: THREE.Object3D): THREE.Box3 {
   const box = new THREE.Box3();
   box.setFromObject(object);
-  box.expandByVector(new THREE.Vector3(0.3,0.3,0.3));
-  box.set(new THREE.Vector3(box.min.x, 0, box.min.z), new THREE.Vector3(box.max.x, box.max.y+1.5, box.max.z));
+  box.expandByVector(new THREE.Vector3(0.3, 0.3, 0.3));
+  box.set(
+    new THREE.Vector3(box.min.x, 0, box.min.z),
+    new THREE.Vector3(box.max.x, box.max.y + 1.5, box.max.z),
+  );
   return box;
 }
 

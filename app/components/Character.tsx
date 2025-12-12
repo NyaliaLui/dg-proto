@@ -12,25 +12,9 @@ import { calculateBoundingBox, checkCollision } from '@/app/collision';
 import { BoundsVisualizer } from '@/app/components/BoundsVisualizer';
 import { NPCHandle } from '@/app/components/NPC';
 
-const logVector = (v: THREE.Vector3) => {
-  console.log(v.x, v.y, v.z);
-};
-
-const logBox = (box: THREE.Box3) => {
-  console.log(
-    `min: ${box.min.x}, ${box.min.y}, ${box.min.z}, max: ${box.max.x}, ${box.max.y}, ${box.max.z}`,
-  );
-};
-
-const logSize = (box: THREE.Box3) => {
-  const size = new THREE.Vector3();
-  box.getSize(size);
-  logVector(size);
-};
-
 interface CharacterProps {
   keys: KeyState;
-  npcRef: React.RefObject<NPCHandle|null>;
+  npcRef: React.RefObject<NPCHandle | null>;
 }
 
 export function Character({ keys, npcRef }: CharacterProps) {
@@ -89,9 +73,6 @@ export function Character({ keys, npcRef }: CharacterProps) {
     }
 
     if (groupRef.current) {
-      currentFbx.children.forEach((child: THREE.Object3D<THREE.Object3DEventMap>) => {
-        console.log(child.name);
-      });
       // Update bounding box for character
       const charBox = calculateBoundingBox(groupRef.current);
       setBoundingBox(charBox);
@@ -142,11 +123,6 @@ export function Character({ keys, npcRef }: CharacterProps) {
       if (!moving) {
         groupRef.current.rotation.y = lastRotationRef.current;
       }
-
-      if (isColliding) {
-        logBox(charBox);
-        if (npcBounds) logBox(npcBounds);
-      }
     }
   });
 
@@ -157,7 +133,11 @@ export function Character({ keys, npcRef }: CharacterProps) {
       </group>
 
       {/* Visualize character bounding box */}
-      <BoundsVisualizer box={boundingBox} color="#00ff00" isColliding={isColliding} />
+      <BoundsVisualizer
+        box={boundingBox}
+        color="#00ff00"
+        isColliding={isColliding}
+      />
     </>
   );
 }
