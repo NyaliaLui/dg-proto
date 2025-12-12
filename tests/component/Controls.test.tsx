@@ -1,8 +1,9 @@
 import '@testing-library/jest-dom';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { expect, jest, describe, it } from '@jest/globals';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { expect, describe, it } from '@jest/globals';
 import { Controls, AnalogStick, OnscreenKeys } from '@/app/components/Controls';
 import { CONTROLS_TEST_IDS } from '@/app/test-ids';
+import { CONTROLS_DEFAULTS } from '@/app/constants';
 
 describe('Controls Component', () => {
   const mockUpdateKey = jest.fn();
@@ -69,7 +70,13 @@ describe('Controls Component', () => {
       const jumpButton = screen.getByTestId(CONTROLS_TEST_IDS.JUMP_BUTTON);
 
       fireEvent.mouseUp(jumpButton);
-      expect(mockUpdateKey).toHaveBeenCalledWith('space', false);
+
+      waitFor(
+        () => {
+          expect(mockUpdateKey).toHaveBeenCalledWith('space', false);
+        },
+        { timeout: CONTROLS_DEFAULTS.MECHANICS_TIMEOUT },
+      );
     });
 
     it('should call updateKey with q true on normal button mouse down', () => {

@@ -21,14 +21,15 @@ export function Character({ keys }: CharacterProps) {
     return keys.w || keys.s || keys.a || keys.d;
   }, [keys.w, keys.s, keys.a, keys.d]);
 
-  // Load both models
+  // Load all models
   const idleFbx = useFBX(CHARACTER_DEFAULTS.MODELS.IDLE);
   const walkFbx = useFBX(CHARACTER_DEFAULTS.MODELS.WALK);
+  const normalFbx = useFBX(CHARACTER_DEFAULTS.MODELS.NORMAL);
 
   const mixer = useRef<THREE.AnimationMixer | null>(null);
 
-  // Switch between idle and walk based on movement
-  const currentFbx = moving ? walkFbx : idleFbx;
+  // Switch between animations based on state
+  const currentFbx = keys.q ? normalFbx : moving ? walkFbx : idleFbx;
 
   useEffect(() => {
     // Clean up previous mixer
