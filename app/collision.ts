@@ -1,5 +1,21 @@
 import * as THREE from 'three';
 
+export const logVector = (v: THREE.Vector3) => {
+  console.log(v.x, v.y, v.z);
+};
+
+export const logBox = (box: THREE.Box3) => {
+  console.log(
+    `min: ${box.min.x}, ${box.min.y}, ${box.min.z}, max: ${box.max.x}, ${box.max.y}, ${box.max.z}`,
+  );
+};
+
+export const logSize = (box: THREE.Box3) => {
+  const size = new THREE.Vector3();
+  box.getSize(size);
+  logVector(size);
+};
+
 export interface BoundingBox {
   box: THREE.Box3;
   position: THREE.Vector3;
@@ -15,11 +31,16 @@ export function checkCollision(box1: THREE.Box3, box2: THREE.Box3): boolean {
 /**
  * Calculate bounding box from a THREE.Object3D
  */
-export function calculateBoundingBox(object: THREE.Object3D): THREE.Box3 {
+export function calculateBoundingBox(
+  lbl: string,
+  object: THREE.Object3D,
+): THREE.Box3 {
   const box = new THREE.Box3();
   box.setFromObject(object);
-  box.expandByVector(new THREE.Vector3(0.3,0.3,0.3));
-  box.set(new THREE.Vector3(box.min.x, 0, box.min.z), new THREE.Vector3(box.max.x, box.max.y+1.5, box.max.z));
+  // box.expandByVector(new THREE.Vector3(0.3, 0.3, 0.3));
+  console.log(`${lbl}: ${object.name}`);
+  logBox(box);
+  box.set(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0.2, 0.2, 0.2));
   return box;
 }
 

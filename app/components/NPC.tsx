@@ -73,7 +73,7 @@ export const NPC = forwardRef<NPCHandle>((props, ref) => {
 
     // Update bounding box
     if (groupRef.current) {
-      const box = calculateBoundingBox(groupRef.current);
+      const box = calculateBoundingBox('npc', groupRef.current);
       setBoundingBox(box);
     }
   });

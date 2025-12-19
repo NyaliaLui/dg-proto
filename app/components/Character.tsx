@@ -8,35 +8,19 @@ import { SkeletonUtils } from 'three-stdlib';
 
 import { CHARACTER_DEFAULTS } from '@/app/constants';
 import { KeyState } from '@/app/components/hooks/useKeyboardControls';
-import { calculateBoundingBox, checkCollision } from '@/app/collision';
+import { calculateBoundingBox, checkCollision, logBox } from '@/app/collision';
 import { BoundsVisualizer } from '@/app/components/BoundsVisualizer';
 import { NPCHandle } from '@/app/components/NPC';
 
-const logVector = (v: THREE.Vector3) => {
-  console.log(v.x, v.y, v.z);
-};
-
-const logBox = (box: THREE.Box3) => {
-  console.log(
-    `min: ${box.min.x}, ${box.min.y}, ${box.min.z}, max: ${box.max.x}, ${box.max.y}, ${box.max.z}`,
-  );
-};
-
-const logSize = (box: THREE.Box3) => {
-  const size = new THREE.Vector3();
-  box.getSize(size);
-  logVector(size);
-};
-
 interface CharacterProps {
   keys: KeyState;
-  npcRef: React.RefObject<NPCHandle|null>;
+  npcRef: React.RefObject<NPCHandle | null>;
 }
 
 export function Character({ keys, npcRef }: CharacterProps) {
   const groupRef = useRef<THREE.Group>(null);
   const lastRotationRef = useRef<number>(Math.PI / 2);
-  const [boundingBox, setBoundingBox] = useState<THREE.Box3 | null>(null);
+  const [boundingBoxes, setBoundingBoxes] = useState<THREE.Box3[]>([]);
   const [isColliding, setIsColliding] = useState(false);
 
   // Determine if character is moving
@@ -89,20 +73,32 @@ export function Character({ keys, npcRef }: CharacterProps) {
     }
 
     if (groupRef.current) {
-      currentFbx.children.forEach((child: THREE.Object3D<THREE.Object3DEventMap>) => {
-        console.log(child.name);
-      });
-      // Update bounding box for character
-      const charBox = calculateBoundingBox(groupRef.current);
-      setBoundingBox(charBox);
+      // Create bounding boxes for each child of currentFbx
+      const childBoxes: THREE.Box3[] = [];
+      const childBox = calculateBoundingBox(
+        'pre',
+        currentFbx.children[0].children[0],
+      );
+      childBoxes.push(childBox);
+      // currentFbx.children[0].children.forEach((child: THREE.Object3D<THREE.Object3DEventMap>, index: number) => {
+      //   console.log(`${child.name}:${index}=>${child.children.length}`);
+      //   const childBox = calculateBoundingBox(child);
+      //   childBoxes.push(childBox);
+      // });
+      setBoundingBoxes(childBoxes);
 
       // Get NPC data
       const npcBounds = npcRef.current?.getBoundingBox();
 
-      // Check collision with NPC
+      // Check collision with NPC - check if any child box collides
       let collision = false;
       if (npcBounds) {
-        collision = checkCollision(charBox, npcBounds);
+        for (const childBox of childBoxes) {
+          if (checkCollision(childBox, npcBounds)) {
+            collision = true;
+            break;
+          }
+        }
         setIsColliding(collision);
       }
 
@@ -130,9 +126,29 @@ export function Character({ keys, npcRef }: CharacterProps) {
       }
 
       // Collision response: revert position if collision detected after movement
-      if (npcBounds) {
-        const newBox = calculateBoundingBox(groupRef.current);
-        if (checkCollision(newBox, npcBounds)) {
+      if (npcBounds && groupRef.current) {
+        // Recalculate child boxes after movement
+        const newChildBoxes: THREE.Box3[] = [];
+        const childBox = calculateBoundingBox(
+          'post',
+          currentFbx.children[0].children[0],
+        );
+        newChildBoxes.push(childBox);
+        // currentFbx.children[0].children.forEach((child: THREE.Object3D<THREE.Object3DEventMap>) => {
+        //   const childBox = calculateBoundingBox(child);
+        //   newChildBoxes.push(childBox);
+        // });
+
+        // Check if any child box collides with NPC
+        let hasCollision = false;
+        for (const childBox of newChildBoxes) {
+          if (checkCollision(childBox, npcBounds)) {
+            hasCollision = true;
+            break;
+          }
+        }
+
+        if (hasCollision) {
           groupRef.current.position.copy(previousPosition);
           setIsColliding(true);
         }
@@ -143,9 +159,15 @@ export function Character({ keys, npcRef }: CharacterProps) {
         groupRef.current.rotation.y = lastRotationRef.current;
       }
 
-      if (isColliding) {
-        logBox(charBox);
-        if (npcBounds) logBox(npcBounds);
+      if (isColliding && boundingBoxes.length > 0) {
+        boundingBoxes.forEach((box, index) => {
+          console.log(`Child ${index}:`);
+          // logBox(box);
+        });
+        if (npcBounds) {
+          console.log('NPC:');
+          // logBox(npcBounds);
+        }
       }
     }
   });
@@ -156,8 +178,15 @@ export function Character({ keys, npcRef }: CharacterProps) {
         <primitive object={currentFbx} scale={CHARACTER_DEFAULTS.SCALE} />
       </group>
 
-      {/* Visualize character bounding box */}
-      <BoundsVisualizer box={boundingBox} color="#00ff00" isColliding={isColliding} />
+      {/* Visualize character bounding boxes - one for each child */}
+      {boundingBoxes.map((box, index) => (
+        <BoundsVisualizer
+          key={`char-box-${index}`}
+          box={box}
+          color="#00ff00"
+          isColliding={isColliding}
+        />
+      ))}
     </>
   );
 }
