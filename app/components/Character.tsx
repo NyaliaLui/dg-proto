@@ -8,7 +8,12 @@ import { SkeletonUtils } from 'three-stdlib';
 
 import { CHARACTER_DEFAULTS } from '@/app/constants';
 import { KeyState } from '@/app/components/hooks/useKeyboardControls';
-import { calculateBoundingBox, checkCollision } from '@/app/collision';
+import {
+  calculateBoundingCapsule,
+  calculateHeadCapsule,
+  checkCollision,
+  BoundingCapsule,
+} from '@/app/collision';
 import { BoundsVisualizer } from '@/app/components/BoundsVisualizer';
 import { NPCHandle } from '@/app/components/NPC';
 
@@ -20,7 +25,10 @@ interface CharacterProps {
 export function Character({ keys, npcRef }: CharacterProps) {
   const groupRef = useRef<THREE.Group>(null);
   const lastRotationRef = useRef<number>(Math.PI / 2);
-  const [boundingBox, setBoundingBox] = useState<THREE.Box3 | null>(null);
+  const [outMostCapsule, setOutMostCapsule] = useState<BoundingCapsule | null>(
+    null,
+  );
+  const [headCapsule, setHeadCapsule] = useState<BoundingCapsule | null>(null);
   const [isColliding, setIsColliding] = useState(false);
 
   // Determine if character is moving
@@ -73,17 +81,19 @@ export function Character({ keys, npcRef }: CharacterProps) {
     }
 
     if (groupRef.current) {
-      // Update bounding box for character
-      const charBox = calculateBoundingBox(groupRef.current);
-      setBoundingBox(charBox);
+      // Update bounding capsules for character
+      const charOutMostCapsule = calculateBoundingCapsule(groupRef.current);
+      const charHeadCapsule = calculateHeadCapsule(charOutMostCapsule);
+      setOutMostCapsule(charOutMostCapsule);
+      setHeadCapsule(charHeadCapsule);
 
       // Get NPC data
-      const npcBounds = npcRef.current?.getBoundingBox();
+      const npcBounds = npcRef.current?.getBoundingCapsule();
 
       // Check collision with NPC
       let collision = false;
       if (npcBounds) {
-        collision = checkCollision(charBox, npcBounds);
+        collision = checkCollision(charOutMostCapsule, npcBounds);
         setIsColliding(collision);
       }
 
@@ -112,8 +122,8 @@ export function Character({ keys, npcRef }: CharacterProps) {
 
       // Collision response: revert position if collision detected after movement
       if (npcBounds) {
-        const newBox = calculateBoundingBox(groupRef.current);
-        if (checkCollision(newBox, npcBounds)) {
+        const newOutMostCapsule = calculateBoundingCapsule(groupRef.current);
+        if (checkCollision(newOutMostCapsule, npcBounds)) {
           groupRef.current.position.copy(previousPosition);
           setIsColliding(true);
         }
@@ -132,10 +142,15 @@ export function Character({ keys, npcRef }: CharacterProps) {
         <primitive object={currentFbx} scale={CHARACTER_DEFAULTS.SCALE} />
       </group>
 
-      {/* Visualize character bounding box */}
+      {/* Visualize character bounding capsules */}
       <BoundsVisualizer
-        box={boundingBox}
+        capsule={outMostCapsule}
         color="#00ff00"
+        isColliding={isColliding}
+      />
+      <BoundsVisualizer
+        capsule={headCapsule}
+        color="#ffff00"
         isColliding={isColliding}
       />
     </>

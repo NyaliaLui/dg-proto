@@ -1,16 +1,22 @@
 import '@testing-library/jest-dom';
 import { expect } from '@jest/globals';
 import { create } from '@react-three/test-renderer';
-import { Group, Box3 } from 'three';
+import { Group, Vector3 } from 'three';
 import { Character } from '@/app/components/Character';
 import { CONTROLS_DEFAULTS } from '@/app/constants';
 import { NPCHandle } from '@/app/components/NPC';
+import { BoundingCapsule } from '@/app/collision';
 import { RefObject } from 'react';
 
 const testScene = new Group();
+const mockCapsule: BoundingCapsule = {
+  start: new Vector3(0, 0.5, 0),
+  end: new Vector3(0, 1.3, 0),
+  radius: 0.5,
+};
 const mockNpcRef: RefObject<NPCHandle | null> = {
   current: {
-    getBoundingBox: jest.fn(() => new Box3()),
+    getBoundingCapsule: jest.fn(() => mockCapsule),
     getRef: jest.fn(() => ({ current: new Group() })),
   },
 };

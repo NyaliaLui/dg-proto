@@ -14,20 +14,27 @@ import * as THREE from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 
 import { CHARACTER_DEFAULTS } from '@/app/constants';
-import { calculateBoundingBox } from '@/app/collision';
+import {
+  calculateBoundingCapsule,
+  calculateHeadCapsule,
+  BoundingCapsule,
+} from '@/app/collision';
 import { BoundsVisualizer } from '@/app/components/BoundsVisualizer';
 
 export interface NPCHandle {
-  getBoundingBox: () => THREE.Box3 | null;
+  getBoundingCapsule: () => BoundingCapsule | null;
   getRef: () => React.RefObject<THREE.Group | null>;
 }
 
 export const NPC = forwardRef<NPCHandle>((props, ref) => {
   const groupRef = useRef<THREE.Group>(null);
-  const [boundingBox, setBoundingBox] = useState<THREE.Box3 | null>(null);
+  const [outMostCapsule, setOutMostCapsule] = useState<BoundingCapsule | null>(
+    null,
+  );
+  const [headCapsule, setHeadCapsule] = useState<BoundingCapsule | null>(null);
 
   useImperativeHandle(ref, () => ({
-    getBoundingBox: () => boundingBox,
+    getBoundingCapsule: () => outMostCapsule,
     getRef: () => groupRef,
   }));
 
@@ -71,10 +78,12 @@ export const NPC = forwardRef<NPCHandle>((props, ref) => {
       mixer.current.update(delta);
     }
 
-    // Update bounding box
+    // Update bounding capsules
     if (groupRef.current) {
-      const box = calculateBoundingBox(groupRef.current);
-      setBoundingBox(box);
+      const npcOutMostCapsule = calculateBoundingCapsule(groupRef.current);
+      const npcHeadCapsule = calculateHeadCapsule(npcOutMostCapsule);
+      setOutMostCapsule(npcOutMostCapsule);
+      setHeadCapsule(npcHeadCapsule);
     }
   });
 
@@ -84,8 +93,9 @@ export const NPC = forwardRef<NPCHandle>((props, ref) => {
         <primitive object={currentFbx} scale={CHARACTER_DEFAULTS.SCALE} />
       </group>
 
-      {/* Visualize NPC bounding box */}
-      <BoundsVisualizer box={boundingBox} color="#0000ff" />
+      {/* Visualize NPC bounding capsules */}
+      <BoundsVisualizer capsule={outMostCapsule} color="#0000ff" />
+      <BoundsVisualizer capsule={headCapsule} color="#ffff00" />
     </>
   );
 });

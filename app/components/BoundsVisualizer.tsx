@@ -3,64 +3,129 @@
 import { useRef, useEffect } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
+import { BoundingCapsule, getCapsuleCenter } from '@/app/collision';
 
 interface BoundsVisualizerProps {
-  box: THREE.Box3 | null;
+  capsule: BoundingCapsule | null;
   color?: string;
   isColliding?: boolean;
 }
 
 /**
- * Visualizes a Box3 bounding box as a wireframe in the scene
+ * Visualizes a BoundingCapsule as a wireframe in the scene
  */
 export function BoundsVisualizer({
-  box,
+  capsule,
   color = '#00ff00',
   isColliding = false,
 }: BoundsVisualizerProps) {
-  const meshRef = useRef<THREE.LineSegments>(null);
+  const groupRef = useRef<THREE.Group>(null);
 
   useEffect(() => {
-    if (!meshRef.current || !box) return;
+    if (!groupRef.current || !capsule) return;
 
-    const size = new THREE.Vector3();
-    const center = new THREE.Vector3();
-    box.getSize(size);
-    box.getCenter(center);
-
-    // Create box geometry
-    const geometry = new THREE.BoxGeometry(size.x, size.y, size.z);
-    const edges = new THREE.EdgesGeometry(geometry);
-
-    if (meshRef.current.geometry) {
-      meshRef.current.geometry.dispose();
+    // Clear previous geometry
+    while (groupRef.current.children.length > 0) {
+      const child = groupRef.current.children[0];
+      if (child instanceof THREE.LineSegments) {
+        child.geometry.dispose();
+        (child.material as THREE.Material).dispose();
+      }
+      groupRef.current.remove(child);
     }
 
-    meshRef.current.geometry = edges;
-    meshRef.current.position.copy(center);
+    const { start, end, radius } = capsule;
+    const height = start.distanceTo(end);
+    const material = new THREE.LineBasicMaterial({
+      color: isColliding ? '#ff0000' : color,
+    });
+
+    // Create cylinder for the middle section
+    const cylinderGeometry = new THREE.CylinderGeometry(
+      radius,
+      radius,
+      height,
+      16,
+      1,
+      true,
+    );
+    const cylinderEdges = new THREE.EdgesGeometry(cylinderGeometry);
+    const cylinderLines = new THREE.LineSegments(cylinderEdges, material);
+
+    // Create top hemisphere
+    const topSphereGeometry = new THREE.SphereGeometry(
+      radius,
+      16,
+      8,
+      0,
+      Math.PI * 2,
+      0,
+      Math.PI / 2,
+    );
+    const topSphereEdges = new THREE.EdgesGeometry(topSphereGeometry);
+    const topSphereLines = new THREE.LineSegments(
+      topSphereEdges,
+      material.clone(),
+    );
+    topSphereLines.position.y = height / 2;
+
+    // Create bottom hemisphere
+    const bottomSphereGeometry = new THREE.SphereGeometry(
+      radius,
+      16,
+      8,
+      0,
+      Math.PI * 2,
+      Math.PI / 2,
+      Math.PI / 2,
+    );
+    const bottomSphereEdges = new THREE.EdgesGeometry(bottomSphereGeometry);
+    const bottomSphereLines = new THREE.LineSegments(
+      bottomSphereEdges,
+      material.clone(),
+    );
+    bottomSphereLines.position.y = -height / 2;
+
+    // Create small sphere at center
+    const centerSphereGeometry = new THREE.SphereGeometry(0.2, 8, 8);
+    const centerSphereMaterial = new THREE.MeshBasicMaterial({
+      color: isColliding ? '#ff0000' : color,
+    });
+    const centerSphere = new THREE.Mesh(
+      centerSphereGeometry,
+      centerSphereMaterial,
+    );
+
+    groupRef.current.add(cylinderLines);
+    groupRef.current.add(topSphereLines);
+    groupRef.current.add(bottomSphereLines);
+    groupRef.current.add(centerSphere);
+
+    // Position at capsule center
+    const center = getCapsuleCenter(capsule);
+    groupRef.current.position.copy(center);
 
     return () => {
-      geometry.dispose();
-      edges.dispose();
+      cylinderGeometry.dispose();
+      cylinderEdges.dispose();
+      topSphereGeometry.dispose();
+      topSphereEdges.dispose();
+      bottomSphereGeometry.dispose();
+      bottomSphereEdges.dispose();
+      centerSphereGeometry.dispose();
+      centerSphereMaterial.dispose();
+      material.dispose();
     };
-  }, [box]);
+  }, [capsule, color, isColliding]);
 
   useFrame(() => {
-    if (meshRef.current && box) {
-      const center = new THREE.Vector3();
-      box.getCenter(center);
-      meshRef.current.position.copy(center);
+    if (groupRef.current && capsule) {
+      const center = getCapsuleCenter(capsule);
+      groupRef.current.position.copy(center);
     }
   });
 
-  if (!box) return null;
+  if (!capsule) return null;
 
-  return (
-    <lineSegments ref={meshRef}>
-      <lineBasicMaterial
-        color={isColliding ? '#ff0000' : color}
-        linewidth={2}
-      />
-    </lineSegments>
-  );
+  return <group ref={groupRef} />;
 }

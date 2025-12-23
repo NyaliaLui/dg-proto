@@ -18,7 +18,7 @@ export default function Home() {
   useEffect(() => {
     const interval = setInterval(() => {
       if (npcRef.current) {
-        const bounds = npcRef.current.getBoundingBox();
+        const bounds = npcRef.current.getBoundingCapsule();
         console.log('NPC bounds:', bounds);
       }
     }, 1000);
