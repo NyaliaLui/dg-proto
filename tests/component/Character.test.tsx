@@ -14,16 +14,28 @@ const mockSetRotation = jest.fn();
 // Store mocks in a module-level object that can be accessed inside jest.mock
 const mocks = { mockSetLinvel, mockSetRotation };
 
+// Create a mock animation clip
+const mockAnimationClip = {
+  name: 'TestAnimation',
+  duration: 1,
+  tracks: [],
+  blendMode: 0,
+};
+
 jest.mock('@react-three/drei', () => {
   const original = jest.requireActual('@react-three/drei');
   return {
     ...original,
     useFBX: jest.fn(() => ({
       scene: testScene,
-      animations: [],
+      animations: [mockAnimationClip],
     })),
   };
 });
+
+jest.mock('../../app/utils', () => ({
+  getAnimation: jest.fn((model) => model.animations[0]),
+}));
 
 jest.mock('three-stdlib', () => ({
   SkeletonUtils: {

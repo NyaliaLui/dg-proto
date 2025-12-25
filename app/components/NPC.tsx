@@ -8,17 +8,26 @@ import * as THREE from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 
 import { CHARACTER_DEFAULTS } from '@/app/constants';
+import { getAnimation } from '@/app/utils';
 
 export function NPC() {
   const groupRef = useRef<THREE.Group>(null);
 
-  // Load all models
-  const idleFbx = useFBX(CHARACTER_DEFAULTS.MODELS.IDLE);
+  // Load the skinned model
+  const modelFbx = useFBX(CHARACTER_DEFAULTS.MODELS.XBOT);
+
+  // Load idle animation from separate file
+  const idleAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.IDLE));
 
   const mixer = useRef<THREE.AnimationMixer | null>(null);
 
   // Clone the model so it can be used independently
-  const currentFbx = useMemo(() => SkeletonUtils.clone(idleFbx), [idleFbx]);
+  const model = useMemo(() => SkeletonUtils.clone(modelFbx), [modelFbx]);
+
+  // Get the idle animation clip
+  const currentAnimation = useMemo(() => {
+    return idleAnim;
+  }, [idleAnim]);
 
   useEffect(() => {
     // Clean up previous mixer
@@ -27,10 +36,10 @@ export function NPC() {
       mixer.current = null;
     }
 
-    // Set up new mixer with current model
-    if (currentFbx && currentFbx.animations.length > 0) {
-      mixer.current = new THREE.AnimationMixer(currentFbx);
-      const action = mixer.current.clipAction(currentFbx.animations[0]);
+    // Set up new mixer with current animation on the model
+    if (model && currentAnimation) {
+      mixer.current = new THREE.AnimationMixer(model);
+      const action = mixer.current.clipAction(currentAnimation);
       action.play();
     }
 
@@ -39,7 +48,7 @@ export function NPC() {
         mixer.current.stopAllAction();
       }
     };
-  }, [currentFbx]);
+  }, [model, currentAnimation]);
 
   useEffect(() => {
     if (groupRef.current) {
@@ -73,7 +82,7 @@ export function NPC() {
       />
       <group ref={groupRef}>
         <primitive
-          object={currentFbx}
+          object={model}
           scale={CHARACTER_DEFAULTS.SCALE}
           position={[0, -0.9, 0]}
         />

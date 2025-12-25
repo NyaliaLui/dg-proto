@@ -3,9 +3,12 @@ import { Vector3 } from 'three';
 export const CHARACTER_DEFAULTS = {
   MOVE_SPEED: 3,
   MODELS: {
-    IDLE: '/models/Idle.fbx',
-    WALK: '/models/Walking.fbx',
-    NORMAL: '/models/Jab.fbx',
+    XBOT: '/models/XBot.fbx',
+  },
+  ANIMATIONS: {
+    IDLE: '/models/IdleWithoutSkin.fbx',
+    WALK: '/models/WalkingWithoutSkin.fbx',
+    NORMAL: '/models/PunchingWithoutSkin.fbx',
   },
   SCALE: 0.01,
   COLLIDERS: {

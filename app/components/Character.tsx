@@ -13,6 +13,7 @@ import { SkeletonUtils } from 'three-stdlib';
 
 import { CHARACTER_DEFAULTS } from '@/app/constants';
 import { KeyState } from '@/app/components/hooks/useKeyboardControls';
+import { getAnimation } from '@/app/utils';
 
 interface CharacterProps {
   keys: KeyState;
@@ -28,23 +29,29 @@ export function Character({ keys }: CharacterProps) {
     return keys.w || keys.s || keys.a || keys.d;
   }, [keys.w, keys.s, keys.a, keys.d]);
 
-  // Load all models
-  const idleFbx = useFBX(CHARACTER_DEFAULTS.MODELS.IDLE);
-  const walkFbx = useFBX(CHARACTER_DEFAULTS.MODELS.WALK);
-  const normalFbx = useFBX(CHARACTER_DEFAULTS.MODELS.NORMAL);
+  // Load the skinned model
+  const modelFbx = useFBX(CHARACTER_DEFAULTS.MODELS.XBOT);
 
-  // Clone models so they can be used independently
-  const idleClone = useMemo(() => SkeletonUtils.clone(idleFbx), [idleFbx]);
-  const walkClone = useMemo(() => SkeletonUtils.clone(walkFbx), [walkFbx]);
-  const normalClone = useMemo(
-    () => SkeletonUtils.clone(normalFbx),
-    [normalFbx],
-  );
+  // Load animations from separate files
+  const idleAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.IDLE));
+  const walkAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.WALK));
+  const punchAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.NORMAL));
+
+  // Clone the model so it can be used independently
+  const model = useMemo(() => SkeletonUtils.clone(modelFbx), [modelFbx]);
 
   const mixer = useRef<THREE.AnimationMixer | null>(null);
 
-  // Switch between animations based on state
-  const currentFbx = keys.q ? normalClone : moving ? walkClone : idleClone;
+  // Determine which animation to play based on state
+  const currentAnimation = useMemo(() => {
+    if (keys.q) {
+      return punchAnim;
+    }
+    if (moving) {
+      return walkAnim;
+    }
+    return idleAnim;
+  }, [keys.q, moving, idleAnim, walkAnim, punchAnim]);
 
   useEffect(() => {
     // Clean up previous mixer
@@ -53,10 +60,10 @@ export function Character({ keys }: CharacterProps) {
       mixer.current = null;
     }
 
-    // Set up new mixer with current model
-    if (currentFbx && currentFbx.animations.length > 0) {
-      mixer.current = new THREE.AnimationMixer(currentFbx);
-      const action = mixer.current.clipAction(currentFbx.animations[0]);
+    // Set up new mixer with current animation on the model
+    if (model && currentAnimation) {
+      mixer.current = new THREE.AnimationMixer(model);
+      const action = mixer.current.clipAction(currentAnimation);
       action.play();
     }
 
@@ -65,7 +72,7 @@ export function Character({ keys }: CharacterProps) {
         mixer.current.stopAllAction();
       }
     };
-  }, [currentFbx]);
+  }, [model, currentAnimation]);
 
   useFrame((_state, delta) => {
     if (mixer.current) {
@@ -142,7 +149,7 @@ export function Character({ keys }: CharacterProps) {
       />
       <group ref={modelRef}>
         <primitive
-          object={currentFbx}
+          object={model}
           scale={CHARACTER_DEFAULTS.SCALE}
           position={[0, -0.9, 0]}
         />
