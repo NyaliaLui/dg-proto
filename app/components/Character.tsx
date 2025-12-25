@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useMemo, useState, useEffect } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { useFBX } from '@react-three/drei';
 import {
   CapsuleCollider,
@@ -10,6 +10,7 @@ import {
 } from '@react-three/rapier';
 import * as THREE from 'three';
 import { SkeletonUtils } from 'three-stdlib';
+import { SkeletonHelper } from 'three';
 
 import { CHARACTER_DEFAULTS } from '@/app/constants';
 import { KeyState } from '@/app/components/hooks/useKeyboardControls';
@@ -25,6 +26,8 @@ export function Character({ keys }: CharacterProps) {
   const lastRotationRef = useRef<number>(Math.PI / 2);
   const attackStartTimeRef = useRef<number | null>(null);
   const [showHandCollider, setShowHandCollider] = useState(false);
+  const { scene } = useThree();
+  const skeletonHelperRef = useRef<SkeletonHelper | null>(null);
 
   // Track when attack starts and update hand collider visibility
   useFrame(({ clock }) => {
@@ -61,6 +64,20 @@ export function Character({ keys }: CharacterProps) {
 
   // Clone the model so it can be used independently
   const model = useMemo(() => SkeletonUtils.clone(modelFbx), [modelFbx]);
+
+  // Create skeleton helper for visualization
+  useEffect(() => {
+    if (model) {
+      const helper = new SkeletonHelper(model);
+      skeletonHelperRef.current = helper;
+      scene.add(helper);
+
+      return () => {
+        scene.remove(helper);
+        skeletonHelperRef.current = null;
+      };
+    }
+  }, [model, scene]);
 
   const mixer = useRef<THREE.AnimationMixer | null>(null);
 
