@@ -24,30 +24,12 @@ export function Character({ keys }: CharacterProps) {
   const rigidBodyRef = useRef<RapierRigidBody>(null);
   const modelRef = useRef<THREE.Group>(null);
   const lastRotationRef = useRef<number>(Math.PI / 2);
-  const attackStartTimeRef = useRef<number | null>(null);
-  const [showHandCollider, setShowHandCollider] = useState(false);
+  const [handPosition, setHandPosition] = useState<[number, number, number]>([
+    0, 0.4, 0.75,
+  ]);
   const { scene } = useThree();
   const skeletonHelperRef = useRef<SkeletonHelper | null>(null);
-
-  // Track when attack starts and update hand collider visibility
-  useFrame(({ clock }) => {
-    if (keys.q) {
-      if (attackStartTimeRef.current === null) {
-        attackStartTimeRef.current = clock.getElapsedTime();
-      }
-      // Show hand collider after 0.1 seconds
-      const shouldShow =
-        clock.getElapsedTime() - attackStartTimeRef.current >= 0.5;
-      if (shouldShow !== showHandCollider) {
-        setShowHandCollider(shouldShow);
-      }
-    } else {
-      attackStartTimeRef.current = null;
-      if (showHandCollider) {
-        setShowHandCollider(false);
-      }
-    }
-  });
+  const leftHandBoneRef = useRef<THREE.Bone | null>(null);
 
   // Determine if character is moving
   const moving = useMemo(() => {
@@ -65,16 +47,24 @@ export function Character({ keys }: CharacterProps) {
   // Clone the model so it can be used independently
   const model = useMemo(() => SkeletonUtils.clone(modelFbx), [modelFbx]);
 
-  // Create skeleton helper for visualization
+  // Create skeleton helper for visualization and find the left hand bone
   useEffect(() => {
     if (model) {
       const helper = new SkeletonHelper(model);
       skeletonHelperRef.current = helper;
       scene.add(helper);
 
+      // Find the left hand bone
+      model.traverse((child) => {
+        if (child instanceof THREE.Bone && child.name === 'mixamorigLeftHand') {
+          leftHandBoneRef.current = child;
+        }
+      });
+
       return () => {
         scene.remove(helper);
         skeletonHelperRef.current = null;
+        leftHandBoneRef.current = null;
       };
     }
   }, [model, scene]);
@@ -116,6 +106,15 @@ export function Character({ keys }: CharacterProps) {
   useFrame((_state, delta) => {
     if (mixer.current) {
       mixer.current.update(delta);
+    }
+
+    // Update hand collider position based on bone position
+    if (keys.q && leftHandBoneRef.current) {
+      const leftHandPos = leftHandBoneRef.current.position;
+      console.log(
+        `leftHandPos: ${leftHandPos.x}, ${leftHandPos.y}, ${leftHandPos.z}`,
+      );
+      setHandPosition([leftHandPos.x, leftHandPos.y, leftHandPos.z]);
     }
 
     if (rigidBodyRef.current) {
@@ -186,9 +185,9 @@ export function Character({ keys }: CharacterProps) {
         ]}
         position={CHARACTER_DEFAULTS.COLLIDERS.HEAD.position}
       />
-      {/* Hand capsule - only active during attack after 0.1s delay */}
-      {showHandCollider && (
-        <CapsuleCollider args={[0.01, 0.07]} position={[0, 0.4, 0.75]} />
+      {/* Hand capsule - only active during attack */}
+      {keys.q && (
+        <CapsuleCollider args={[0.01, 0.07]} position={handPosition} />
       )}
       <group ref={modelRef}>
         <primitive
