@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useMemo } from 'react';
+import { useRef, useMemo, useState, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useFBX } from '@react-three/drei';
 import {
@@ -23,6 +23,28 @@ export function Character({ keys }: CharacterProps) {
   const rigidBodyRef = useRef<RapierRigidBody>(null);
   const modelRef = useRef<THREE.Group>(null);
   const lastRotationRef = useRef<number>(Math.PI / 2);
+  const attackStartTimeRef = useRef<number | null>(null);
+  const [showHandCollider, setShowHandCollider] = useState(false);
+
+  // Track when attack starts and update hand collider visibility
+  useFrame(({ clock }) => {
+    if (keys.q) {
+      if (attackStartTimeRef.current === null) {
+        attackStartTimeRef.current = clock.getElapsedTime();
+      }
+      // Show hand collider after 0.1 seconds
+      const shouldShow =
+        clock.getElapsedTime() - attackStartTimeRef.current >= 0.5;
+      if (shouldShow !== showHandCollider) {
+        setShowHandCollider(shouldShow);
+      }
+    } else {
+      attackStartTimeRef.current = null;
+      if (showHandCollider) {
+        setShowHandCollider(false);
+      }
+    }
+  });
 
   // Determine if character is moving
   const moving = useMemo(() => {
@@ -147,6 +169,10 @@ export function Character({ keys }: CharacterProps) {
         ]}
         position={CHARACTER_DEFAULTS.COLLIDERS.HEAD.position}
       />
+      {/* Hand capsule - only active during attack after 0.1s delay */}
+      {showHandCollider && (
+        <CapsuleCollider args={[0.01, 0.07]} position={[0, 0.4, 0.75]} />
+      )}
       <group ref={modelRef}>
         <primitive
           object={model}
