@@ -37,11 +37,25 @@ jest.mock('../../app/utils', () => ({
   getAnimation: jest.fn((model) => model.animations[0]),
 }));
 
-jest.mock('three-stdlib', () => ({
-  SkeletonUtils: {
-    clone: jest.fn((obj) => obj),
-  },
-}));
+jest.mock('three-stdlib', () => {
+  const { Group } = jest.requireActual('three');
+  return {
+    SkeletonUtils: {
+      clone: jest.fn(() => new Group()),
+    },
+  };
+});
+
+jest.mock('three', () => {
+  const originalThree = jest.requireActual('three');
+  return {
+    ...originalThree,
+    SkeletonHelper: jest.fn().mockImplementation(() => ({
+      visible: true,
+      update: jest.fn(),
+    })),
+  };
+});
 
 jest.mock('@react-three/rapier', () => {
   const React = jest.requireActual('react');
@@ -98,7 +112,9 @@ describe('Character Component', () => {
       const innerGroup = rigidBody.children[0];
       const primitive = innerGroup.children[0];
       // The primitive has scale prop applied directly (uniform scale)
-      expect(primitive.instance.scale).toBe(0.01);
+      expect(primitive.instance.scale.x).toBe(0.01);
+      expect(primitive.instance.scale.y).toBe(0.01);
+      expect(primitive.instance.scale.z).toBe(0.01);
     });
   });
 

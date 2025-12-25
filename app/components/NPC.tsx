@@ -1,17 +1,20 @@
 'use client';
 
 import { useRef, useEffect, useMemo } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { useFBX } from '@react-three/drei';
 import { CapsuleCollider, RigidBody } from '@react-three/rapier';
 import * as THREE from 'three';
 import { SkeletonUtils } from 'three-stdlib';
+import { SkeletonHelper } from 'three';
 
 import { CHARACTER_DEFAULTS } from '@/app/constants';
 import { getAnimation } from '@/app/utils';
 
 export function NPC() {
   const groupRef = useRef<THREE.Group>(null);
+  const { scene } = useThree();
+  const skeletonHelperRef = useRef<SkeletonHelper | null>(null);
 
   // Load the skinned model
   const modelFbx = useFBX(CHARACTER_DEFAULTS.MODELS.XBOT);
@@ -23,6 +26,20 @@ export function NPC() {
 
   // Clone the model so it can be used independently
   const model = useMemo(() => SkeletonUtils.clone(modelFbx), [modelFbx]);
+
+  // Create skeleton helper for visualization
+  useEffect(() => {
+    if (model) {
+      const helper = new SkeletonHelper(model);
+      skeletonHelperRef.current = helper;
+      scene.add(helper);
+
+      return () => {
+        scene.remove(helper);
+        skeletonHelperRef.current = null;
+      };
+    }
+  }, [model, scene]);
 
   // Get the idle animation clip
   const currentAnimation = useMemo(() => {

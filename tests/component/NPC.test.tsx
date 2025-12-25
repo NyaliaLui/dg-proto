@@ -35,6 +35,17 @@ jest.mock('three-stdlib', () => ({
   },
 }));
 
+jest.mock('three', () => {
+  const originalThree = jest.requireActual('three');
+  return {
+    ...originalThree,
+    SkeletonHelper: jest.fn().mockImplementation(() => ({
+      visible: true,
+      update: jest.fn(),
+    })),
+  };
+});
+
 jest.mock('@react-three/rapier', () => ({
   RigidBody: ({
     children,
