@@ -1,42 +1,16 @@
 'use client';
 
-import {
-  useRef,
-  useEffect,
-  useMemo,
-  useState,
-  forwardRef,
-  useImperativeHandle,
-} from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useFBX } from '@react-three/drei';
+import { CapsuleCollider, RigidBody } from '@react-three/rapier';
 import * as THREE from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 
 import { CHARACTER_DEFAULTS } from '@/app/constants';
-import {
-  calculateBoundingCapsule,
-  calculateHeadCapsule,
-  BoundingCapsule,
-} from '@/app/collision';
-import { BoundsVisualizer } from '@/app/components/BoundsVisualizer';
 
-export interface NPCHandle {
-  getBoundingCapsule: () => BoundingCapsule | null;
-  getRef: () => React.RefObject<THREE.Group | null>;
-}
-
-export const NPC = forwardRef<NPCHandle>((props, ref) => {
+export function NPC() {
   const groupRef = useRef<THREE.Group>(null);
-  const [outMostCapsule, setOutMostCapsule] = useState<BoundingCapsule | null>(
-    null,
-  );
-  const [headCapsule, setHeadCapsule] = useState<BoundingCapsule | null>(null);
-
-  useImperativeHandle(ref, () => ({
-    getBoundingCapsule: () => outMostCapsule,
-    getRef: () => groupRef,
-  }));
 
   // Load all models
   const idleFbx = useFBX(CHARACTER_DEFAULTS.MODELS.IDLE);
@@ -77,27 +51,33 @@ export const NPC = forwardRef<NPCHandle>((props, ref) => {
     if (mixer.current) {
       mixer.current.update(delta);
     }
-
-    // Update bounding capsules
-    if (groupRef.current) {
-      const npcOutMostCapsule = calculateBoundingCapsule(groupRef.current);
-      const npcHeadCapsule = calculateHeadCapsule(npcOutMostCapsule);
-      setOutMostCapsule(npcOutMostCapsule);
-      setHeadCapsule(npcHeadCapsule);
-    }
   });
 
   return (
-    <>
-      <group ref={groupRef} position={[1, 0, 0]}>
-        <primitive object={currentFbx} scale={CHARACTER_DEFAULTS.SCALE} />
+    <RigidBody type="fixed" position={[1, 0.9, 0]} colliders={false}>
+      {/* Torso capsule */}
+      <CapsuleCollider
+        args={[
+          CHARACTER_DEFAULTS.COLLIDERS.TORSO.halfHeight,
+          CHARACTER_DEFAULTS.COLLIDERS.TORSO.radius,
+        ]}
+        position={CHARACTER_DEFAULTS.COLLIDERS.TORSO.position}
+      />
+      {/* Head capsule */}
+      <CapsuleCollider
+        args={[
+          CHARACTER_DEFAULTS.COLLIDERS.HEAD.halfHeight,
+          CHARACTER_DEFAULTS.COLLIDERS.HEAD.radius,
+        ]}
+        position={CHARACTER_DEFAULTS.COLLIDERS.HEAD.position}
+      />
+      <group ref={groupRef}>
+        <primitive
+          object={currentFbx}
+          scale={CHARACTER_DEFAULTS.SCALE}
+          position={[0, -0.9, 0]}
+        />
       </group>
-
-      {/* Visualize NPC bounding capsules */}
-      <BoundsVisualizer capsule={outMostCapsule} color="#0000ff" />
-      <BoundsVisualizer capsule={headCapsule} color="#ffff00" />
-    </>
+    </RigidBody>
   );
-});
-
-NPC.displayName = 'NPC';
+}

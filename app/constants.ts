@@ -8,6 +8,11 @@ export const CHARACTER_DEFAULTS = {
     NORMAL: '/models/Jab.fbx',
   },
   SCALE: 0.01,
+  COLLIDERS: {
+    BODY: { halfHeight: 0.4, radius: 0.5, position: [0, 0, 0] as const },
+    TORSO: { halfHeight: 0.17, radius: 0.15, position: [0, 0.24, 0] as const },
+    HEAD: { halfHeight: 0.05, radius: 0.13, position: [0, 0.7, 0] as const },
+  },
 };
 
 export const CONTROLS_DEFAULTS = {
@@ -53,5 +58,8 @@ export const ENVIRONMENT_DEFAULTS = {
   texture: {
     ground: '/textures/grass.jpg',
     sky: '/textures/sky.jpg',
+  },
+  physics: {
+    debug: process.env.NEXT_PUBLIC_PHYSICS_DEBUG === 'true',
   },
 };

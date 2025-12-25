@@ -23,6 +23,17 @@ jest.mock('three-stdlib', () => ({
   },
 }));
 
+jest.mock('@react-three/rapier', () => ({
+  RigidBody: ({
+    children,
+    position,
+  }: {
+    children: React.ReactNode;
+    position?: [number, number, number];
+  }) => <group position={position}>{children}</group>,
+  CapsuleCollider: () => null,
+}));
+
 describe('NPC Component', () => {
   describe('Rendering', () => {
     it('should render a group element', async () => {
@@ -34,10 +45,10 @@ describe('NPC Component', () => {
 
     it('should have correct initial position', async () => {
       const renderer = await create(<NPC />);
-      const group = renderer.scene.children[0];
-      expect(group.instance.position.x).toBe(1);
-      expect(group.instance.position.y).toBe(0);
-      expect(group.instance.position.z).toBe(0);
+      const rigidBody = renderer.scene.children[0];
+      expect(rigidBody.instance.position.x).toBe(1);
+      expect(rigidBody.instance.position.y).toBe(0.9);
+      expect(rigidBody.instance.position.z).toBe(0);
     });
 
     it('should render with idle model', async () => {
@@ -48,8 +59,11 @@ describe('NPC Component', () => {
 
     it('should have correct scale', async () => {
       const renderer = await create(<NPC />);
-      const group = renderer.scene.children[0];
-      const primitive = group.children[0];
+      const rigidBody = renderer.scene.children[0];
+      // RigidBody (group) -> inner group (groupRef) -> primitive
+      const innerGroup = rigidBody.children[0];
+      const primitive = innerGroup.children[0];
+      // The primitive has scale prop applied directly (uniform scale)
       expect(primitive.instance.scale).toBe(0.01);
     });
   });
@@ -57,8 +71,10 @@ describe('NPC Component', () => {
   describe('Rotation', () => {
     it('should have initial rotation facing left', async () => {
       const renderer = await create(<NPC />);
-      const group = renderer.scene.children[0];
-      expect(group.instance.rotation.y).toBe(-Math.PI / 2);
+      const rigidBody = renderer.scene.children[0];
+      // The rotation is applied to the inner group via useEffect
+      const innerGroup = rigidBody.children[0];
+      expect(innerGroup.instance.rotation.y).toBe(-Math.PI / 2);
     });
   });
 });

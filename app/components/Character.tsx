@@ -1,35 +1,27 @@
 'use client';
 
-import { useRef, useEffect, useMemo, useState } from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useFBX } from '@react-three/drei';
+import {
+  CapsuleCollider,
+  RigidBody,
+  RapierRigidBody,
+} from '@react-three/rapier';
 import * as THREE from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 
 import { CHARACTER_DEFAULTS } from '@/app/constants';
 import { KeyState } from '@/app/components/hooks/useKeyboardControls';
-import {
-  calculateBoundingCapsule,
-  calculateHeadCapsule,
-  checkCollision,
-  BoundingCapsule,
-} from '@/app/collision';
-import { BoundsVisualizer } from '@/app/components/BoundsVisualizer';
-import { NPCHandle } from '@/app/components/NPC';
 
 interface CharacterProps {
   keys: KeyState;
-  npcRef: React.RefObject<NPCHandle | null>;
 }
 
-export function Character({ keys, npcRef }: CharacterProps) {
-  const groupRef = useRef<THREE.Group>(null);
+export function Character({ keys }: CharacterProps) {
+  const rigidBodyRef = useRef<RapierRigidBody>(null);
+  const modelRef = useRef<THREE.Group>(null);
   const lastRotationRef = useRef<number>(Math.PI / 2);
-  const [outMostCapsule, setOutMostCapsule] = useState<BoundingCapsule | null>(
-    null,
-  );
-  const [headCapsule, setHeadCapsule] = useState<BoundingCapsule | null>(null);
-  const [isColliding, setIsColliding] = useState(false);
 
   // Determine if character is moving
   const moving = useMemo(() => {
@@ -80,79 +72,81 @@ export function Character({ keys, npcRef }: CharacterProps) {
       mixer.current.update(delta);
     }
 
-    if (groupRef.current) {
-      // Update bounding capsules for character
-      const charOutMostCapsule = calculateBoundingCapsule(groupRef.current);
-      const charHeadCapsule = calculateHeadCapsule(charOutMostCapsule);
-      setOutMostCapsule(charOutMostCapsule);
-      setHeadCapsule(charHeadCapsule);
+    if (rigidBodyRef.current) {
+      const moveSpeed = CHARACTER_DEFAULTS.MOVE_SPEED;
+      const velocity = { x: 0, y: 0, z: 0 };
 
-      // Get NPC data
-      const npcBounds = npcRef.current?.getBoundingCapsule();
-
-      // Check collision with NPC
-      let collision = false;
-      if (npcBounds) {
-        collision = checkCollision(charOutMostCapsule, npcBounds);
-        setIsColliding(collision);
-      }
-
-      const moveSpeed = CHARACTER_DEFAULTS.MOVE_SPEED * delta;
-      const previousPosition = groupRef.current.position.clone();
-
-      // WASD movement with rotation to face direction (right-handed coordinate system)
+      // WASD movement with rotation to face direction
       if (keys.w) {
-        groupRef.current.position.z -= moveSpeed; // Move forward (toward -Z)
-        groupRef.current.rotation.y = Math.PI; // Face forward (-Z direction)
+        velocity.z = -moveSpeed;
+        rigidBodyRef.current.setRotation({ x: 0, y: 1, z: 0, w: 0 }, true); // Face -Z
       }
       if (keys.s) {
-        groupRef.current.position.z += moveSpeed; // Move backward (toward +Z)
-        groupRef.current.rotation.y = 0; // Face backward (+Z direction, toward camera)
+        velocity.z = moveSpeed;
+        rigidBodyRef.current.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true); // Face +Z
       }
       if (keys.a) {
-        groupRef.current.position.x -= moveSpeed; // Move left (toward -X)
-        groupRef.current.rotation.y = -Math.PI / 2; // Face left (-X direction)
+        velocity.x = -moveSpeed;
+        rigidBodyRef.current.setRotation(
+          { x: 0, y: -0.707, z: 0, w: 0.707 },
+          true,
+        ); // Face -X
         lastRotationRef.current = -Math.PI / 2;
       }
       if (keys.d) {
-        groupRef.current.position.x += moveSpeed; // Move right (toward +X)
-        groupRef.current.rotation.y = Math.PI / 2; // Face right (+X direction)
+        velocity.x = moveSpeed;
+        rigidBodyRef.current.setRotation(
+          { x: 0, y: 0.707, z: 0, w: 0.707 },
+          true,
+        ); // Face +X
         lastRotationRef.current = Math.PI / 2;
       }
 
-      // Collision response: revert position if collision detected after movement
-      if (npcBounds) {
-        const newOutMostCapsule = calculateBoundingCapsule(groupRef.current);
-        if (checkCollision(newOutMostCapsule, npcBounds)) {
-          groupRef.current.position.copy(previousPosition);
-          setIsColliding(true);
-        }
-      }
+      rigidBodyRef.current.setLinvel(velocity, true);
 
       // When idle, maintain last rotation
       if (!moving) {
-        groupRef.current.rotation.y = lastRotationRef.current;
+        const halfAngle = lastRotationRef.current / 2;
+        rigidBodyRef.current.setRotation(
+          { x: 0, y: Math.sin(halfAngle), z: 0, w: Math.cos(halfAngle) },
+          true,
+        );
       }
     }
   });
 
   return (
-    <>
-      <group ref={groupRef} position={[-1, 0, 0]}>
-        <primitive object={currentFbx} scale={CHARACTER_DEFAULTS.SCALE} />
+    <RigidBody
+      ref={rigidBodyRef}
+      type="dynamic"
+      position={[-1, 0.9, 0]}
+      lockRotations
+      enabledRotations={[false, false, false]}
+      colliders={false}
+    >
+      {/* Torso capsule */}
+      <CapsuleCollider
+        args={[
+          CHARACTER_DEFAULTS.COLLIDERS.TORSO.halfHeight,
+          CHARACTER_DEFAULTS.COLLIDERS.TORSO.radius,
+        ]}
+        position={CHARACTER_DEFAULTS.COLLIDERS.TORSO.position}
+      />
+      {/* Head capsule */}
+      <CapsuleCollider
+        args={[
+          CHARACTER_DEFAULTS.COLLIDERS.HEAD.halfHeight,
+          CHARACTER_DEFAULTS.COLLIDERS.HEAD.radius,
+        ]}
+        position={CHARACTER_DEFAULTS.COLLIDERS.HEAD.position}
+      />
+      <group ref={modelRef}>
+        <primitive
+          object={currentFbx}
+          scale={CHARACTER_DEFAULTS.SCALE}
+          position={[0, -0.9, 0]}
+        />
       </group>
-
-      {/* Visualize character bounding capsules */}
-      <BoundsVisualizer
-        capsule={outMostCapsule}
-        color="#00ff00"
-        isColliding={isColliding}
-      />
-      <BoundsVisualizer
-        capsule={headCapsule}
-        color="#ffff00"
-        isColliding={isColliding}
-      />
-    </>
+    </RigidBody>
   );
 }
