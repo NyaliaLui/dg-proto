@@ -1,43 +1,33 @@
 'use client';
 
-import {
-  useRef,
-  useEffect,
-  useMemo,
-  useState,
-  forwardRef,
-  useImperativeHandle,
-} from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useFBX } from '@react-three/drei';
+import { CapsuleCollider, RigidBody } from '@react-three/rapier';
 import * as THREE from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 
 import { CHARACTER_DEFAULTS } from '@/app/constants';
-import { calculateBoundingBox } from '@/app/collision';
-import { BoundsVisualizer } from '@/app/components/BoundsVisualizer';
+import { getAnimation } from '@/app/utils';
 
-export interface NPCHandle {
-  getBoundingBox: () => THREE.Box3 | null;
-  getRef: () => React.RefObject<THREE.Group | null>;
-}
-
-export const NPC = forwardRef<NPCHandle>((props, ref) => {
+export function NPC() {
   const groupRef = useRef<THREE.Group>(null);
-  const [boundingBox, setBoundingBox] = useState<THREE.Box3 | null>(null);
 
-  useImperativeHandle(ref, () => ({
-    getBoundingBox: () => boundingBox,
-    getRef: () => groupRef,
-  }));
+  // Load the skinned model
+  const modelFbx = useFBX(CHARACTER_DEFAULTS.MODELS.XBOT);
 
-  // Load all models
-  const idleFbx = useFBX(CHARACTER_DEFAULTS.MODELS.IDLE);
+  // Load idle animation from separate file
+  const idleAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.IDLE));
 
   const mixer = useRef<THREE.AnimationMixer | null>(null);
 
   // Clone the model so it can be used independently
-  const currentFbx = useMemo(() => SkeletonUtils.clone(idleFbx), [idleFbx]);
+  const model = useMemo(() => SkeletonUtils.clone(modelFbx), [modelFbx]);
+
+  // Get the idle animation clip
+  const currentAnimation = useMemo(() => {
+    return idleAnim;
+  }, [idleAnim]);
 
   useEffect(() => {
     // Clean up previous mixer
@@ -46,10 +36,10 @@ export const NPC = forwardRef<NPCHandle>((props, ref) => {
       mixer.current = null;
     }
 
-    // Set up new mixer with current model
-    if (currentFbx && currentFbx.animations.length > 0) {
-      mixer.current = new THREE.AnimationMixer(currentFbx);
-      const action = mixer.current.clipAction(currentFbx.animations[0]);
+    // Set up new mixer with current animation on the model
+    if (model && currentAnimation) {
+      mixer.current = new THREE.AnimationMixer(model);
+      const action = mixer.current.clipAction(currentAnimation);
       action.play();
     }
 
@@ -58,7 +48,7 @@ export const NPC = forwardRef<NPCHandle>((props, ref) => {
         mixer.current.stopAllAction();
       }
     };
-  }, [currentFbx]);
+  }, [model, currentAnimation]);
 
   useEffect(() => {
     if (groupRef.current) {
@@ -70,24 +60,33 @@ export const NPC = forwardRef<NPCHandle>((props, ref) => {
     if (mixer.current) {
       mixer.current.update(delta);
     }
-
-    // Update bounding box
-    if (groupRef.current) {
-      const box = calculateBoundingBox(groupRef.current);
-      setBoundingBox(box);
-    }
   });
 
   return (
-    <>
-      <group ref={groupRef} position={[1, 0, 0]}>
-        <primitive object={currentFbx} scale={CHARACTER_DEFAULTS.SCALE} />
+    <RigidBody type="fixed" position={[1, 0.9, 0]} colliders={false}>
+      {/* Torso capsule */}
+      <CapsuleCollider
+        args={[
+          CHARACTER_DEFAULTS.COLLIDERS.TORSO.halfHeight,
+          CHARACTER_DEFAULTS.COLLIDERS.TORSO.radius,
+        ]}
+        position={CHARACTER_DEFAULTS.COLLIDERS.TORSO.position}
+      />
+      {/* Head capsule */}
+      <CapsuleCollider
+        args={[
+          CHARACTER_DEFAULTS.COLLIDERS.HEAD.halfHeight,
+          CHARACTER_DEFAULTS.COLLIDERS.HEAD.radius,
+        ]}
+        position={CHARACTER_DEFAULTS.COLLIDERS.HEAD.position}
+      />
+      <group ref={groupRef}>
+        <primitive
+          object={model}
+          scale={CHARACTER_DEFAULTS.SCALE}
+          position={[0, -0.9, 0]}
+        />
       </group>
-
-      {/* Visualize NPC bounding box */}
-      <BoundsVisualizer box={boundingBox} color="#0000ff" />
-    </>
+    </RigidBody>
   );
-});
-
-NPC.displayName = 'NPC';
+}

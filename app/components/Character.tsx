@@ -1,50 +1,79 @@
 'use client';
 
-import { useRef, useEffect, useMemo, useState } from 'react';
+import { useRef, useMemo, useState, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useFBX } from '@react-three/drei';
+import {
+  CapsuleCollider,
+  RigidBody,
+  RapierRigidBody,
+} from '@react-three/rapier';
 import * as THREE from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 
 import { CHARACTER_DEFAULTS } from '@/app/constants';
 import { KeyState } from '@/app/components/hooks/useKeyboardControls';
-import { calculateBoundingBox, checkCollision } from '@/app/collision';
-import { BoundsVisualizer } from '@/app/components/BoundsVisualizer';
-import { NPCHandle } from '@/app/components/NPC';
+import { getAnimation } from '@/app/utils';
 
 interface CharacterProps {
   keys: KeyState;
-  npcRef: React.RefObject<NPCHandle | null>;
 }
 
-export function Character({ keys, npcRef }: CharacterProps) {
-  const groupRef = useRef<THREE.Group>(null);
+export function Character({ keys }: CharacterProps) {
+  const rigidBodyRef = useRef<RapierRigidBody>(null);
+  const modelRef = useRef<THREE.Group>(null);
   const lastRotationRef = useRef<number>(Math.PI / 2);
-  const [boundingBox, setBoundingBox] = useState<THREE.Box3 | null>(null);
-  const [isColliding, setIsColliding] = useState(false);
+  const attackStartTimeRef = useRef<number | null>(null);
+  const [showHandCollider, setShowHandCollider] = useState(false);
+
+  // Track when attack starts and update hand collider visibility
+  useFrame(({ clock }) => {
+    if (keys.q) {
+      if (attackStartTimeRef.current === null) {
+        attackStartTimeRef.current = clock.getElapsedTime();
+      }
+      // Show hand collider after 0.1 seconds
+      const shouldShow =
+        clock.getElapsedTime() - attackStartTimeRef.current >= 0.5;
+      if (shouldShow !== showHandCollider) {
+        setShowHandCollider(shouldShow);
+      }
+    } else {
+      attackStartTimeRef.current = null;
+      if (showHandCollider) {
+        setShowHandCollider(false);
+      }
+    }
+  });
 
   // Determine if character is moving
   const moving = useMemo(() => {
     return keys.w || keys.s || keys.a || keys.d;
   }, [keys.w, keys.s, keys.a, keys.d]);
 
-  // Load all models
-  const idleFbx = useFBX(CHARACTER_DEFAULTS.MODELS.IDLE);
-  const walkFbx = useFBX(CHARACTER_DEFAULTS.MODELS.WALK);
-  const normalFbx = useFBX(CHARACTER_DEFAULTS.MODELS.NORMAL);
+  // Load the skinned model
+  const modelFbx = useFBX(CHARACTER_DEFAULTS.MODELS.XBOT);
 
-  // Clone models so they can be used independently
-  const idleClone = useMemo(() => SkeletonUtils.clone(idleFbx), [idleFbx]);
-  const walkClone = useMemo(() => SkeletonUtils.clone(walkFbx), [walkFbx]);
-  const normalClone = useMemo(
-    () => SkeletonUtils.clone(normalFbx),
-    [normalFbx],
-  );
+  // Load animations from separate files
+  const idleAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.IDLE));
+  const walkAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.WALK));
+  const punchAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.NORMAL));
+
+  // Clone the model so it can be used independently
+  const model = useMemo(() => SkeletonUtils.clone(modelFbx), [modelFbx]);
 
   const mixer = useRef<THREE.AnimationMixer | null>(null);
 
-  // Switch between animations based on state
-  const currentFbx = keys.q ? normalClone : moving ? walkClone : idleClone;
+  // Determine which animation to play based on state
+  const currentAnimation = useMemo(() => {
+    if (keys.q) {
+      return punchAnim;
+    }
+    if (moving) {
+      return walkAnim;
+    }
+    return idleAnim;
+  }, [keys.q, moving, idleAnim, walkAnim, punchAnim]);
 
   useEffect(() => {
     // Clean up previous mixer
@@ -53,10 +82,10 @@ export function Character({ keys, npcRef }: CharacterProps) {
       mixer.current = null;
     }
 
-    // Set up new mixer with current model
-    if (currentFbx && currentFbx.animations.length > 0) {
-      mixer.current = new THREE.AnimationMixer(currentFbx);
-      const action = mixer.current.clipAction(currentFbx.animations[0]);
+    // Set up new mixer with current animation on the model
+    if (model && currentAnimation) {
+      mixer.current = new THREE.AnimationMixer(model);
+      const action = mixer.current.clipAction(currentAnimation);
       action.play();
     }
 
@@ -65,79 +94,92 @@ export function Character({ keys, npcRef }: CharacterProps) {
         mixer.current.stopAllAction();
       }
     };
-  }, [currentFbx]);
+  }, [model, currentAnimation]);
 
   useFrame((_state, delta) => {
     if (mixer.current) {
       mixer.current.update(delta);
     }
 
-    if (groupRef.current) {
-      // Update bounding box for character
-      const charBox = calculateBoundingBox(groupRef.current);
-      setBoundingBox(charBox);
+    if (rigidBodyRef.current) {
+      const moveSpeed = CHARACTER_DEFAULTS.MOVE_SPEED;
+      const velocity = { x: 0, y: 0, z: 0 };
 
-      // Get NPC data
-      const npcBounds = npcRef.current?.getBoundingBox();
-
-      // Check collision with NPC
-      let collision = false;
-      if (npcBounds) {
-        collision = checkCollision(charBox, npcBounds);
-        setIsColliding(collision);
-      }
-
-      const moveSpeed = CHARACTER_DEFAULTS.MOVE_SPEED * delta;
-      const previousPosition = groupRef.current.position.clone();
-
-      // WASD movement with rotation to face direction (right-handed coordinate system)
+      // WASD movement with rotation to face direction
       if (keys.w) {
-        groupRef.current.position.z -= moveSpeed; // Move forward (toward -Z)
-        groupRef.current.rotation.y = Math.PI; // Face forward (-Z direction)
+        velocity.z = -moveSpeed;
+        rigidBodyRef.current.setRotation({ x: 0, y: 1, z: 0, w: 0 }, true); // Face -Z
       }
       if (keys.s) {
-        groupRef.current.position.z += moveSpeed; // Move backward (toward +Z)
-        groupRef.current.rotation.y = 0; // Face backward (+Z direction, toward camera)
+        velocity.z = moveSpeed;
+        rigidBodyRef.current.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true); // Face +Z
       }
       if (keys.a) {
-        groupRef.current.position.x -= moveSpeed; // Move left (toward -X)
-        groupRef.current.rotation.y = -Math.PI / 2; // Face left (-X direction)
+        velocity.x = -moveSpeed;
+        rigidBodyRef.current.setRotation(
+          { x: 0, y: -0.707, z: 0, w: 0.707 },
+          true,
+        ); // Face -X
         lastRotationRef.current = -Math.PI / 2;
       }
       if (keys.d) {
-        groupRef.current.position.x += moveSpeed; // Move right (toward +X)
-        groupRef.current.rotation.y = Math.PI / 2; // Face right (+X direction)
+        velocity.x = moveSpeed;
+        rigidBodyRef.current.setRotation(
+          { x: 0, y: 0.707, z: 0, w: 0.707 },
+          true,
+        ); // Face +X
         lastRotationRef.current = Math.PI / 2;
       }
 
-      // Collision response: revert position if collision detected after movement
-      if (npcBounds) {
-        const newBox = calculateBoundingBox(groupRef.current);
-        if (checkCollision(newBox, npcBounds)) {
-          groupRef.current.position.copy(previousPosition);
-          setIsColliding(true);
-        }
-      }
+      rigidBodyRef.current.setLinvel(velocity, true);
 
       // When idle, maintain last rotation
       if (!moving) {
-        groupRef.current.rotation.y = lastRotationRef.current;
+        const halfAngle = lastRotationRef.current / 2;
+        rigidBodyRef.current.setRotation(
+          { x: 0, y: Math.sin(halfAngle), z: 0, w: Math.cos(halfAngle) },
+          true,
+        );
       }
     }
   });
 
   return (
-    <>
-      <group ref={groupRef} position={[-1, 0, 0]}>
-        <primitive object={currentFbx} scale={CHARACTER_DEFAULTS.SCALE} />
-      </group>
-
-      {/* Visualize character bounding box */}
-      <BoundsVisualizer
-        box={boundingBox}
-        color="#00ff00"
-        isColliding={isColliding}
+    <RigidBody
+      ref={rigidBodyRef}
+      type="dynamic"
+      position={[-1, 0.9, 0]}
+      lockRotations
+      enabledRotations={[false, false, false]}
+      colliders={false}
+    >
+      {/* Torso capsule */}
+      <CapsuleCollider
+        args={[
+          CHARACTER_DEFAULTS.COLLIDERS.TORSO.halfHeight,
+          CHARACTER_DEFAULTS.COLLIDERS.TORSO.radius,
+        ]}
+        position={CHARACTER_DEFAULTS.COLLIDERS.TORSO.position}
       />
-    </>
+      {/* Head capsule */}
+      <CapsuleCollider
+        args={[
+          CHARACTER_DEFAULTS.COLLIDERS.HEAD.halfHeight,
+          CHARACTER_DEFAULTS.COLLIDERS.HEAD.radius,
+        ]}
+        position={CHARACTER_DEFAULTS.COLLIDERS.HEAD.position}
+      />
+      {/* Hand capsule - only active during attack after 0.1s delay */}
+      {showHandCollider && (
+        <CapsuleCollider args={[0.01, 0.07]} position={[0, 0.4, 0.75]} />
+      )}
+      <group ref={modelRef}>
+        <primitive
+          object={model}
+          scale={CHARACTER_DEFAULTS.SCALE}
+          position={[0, -0.9, 0]}
+        />
+      </group>
+    </RigidBody>
   );
 }

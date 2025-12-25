@@ -1,18 +1,25 @@
 import '@testing-library/jest-dom';
 import { expect } from '@jest/globals';
 import { create } from '@react-three/test-renderer';
-import { Group, Box3 } from 'three';
+import { Group } from 'three';
 import { Character } from '@/app/components/Character';
-import { CONTROLS_DEFAULTS } from '@/app/constants';
-import { NPCHandle } from '@/app/components/NPC';
-import { RefObject } from 'react';
+import { CONTROLS_DEFAULTS, CHARACTER_DEFAULTS } from '@/app/constants';
 
 const testScene = new Group();
-const mockNpcRef: RefObject<NPCHandle | null> = {
-  current: {
-    getBoundingBox: jest.fn(() => new Box3()),
-    getRef: jest.fn(() => ({ current: new Group() })),
-  },
+
+// Mock velocity tracking - must be defined before jest.mock
+const mockSetLinvel = jest.fn();
+const mockSetRotation = jest.fn();
+
+// Store mocks in a module-level object that can be accessed inside jest.mock
+const mocks = { mockSetLinvel, mockSetRotation };
+
+// Create a mock animation clip
+const mockAnimationClip = {
+  name: 'TestAnimation',
+  duration: 1,
+  tracks: [],
+  blendMode: 0,
 };
 
 jest.mock('@react-three/drei', () => {
@@ -21,10 +28,14 @@ jest.mock('@react-three/drei', () => {
     ...original,
     useFBX: jest.fn(() => ({
       scene: testScene,
-      animations: [],
+      animations: [mockAnimationClip],
     })),
   };
 });
+
+jest.mock('../../app/utils', () => ({
+  getAnimation: jest.fn((model) => model.animations[0]),
+}));
 
 jest.mock('three-stdlib', () => ({
   SkeletonUtils: {
@@ -32,100 +43,132 @@ jest.mock('three-stdlib', () => ({
   },
 }));
 
+jest.mock('@react-three/rapier', () => {
+  const React = jest.requireActual('react');
+  return {
+    RigidBody: React.forwardRef(function MockRigidBody(
+      {
+        children,
+        position,
+      }: {
+        children: React.ReactNode;
+        position?: [number, number, number];
+      },
+      ref: React.Ref<unknown>,
+    ) {
+      React.useImperativeHandle(ref, () => ({
+        setLinvel: mocks.mockSetLinvel,
+        setRotation: mocks.mockSetRotation,
+      }));
+      return <group position={position}>{children}</group>;
+    }),
+    CapsuleCollider: () => null,
+  };
+});
+
 describe('Character Component', () => {
   const mockKeys = CONTROLS_DEFAULTS.KEYBOARD;
 
   describe('Rendering', () => {
     it('should render a group element', async () => {
-      const renderer = await create(
-        <Character keys={mockKeys} npcRef={mockNpcRef} />,
-      );
+      const renderer = await create(<Character keys={mockKeys} />);
       const group = renderer.scene.children[0];
       expect(group).toBeDefined();
       expect(group?.type).toBe('Group');
     });
 
     it('should have correct initial position', async () => {
-      const renderer = await create(
-        <Character keys={mockKeys} npcRef={mockNpcRef} />,
-      );
-      const group = renderer.scene.children[0];
-      expect(group.instance.position.x).toBe(-1);
-      expect(group.instance.position.y).toBe(0);
-      expect(group.instance.position.z).toBe(0);
+      const renderer = await create(<Character keys={mockKeys} />);
+      const rigidBody = renderer.scene.children[0];
+      expect(rigidBody.instance.position.x).toBe(-1);
+      expect(rigidBody.instance.position.y).toBe(0.9);
+      expect(rigidBody.instance.position.z).toBe(0);
     });
 
-    it('should render with idle model when not moving', async () => {
-      const renderer = await create(
-        <Character keys={mockKeys} npcRef={mockNpcRef} />,
-      );
+    it('should render with idle model', async () => {
+      const renderer = await create(<Character keys={mockKeys} />);
       const group = renderer.scene.children[0];
       expect(group).toBeDefined();
     });
 
     it('should have correct scale', async () => {
-      const renderer = await create(
-        <Character keys={mockKeys} npcRef={mockNpcRef} />,
-      );
-      const group = renderer.scene.children[0];
-      const primitive = group.children[0];
+      const renderer = await create(<Character keys={mockKeys} />);
+      const rigidBody = renderer.scene.children[0];
+      // RigidBody (group) -> inner group (modelRef) -> primitive
+      const innerGroup = rigidBody.children[0];
+      const primitive = innerGroup.children[0];
+      // The primitive has scale prop applied directly (uniform scale)
       expect(primitive.instance.scale).toBe(0.01);
     });
   });
 
   describe('Movement', () => {
-    it('should switch to walking model when moving', async () => {
+    beforeEach(() => {
+      mockSetLinvel.mockClear();
+      mockSetRotation.mockClear();
+    });
+
+    it('should set negative Z velocity when W key is pressed', async () => {
       const movingKeys = { ...mockKeys, w: true };
-      const renderer = await create(
-        <Character keys={movingKeys} npcRef={mockNpcRef} />,
+      const renderer = await create(<Character keys={movingKeys} />);
+      await renderer.advanceFrames(1, 1 / 60);
+
+      expect(mockSetLinvel).toHaveBeenCalledWith(
+        { x: 0, y: 0, z: -CHARACTER_DEFAULTS.MOVE_SPEED },
+        true,
       );
-      const group = renderer.scene.children[0];
-      expect(group).toBeDefined();
     });
 
-    it('should detect movement with W key', async () => {
-      const movingKeys = { ...mockKeys, w: true };
-      const renderer = await create(
-        <Character keys={movingKeys} npcRef={mockNpcRef} />,
-      );
-      expect(renderer.scene.children[0]).toBeDefined();
-    });
-
-    it('should detect movement with A key', async () => {
-      const movingKeys = { ...mockKeys, a: true };
-      const renderer = await create(
-        <Character keys={movingKeys} npcRef={mockNpcRef} />,
-      );
-      expect(renderer.scene.children[0]).toBeDefined();
-    });
-
-    it('should detect movement with S key', async () => {
+    it('should set positive Z velocity when S key is pressed', async () => {
       const movingKeys = { ...mockKeys, s: true };
-      const renderer = await create(
-        <Character keys={movingKeys} npcRef={mockNpcRef} />,
+      const renderer = await create(<Character keys={movingKeys} />);
+      await renderer.advanceFrames(1, 1 / 60);
+
+      expect(mockSetLinvel).toHaveBeenCalledWith(
+        { x: 0, y: 0, z: CHARACTER_DEFAULTS.MOVE_SPEED },
+        true,
       );
-      expect(renderer.scene.children[0]).toBeDefined();
     });
 
-    it('should detect movement with D key', async () => {
+    it('should set negative X velocity when A key is pressed', async () => {
+      const movingKeys = { ...mockKeys, a: true };
+      const renderer = await create(<Character keys={movingKeys} />);
+      await renderer.advanceFrames(1, 1 / 60);
+
+      expect(mockSetLinvel).toHaveBeenCalledWith(
+        { x: -CHARACTER_DEFAULTS.MOVE_SPEED, y: 0, z: 0 },
+        true,
+      );
+    });
+
+    it('should set positive X velocity when D key is pressed', async () => {
       const movingKeys = { ...mockKeys, d: true };
-      const renderer = await create(
-        <Character keys={movingKeys} npcRef={mockNpcRef} />,
-      );
-      expect(renderer.scene.children[0]).toBeDefined();
-    });
-  });
+      const renderer = await create(<Character keys={movingKeys} />);
+      await renderer.advanceFrames(1, 1 / 60);
 
-  describe('Rotation', () => {
-    it('should have initial rotation facing right', async () => {
-      const renderer = await create(
-        <Character keys={mockKeys} npcRef={mockNpcRef} />,
+      expect(mockSetLinvel).toHaveBeenCalledWith(
+        { x: CHARACTER_DEFAULTS.MOVE_SPEED, y: 0, z: 0 },
+        true,
       );
-      const group = renderer.scene.children[0];
-      expect(group.instance.rotation.y).toBe(0);
-      // Advance the frame so the initial value is set
-      await renderer.advanceFrames(1, 1);
-      expect(group.instance.rotation.y).toBe(Math.PI / 2);
+    });
+
+    it('should set zero velocity when no movement keys are pressed', async () => {
+      const renderer = await create(<Character keys={mockKeys} />);
+      await renderer.advanceFrames(1, 1 / 60);
+
+      expect(mockSetLinvel).toHaveBeenCalledWith({ x: 0, y: 0, z: 0 }, true);
+    });
+
+    it('should rotate character to face movement direction', async () => {
+      const movingKeys = { ...mockKeys, w: true };
+      const renderer = await create(<Character keys={movingKeys} />);
+      await renderer.advanceFrames(1, 1 / 60);
+
+      // W key should rotate to face -Z direction
+      expect(mockSetRotation).toHaveBeenCalledWith(
+        { x: 0, y: 1, z: 0, w: 0 },
+        true,
+      );
     });
   });
 });
