@@ -14,7 +14,13 @@ import { SkeletonHelper } from 'three';
 
 import { CHARACTER_DEFAULTS } from '@/app/constants';
 import { KeyState } from '@/app/components/hooks/useKeyboardControls';
-import { getAnimation } from '@/app/utils';
+import {
+  getAnimation,
+  getBoneList,
+  makeBoneVertexMap,
+  getBoneWorldPosition,
+  BoneVertexMap,
+} from '@/app/utils';
 
 interface CharacterProps {
   keys: KeyState;
@@ -29,7 +35,7 @@ export function Character({ keys }: CharacterProps) {
   ]);
   const { scene } = useThree();
   const skeletonHelperRef = useRef<SkeletonHelper | null>(null);
-  const leftHandBoneRef = useRef<THREE.Bone | null>(null);
+  const boneVertexMapRef = useRef<BoneVertexMap | null>(null);
 
   // Determine if character is moving
   const moving = useMemo(() => {
@@ -47,24 +53,21 @@ export function Character({ keys }: CharacterProps) {
   // Clone the model so it can be used independently
   const model = useMemo(() => SkeletonUtils.clone(modelFbx), [modelFbx]);
 
-  // Create skeleton helper for visualization and find the left hand bone
+  // Create skeleton helper for visualization and build bone vertex map
   useEffect(() => {
     if (model) {
       const helper = new SkeletonHelper(model);
-      skeletonHelperRef.current = helper;
-      scene.add(helper);
+      const bones = getBoneList(model);
+      const boneVertexMap = makeBoneVertexMap(bones);
 
-      // Find the left hand bone
-      model.traverse((child) => {
-        if (child instanceof THREE.Bone && child.name === 'mixamorigLeftHand') {
-          leftHandBoneRef.current = child;
-        }
-      });
+      skeletonHelperRef.current = helper;
+      boneVertexMapRef.current = boneVertexMap;
+      scene.add(helper);
 
       return () => {
         scene.remove(helper);
         skeletonHelperRef.current = null;
-        leftHandBoneRef.current = null;
+        boneVertexMapRef.current = null;
       };
     }
   }, [model, scene]);
@@ -108,13 +111,39 @@ export function Character({ keys }: CharacterProps) {
       mixer.current.update(delta);
     }
 
-    // Update hand collider position based on bone position
-    if (keys.q && leftHandBoneRef.current) {
-      const leftHandPos = leftHandBoneRef.current.position;
-      console.log(
-        `leftHandPos: ${leftHandPos.x}, ${leftHandPos.y}, ${leftHandPos.z}`,
+    // Update hand collider position based on bone world position from SkeletonHelper
+    if (
+      keys.q &&
+      skeletonHelperRef.current &&
+      boneVertexMapRef.current &&
+      model
+    ) {
+      // Update the model's world matrices to ensure bone positions are current
+      model.updateMatrixWorld(true);
+      // Update the skeleton helper's geometry (it reads from bones internally)
+      skeletonHelperRef.current.updateMatrixWorld(true);
+
+      const positions = skeletonHelperRef.current.geometry.attributes.position;
+      const leftHandPos = getBoneWorldPosition(
+        'mixamorigLeftHand',
+        boneVertexMapRef.current,
+        positions,
       );
-      setHandPosition([leftHandPos.x, leftHandPos.y, leftHandPos.z]);
+      leftHandPos?.multiplyScalar(CHARACTER_DEFAULTS.SCALE);
+
+      if (leftHandPos && rigidBodyRef.current) {
+        // Get the rigid body position to calculate relative position
+        const rbPos = rigidBodyRef.current.translation();
+
+        // Calculate hand position relative to the rigid body
+        const relativePos: [number, number, number] = [
+          leftHandPos.x - rbPos.x - 1.05,
+          leftHandPos.y - rbPos.y,
+          leftHandPos.z - rbPos.z + 0.03,
+        ];
+
+        setHandPosition(relativePos);
+      }
     }
 
     if (rigidBodyRef.current) {
@@ -187,7 +216,7 @@ export function Character({ keys }: CharacterProps) {
       />
       {/* Hand capsule - only active during attack */}
       {keys.q && (
-        <CapsuleCollider args={[0.01, 0.07]} position={handPosition} />
+        <CapsuleCollider args={[0.01, 0.08]} position={handPosition} />
       )}
       <group ref={modelRef}>
         <primitive

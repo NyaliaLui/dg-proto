@@ -35,6 +35,9 @@ jest.mock('@react-three/drei', () => {
 
 jest.mock('../../app/utils', () => ({
   getAnimation: jest.fn((model) => model.animations[0]),
+  getBoneList: jest.fn(() => []),
+  makeBoneVertexMap: jest.fn(() => ({})),
+  getBoneWorldPosition: jest.fn(() => null),
 }));
 
 jest.mock('three-stdlib', () => {
