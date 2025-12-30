@@ -15,6 +15,7 @@ export const CHARACTER_DEFAULTS = {
     BODY: { halfHeight: 0.4, radius: 0.5, position: [0, 0, 0] as const },
     TORSO: { halfHeight: 0.17, radius: 0.15, position: [0, 0.24, 0] as const },
     HEAD: { halfHeight: 0.05, radius: 0.13, position: [0, 0.7, 0] as const },
+    HAND: { halfHeight: 0.01, radius: 0.08 },
   },
 };
 

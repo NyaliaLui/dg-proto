@@ -216,7 +216,13 @@ export function Character({ keys }: CharacterProps) {
       />
       {/* Hand capsule - only active during attack */}
       {keys.q && (
-        <CapsuleCollider args={[0.01, 0.08]} position={handPosition} />
+        <CapsuleCollider
+          args={[
+            CHARACTER_DEFAULTS.COLLIDERS.HAND.halfHeight,
+            CHARACTER_DEFAULTS.COLLIDERS.HAND.radius,
+          ]}
+          position={handPosition}
+        />
       )}
       <group ref={modelRef}>
         <primitive
