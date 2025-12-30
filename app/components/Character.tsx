@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useMemo, useState, useEffect } from 'react';
+import { useRef, useMemo, useEffect, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useFBX } from '@react-three/drei';
 import {
@@ -30,8 +30,14 @@ export function Character({ keys }: CharacterProps) {
   const rigidBodyRef = useRef<RapierRigidBody>(null);
   const modelRef = useRef<THREE.Group>(null);
   const lastRotationRef = useRef<number>(Math.PI / 2);
+  const [torsoPosition, setTorsoPosition] = useState<[number, number, number]>([
+    ...CHARACTER_DEFAULTS.COLLIDERS.TORSO.position,
+  ]);
+  const [headPosition, setHeadPosition] = useState<[number, number, number]>([
+    ...CHARACTER_DEFAULTS.COLLIDERS.HEAD.position,
+  ]);
   const [handPosition, setHandPosition] = useState<[number, number, number]>([
-    0, 0.4, 0.75,
+    ...CHARACTER_DEFAULTS.COLLIDERS.HAND.position,
   ]);
   const { scene } = useThree();
   const skeletonHelperRef = useRef<SkeletonHelper | null>(null);
@@ -111,38 +117,62 @@ export function Character({ keys }: CharacterProps) {
       mixer.current.update(delta);
     }
 
-    // Update hand collider position based on bone world position from SkeletonHelper
-    if (
-      keys.q &&
-      skeletonHelperRef.current &&
-      boneVertexMapRef.current &&
-      model
-    ) {
+    // Update collider positions based on bone world positions from SkeletonHelper
+    if (skeletonHelperRef.current && boneVertexMapRef.current && model) {
       // Update the model's world matrices to ensure bone positions are current
       model.updateMatrixWorld(true);
       // Update the skeleton helper's geometry (it reads from bones internally)
       skeletonHelperRef.current.updateMatrixWorld(true);
 
       const positions = skeletonHelperRef.current.geometry.attributes.position;
-      const leftHandPos = getBoneWorldPosition(
-        'mixamorigLeftHand',
-        boneVertexMapRef.current,
-        positions,
-      );
-      leftHandPos?.multiplyScalar(CHARACTER_DEFAULTS.SCALE);
 
-      if (leftHandPos && rigidBodyRef.current) {
-        // Get the rigid body position to calculate relative position
-        const rbPos = rigidBodyRef.current.translation();
+      if (rigidBodyRef.current) {
+        // Update torso position based on spine bone
+        const spinePos = getBoneWorldPosition(
+          'mixamorigSpine',
+          boneVertexMapRef.current,
+          positions,
+        );
+        if (spinePos) {
+          spinePos.multiplyScalar(CHARACTER_DEFAULTS.SCALE);
+          setTorsoPosition([
+            spinePos.x,
+            spinePos.y + CHARACTER_DEFAULTS.COLLIDERS.TORSO.offset.y,
+            spinePos.z + CHARACTER_DEFAULTS.COLLIDERS.TORSO.offset.z,
+          ]);
+        }
 
-        // Calculate hand position relative to the rigid body
-        const relativePos: [number, number, number] = [
-          leftHandPos.x - rbPos.x - 1.05,
-          leftHandPos.y - rbPos.y,
-          leftHandPos.z - rbPos.z + 0.03,
-        ];
+        // Update head position based on head bone
+        const headBonePos = getBoneWorldPosition(
+          'mixamorigHead',
+          boneVertexMapRef.current,
+          positions,
+        );
+        if (headBonePos) {
+          headBonePos.multiplyScalar(CHARACTER_DEFAULTS.SCALE);
+          setHeadPosition([
+            headBonePos.x,
+            headBonePos.y + CHARACTER_DEFAULTS.COLLIDERS.HEAD.offset.y,
+            headBonePos.z + CHARACTER_DEFAULTS.COLLIDERS.HEAD.offset.z,
+          ]);
+        }
 
-        setHandPosition(relativePos);
+        // Update hand position (only during attack)
+        if (keys.q) {
+          const leftHandPos = getBoneWorldPosition(
+            'mixamorigLeftHand',
+            boneVertexMapRef.current,
+            positions,
+          );
+          if (leftHandPos) {
+            leftHandPos.multiplyScalar(CHARACTER_DEFAULTS.SCALE);
+            setHandPosition([
+              leftHandPos.x,
+              leftHandPos.y + CHARACTER_DEFAULTS.COLLIDERS.HAND.offset.y,
+              leftHandPos.z + CHARACTER_DEFAULTS.COLLIDERS.HAND.offset.z,
+            ]);
+          }
+        }
       }
     }
 
@@ -204,7 +234,7 @@ export function Character({ keys }: CharacterProps) {
           CHARACTER_DEFAULTS.COLLIDERS.TORSO.halfHeight,
           CHARACTER_DEFAULTS.COLLIDERS.TORSO.radius,
         ]}
-        position={CHARACTER_DEFAULTS.COLLIDERS.TORSO.position}
+        position={torsoPosition}
       />
       {/* Head capsule */}
       <CapsuleCollider
@@ -212,7 +242,7 @@ export function Character({ keys }: CharacterProps) {
           CHARACTER_DEFAULTS.COLLIDERS.HEAD.halfHeight,
           CHARACTER_DEFAULTS.COLLIDERS.HEAD.radius,
         ]}
-        position={CHARACTER_DEFAULTS.COLLIDERS.HEAD.position}
+        position={headPosition}
       />
       {/* Hand capsule - only active during attack */}
       {keys.q && (

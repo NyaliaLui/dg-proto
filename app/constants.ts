@@ -13,9 +13,24 @@ export const CHARACTER_DEFAULTS = {
   SCALE: 0.01,
   COLLIDERS: {
     BODY: { halfHeight: 0.4, radius: 0.5, position: [0, 0, 0] as const },
-    TORSO: { halfHeight: 0.17, radius: 0.15, position: [0, 0.24, 0] as const },
-    HEAD: { halfHeight: 0.05, radius: 0.13, position: [0, 0.7, 0] as const },
-    HAND: { halfHeight: 0.01, radius: 0.08 },
+    TORSO: {
+      halfHeight: 0.19,
+      radius: 0.1,
+      position: [0, 0.24, 0] as const,
+      offset: { y: -0.85, z: -0.02 },
+    },
+    HEAD: {
+      halfHeight: 0.05,
+      radius: 0.1,
+      position: [0, 0.7, 0] as const,
+      offset: { y: -0.84, z: 0.02 },
+    },
+    HAND: {
+      halfHeight: 0.01,
+      radius: 0.08,
+      position: [0, 0.4, 0.75] as const,
+      offset: { y: -0.89, z: 0 },
+    },
   },
 };
 

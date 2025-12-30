@@ -56,6 +56,16 @@ jest.mock('three', () => {
     SkeletonHelper: jest.fn().mockImplementation(() => ({
       visible: true,
       update: jest.fn(),
+      updateMatrixWorld: jest.fn(),
+      geometry: {
+        attributes: {
+          position: {
+            getX: jest.fn(() => 0),
+            getY: jest.fn(() => 0),
+            getZ: jest.fn(() => 0),
+          },
+        },
+      },
     })),
   };
 });
@@ -76,6 +86,7 @@ jest.mock('@react-three/rapier', () => {
       React.useImperativeHandle(ref, () => ({
         setLinvel: mocks.mockSetLinvel,
         setRotation: mocks.mockSetRotation,
+        translation: () => ({ x: 0, y: 0, z: 0 }),
       }));
       return <group position={position}>{children}</group>;
     }),
