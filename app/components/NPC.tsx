@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useMemo } from 'react';
+import { useRef, useEffect, useMemo, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useFBX } from '@react-three/drei';
 import { CapsuleCollider, RigidBody } from '@react-three/rapier';
@@ -9,12 +9,25 @@ import { SkeletonUtils } from 'three-stdlib';
 import { SkeletonHelper } from 'three';
 
 import { CHARACTER_DEFAULTS } from '@/app/constants';
-import { getAnimation } from '@/app/utils';
+import {
+  getAnimation,
+  getBoneList,
+  makeBoneVertexMap,
+  getBoneWorldPosition,
+  BoneVertexMap,
+} from '@/app/utils';
 
 export function NPC() {
   const groupRef = useRef<THREE.Group>(null);
   const { scene } = useThree();
   const skeletonHelperRef = useRef<SkeletonHelper | null>(null);
+  const boneVertexMapRef = useRef<BoneVertexMap | null>(null);
+  const [torsoPosition, setTorsoPosition] = useState<[number, number, number]>([
+    ...CHARACTER_DEFAULTS.COLLIDERS.TORSO.position,
+  ]);
+  const [headPosition, setHeadPosition] = useState<[number, number, number]>([
+    ...CHARACTER_DEFAULTS.COLLIDERS.HEAD.position,
+  ]);
 
   // Load the skinned model
   const modelFbx = useFBX(CHARACTER_DEFAULTS.MODELS.XBOT);
@@ -27,16 +40,21 @@ export function NPC() {
   // Clone the model so it can be used independently
   const model = useMemo(() => SkeletonUtils.clone(modelFbx), [modelFbx]);
 
-  // Create skeleton helper for visualization
+  // Create skeleton helper for visualization and build bone vertex map
   useEffect(() => {
     if (model) {
       const helper = new SkeletonHelper(model);
+      const bones = getBoneList(model);
+      const boneVertexMap = makeBoneVertexMap(bones);
+
       skeletonHelperRef.current = helper;
+      boneVertexMapRef.current = boneVertexMap;
       scene.add(helper);
 
       return () => {
         scene.remove(helper);
         skeletonHelperRef.current = null;
+        boneVertexMapRef.current = null;
       };
     }
   }, [model, scene]);
@@ -77,6 +95,46 @@ export function NPC() {
     if (mixer.current) {
       mixer.current.update(delta);
     }
+
+    // Update collider positions based on bone world positions from SkeletonHelper
+    if (skeletonHelperRef.current && boneVertexMapRef.current && model) {
+      // Update the model's world matrices to ensure bone positions are current
+      model.updateMatrixWorld(true);
+      // Update the skeleton helper's geometry (it reads from bones internally)
+      skeletonHelperRef.current.updateMatrixWorld(true);
+
+      const positions = skeletonHelperRef.current.geometry.attributes.position;
+
+      // Update torso position based on spine bone
+      const spinePos = getBoneWorldPosition(
+        'mixamorigSpine',
+        boneVertexMapRef.current,
+        positions,
+      );
+      if (spinePos) {
+        spinePos.multiplyScalar(CHARACTER_DEFAULTS.SCALE);
+        setTorsoPosition([
+          spinePos.x,
+          spinePos.y + CHARACTER_DEFAULTS.COLLIDERS.TORSO.offset.y,
+          spinePos.z + CHARACTER_DEFAULTS.COLLIDERS.TORSO.offset.z,
+        ]);
+      }
+
+      // Update head position based on head bone
+      const headBonePos = getBoneWorldPosition(
+        'mixamorigHead',
+        boneVertexMapRef.current,
+        positions,
+      );
+      if (headBonePos) {
+        headBonePos.multiplyScalar(CHARACTER_DEFAULTS.SCALE);
+        setHeadPosition([
+          headBonePos.x,
+          headBonePos.y + CHARACTER_DEFAULTS.COLLIDERS.HEAD.offset.y,
+          headBonePos.z + CHARACTER_DEFAULTS.COLLIDERS.HEAD.offset.z,
+        ]);
+      }
+    }
   });
 
   return (
@@ -87,7 +145,7 @@ export function NPC() {
           CHARACTER_DEFAULTS.COLLIDERS.TORSO.halfHeight,
           CHARACTER_DEFAULTS.COLLIDERS.TORSO.radius,
         ]}
-        position={CHARACTER_DEFAULTS.COLLIDERS.TORSO.position}
+        position={torsoPosition}
       />
       {/* Head capsule */}
       <CapsuleCollider
@@ -95,7 +153,7 @@ export function NPC() {
           CHARACTER_DEFAULTS.COLLIDERS.HEAD.halfHeight,
           CHARACTER_DEFAULTS.COLLIDERS.HEAD.radius,
         ]}
-        position={CHARACTER_DEFAULTS.COLLIDERS.HEAD.position}
+        position={headPosition}
       />
       <group ref={groupRef}>
         <primitive
