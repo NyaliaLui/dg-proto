@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useMemo, useState } from 'react';
+import { useRef, useEffect, useMemo, useState, useCallback } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useFBX } from '@react-three/drei';
 import { CapsuleCollider, RigidBody } from '@react-three/rapier';
@@ -17,7 +17,12 @@ import {
   BoneVertexMap,
 } from '@/app/utils';
 
-export function NPC() {
+interface BotProps {
+  id: string;
+  onDeath?: (id: string) => void;
+}
+
+export function Bot({ id, onDeath }: BotProps) {
   const groupRef = useRef<THREE.Group>(null);
   const { scene } = useThree();
   const skeletonHelperRef = useRef<SkeletonHelper | null>(null);
@@ -28,6 +33,22 @@ export function NPC() {
   const [headPosition, setHeadPosition] = useState<[number, number, number]>([
     ...CHARACTER_DEFAULTS.COLLIDERS.HEAD.position,
   ]);
+  const [hp, setHp] = useState(3);
+
+  const handleHit = useCallback(() => {
+    setHp((prevHp) => {
+      const newHp = prevHp - 1;
+      console.log(`Bot was hit! HP: ${newHp}`);
+      return newHp;
+    });
+  }, []);
+
+  // Notify parent when bot dies
+  useEffect(() => {
+    if (hp <= 0 && onDeath) {
+      onDeath(id);
+    }
+  }, [hp, id, onDeath]);
 
   // Load the skinned model
   const modelFbx = useFBX(CHARACTER_DEFAULTS.MODELS.XBOT);
@@ -137,6 +158,24 @@ export function NPC() {
     }
   });
 
+  const hpBlocks = useMemo(() => {
+    const blocks = [];
+    const blockSize = 0.08;
+    const gap = 0.04;
+    const totalWidth = hp * blockSize + (hp - 1) * gap;
+    const startX = -totalWidth / 2 + blockSize / 2;
+
+    for (let i = 0; i < hp; i++) {
+      blocks.push(
+        <mesh key={i} position={[startX + i * (blockSize + gap), 0, 0]}>
+          <boxGeometry args={[blockSize, blockSize, blockSize]} />
+          <meshStandardMaterial color="red" />
+        </mesh>,
+      );
+    }
+    return blocks;
+  }, [hp]);
+
   return (
     <RigidBody type="fixed" position={[1, 0.9, 0]} colliders={false}>
       {/* Torso capsule */}
@@ -146,6 +185,8 @@ export function NPC() {
           CHARACTER_DEFAULTS.COLLIDERS.TORSO.radius,
         ]}
         position={torsoPosition}
+        sensor
+        onIntersectionEnter={handleHit}
       />
       {/* Head capsule */}
       <CapsuleCollider
@@ -154,7 +195,15 @@ export function NPC() {
           CHARACTER_DEFAULTS.COLLIDERS.HEAD.radius,
         ]}
         position={headPosition}
+        sensor
+        onIntersectionEnter={handleHit}
       />
+      {/* HP blocks floating above head */}
+      <group
+        position={[headPosition[0], headPosition[1] + 0.3, headPosition[2]]}
+      >
+        {hpBlocks}
+      </group>
       <group ref={groupRef}>
         <primitive
           object={model}
