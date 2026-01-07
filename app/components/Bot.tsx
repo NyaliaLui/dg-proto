@@ -17,7 +17,7 @@ import {
   BoneVertexMap,
 } from '@/app/utils';
 
-export function NPC() {
+export function Bot() {
   const groupRef = useRef<THREE.Group>(null);
   const { scene } = useThree();
   const skeletonHelperRef = useRef<SkeletonHelper | null>(null);

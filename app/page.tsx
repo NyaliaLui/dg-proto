@@ -4,7 +4,7 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { Physics } from '@react-three/rapier';
 import { Character } from '@/app/components/Character';
-import { NPC } from '@/app/components/NPC';
+import { Bot } from '@/app/components/Bot';
 import { World } from '@/app/components/World';
 import { useKeyboardControls } from '@/app/components/hooks/useKeyboardControls';
 import { Controls } from '@/app/components/Controls';
@@ -28,7 +28,7 @@ export default function Home() {
           intensity={ENVIRONMENT_DEFAULTS.directionalLight.intensity}
         />
         <Physics gravity={[0, 0, 0]} debug={ENVIRONMENT_DEFAULTS.physics.debug}>
-          <NPC />
+          <Bot />
           <Character keys={keys} />
         </Physics>
         <World />
