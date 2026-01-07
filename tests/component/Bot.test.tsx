@@ -94,14 +94,14 @@ describe('Bot Component', () => {
 
   describe('Rendering', () => {
     it('should render a group element', async () => {
-      const renderer = await create(<Bot />);
+      const renderer = await create(<Bot id="test-bot" />);
       const group = renderer.scene.children[0];
       expect(group).toBeDefined();
       expect(group?.type).toBe('Group');
     });
 
     it('should have correct initial position', async () => {
-      const renderer = await create(<Bot />);
+      const renderer = await create(<Bot id="test-bot" />);
       const rigidBody = renderer.scene.children[0];
       expect(rigidBody.instance.position.x).toBe(1);
       expect(rigidBody.instance.position.y).toBe(0.9);
@@ -109,13 +109,13 @@ describe('Bot Component', () => {
     });
 
     it('should render with idle model', async () => {
-      const renderer = await create(<Bot />);
+      const renderer = await create(<Bot id="test-bot" />);
       const group = renderer.scene.children[0];
       expect(group).toBeDefined();
     });
 
     it('should have correct scale', async () => {
-      const renderer = await create(<Bot />);
+      const renderer = await create(<Bot id="test-bot" />);
       const rigidBody = renderer.scene.children[0];
       // RigidBody (group) -> HP blocks group, model group (groupRef) -> primitive
       // Find the model group (the one with the primitive, not the HP blocks)
@@ -132,7 +132,7 @@ describe('Bot Component', () => {
 
   describe('Rotation', () => {
     it('should have initial rotation facing left', async () => {
-      const renderer = await create(<Bot />);
+      const renderer = await create(<Bot id="test-bot" />);
       const rigidBody = renderer.scene.children[0];
       // The rotation is applied to the model group via useEffect
       // Find the model group (the one without meshes - HP blocks have meshes)
@@ -147,9 +147,11 @@ describe('Bot Component', () => {
 
   describe('HP', () => {
     let renderer: ReactThreeTestRenderer;
+    let mockOnDeath: jest.Mock;
 
     beforeEach(async () => {
-      renderer = await create(<Bot />);
+      mockOnDeath = jest.fn();
+      renderer = await create(<Bot id="test-bot" onDeath={mockOnDeath} />);
     });
 
     afterEach(async () => {
@@ -191,18 +193,30 @@ describe('Bot Component', () => {
       expect(console.log).toHaveBeenCalledWith('Bot was hit! HP: 0');
     });
 
-    it('should allow HP to go negative', async () => {
+    it('should call onDeath callback when HP reaches zero', async () => {
       const hitHandler = capturedHitHandlers[0];
 
-      // Hit 4 times (starting from 3 HP)
+      // Hit 3 times to reach 0 HP
       await act(async () => {
-        hitHandler();
         hitHandler();
         hitHandler();
         hitHandler();
       });
 
-      expect(console.log).toHaveBeenLastCalledWith('Bot was hit! HP: -1');
+      expect(console.log).toHaveBeenLastCalledWith('Bot was hit! HP: 0');
+      expect(mockOnDeath).toHaveBeenCalledWith('test-bot');
+    });
+
+    it('should not call onDeath when HP is above zero', async () => {
+      const hitHandler = capturedHitHandlers[0];
+
+      // Hit only twice (HP goes to 1)
+      await act(async () => {
+        hitHandler();
+        hitHandler();
+      });
+
+      expect(mockOnDeath).not.toHaveBeenCalled();
     });
   });
 
@@ -224,12 +238,12 @@ describe('Bot Component', () => {
     };
 
     it('should render 3 HP blocks initially', async () => {
-      const renderer = await create(<Bot />);
+      const renderer = await create(<Bot id="test-bot" />);
       expect(countHpBlocks(renderer)).toBe(3);
     });
 
     it('should render HP blocks as meshes with box geometry', async () => {
-      const renderer = await create(<Bot />);
+      const renderer = await create(<Bot id="test-bot" />);
       const hpGroup = findHpBlocksGroup(renderer);
 
       expect(hpGroup).toBeDefined();
@@ -241,7 +255,7 @@ describe('Bot Component', () => {
     });
 
     it('should render red colored blocks', async () => {
-      const renderer = await create(<Bot />);
+      const renderer = await create(<Bot id="test-bot" />);
       const hpGroup = findHpBlocksGroup(renderer);
       const meshes = hpGroup!.children.filter((child) => child.type === 'Mesh');
 
@@ -252,7 +266,7 @@ describe('Bot Component', () => {
     });
 
     it('should decrease HP blocks when hit', async () => {
-      const renderer = await create(<Bot />);
+      const renderer = await create(<Bot id="test-bot" />);
       const hitHandler = capturedHitHandlers[0];
 
       expect(countHpBlocks(renderer)).toBe(3);
@@ -266,30 +280,25 @@ describe('Bot Component', () => {
         hitHandler();
       });
       expect(countHpBlocks(renderer)).toBe(1);
-
-      await act(async () => {
-        hitHandler();
-      });
-      expect(countHpBlocks(renderer)).toBe(0);
     });
 
-    it('should render no blocks when HP is 0 or negative', async () => {
-      const renderer = await create(<Bot />);
+    it('should show 0 HP blocks when HP reaches zero', async () => {
+      const renderer = await create(<Bot id="test-bot" />);
       const hitHandler = capturedHitHandlers[0];
 
-      // Hit 4 times to go to -1 HP
+      // Hit 3 times to reach 0 HP
       await act(async () => {
-        hitHandler();
         hitHandler();
         hitHandler();
         hitHandler();
       });
 
+      // HP blocks should be 0 (negative HP doesn't render blocks)
       expect(countHpBlocks(renderer)).toBe(0);
     });
 
     it('should position HP blocks above the head', async () => {
-      const renderer = await create(<Bot />);
+      const renderer = await create(<Bot id="test-bot" />);
       const hpGroup = findHpBlocksGroup(renderer);
 
       // The HP blocks group should be positioned above the head

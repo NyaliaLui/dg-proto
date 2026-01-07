@@ -54,6 +54,10 @@ export const CONTROLS_DEFAULTS = {
   },
 };
 
+export const GAME_DEFAULTS = {
+  INITIAL_BOT_COUNT: 1,
+};
+
 export const ENVIRONMENT_DEFAULTS = {
   enableShadows: true,
   ambientLight: {

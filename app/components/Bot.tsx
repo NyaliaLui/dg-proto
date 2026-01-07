@@ -17,7 +17,12 @@ import {
   BoneVertexMap,
 } from '@/app/utils';
 
-export function Bot() {
+interface BotProps {
+  id: string;
+  onDeath?: (id: string) => void;
+}
+
+export function Bot({ id, onDeath }: BotProps) {
   const groupRef = useRef<THREE.Group>(null);
   const { scene } = useThree();
   const skeletonHelperRef = useRef<SkeletonHelper | null>(null);
@@ -37,6 +42,13 @@ export function Bot() {
       return newHp;
     });
   }, []);
+
+  // Notify parent when bot dies
+  useEffect(() => {
+    if (hp <= 0 && onDeath) {
+      onDeath(id);
+    }
+  }, [hp, id, onDeath]);
 
   // Load the skinned model
   const modelFbx = useFBX(CHARACTER_DEFAULTS.MODELS.XBOT);
