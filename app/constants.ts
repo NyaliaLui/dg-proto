@@ -1,7 +1,7 @@
 import { Vector3 } from 'three';
 
 export const CHARACTER_DEFAULTS = {
-  MOVE_SPEED: 3,
+  MOVE_SPEED: 5,
   MODELS: {
     XBOT: '/models/XBot.fbx',
   },
