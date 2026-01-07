@@ -146,6 +146,24 @@ export function Bot() {
     }
   });
 
+  const hpBlocks = useMemo(() => {
+    const blocks = [];
+    const blockSize = 0.08;
+    const gap = 0.04;
+    const totalWidth = hp * blockSize + (hp - 1) * gap;
+    const startX = -totalWidth / 2 + blockSize / 2;
+
+    for (let i = 0; i < hp; i++) {
+      blocks.push(
+        <mesh key={i} position={[startX + i * (blockSize + gap), 0, 0]}>
+          <boxGeometry args={[blockSize, blockSize, blockSize]} />
+          <meshStandardMaterial color="red" />
+        </mesh>,
+      );
+    }
+    return blocks;
+  }, [hp]);
+
   return (
     <RigidBody type="fixed" position={[1, 0.9, 0]} colliders={false}>
       {/* Torso capsule */}
@@ -168,6 +186,12 @@ export function Bot() {
         sensor
         onIntersectionEnter={handleHit}
       />
+      {/* HP blocks floating above head */}
+      <group
+        position={[headPosition[0], headPosition[1] + 0.3, headPosition[2]]}
+      >
+        {hpBlocks}
+      </group>
       <group ref={groupRef}>
         <primitive
           object={model}

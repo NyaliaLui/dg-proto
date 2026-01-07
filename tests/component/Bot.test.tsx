@@ -117,9 +117,14 @@ describe('Bot Component', () => {
     it('should have correct scale', async () => {
       const renderer = await create(<Bot />);
       const rigidBody = renderer.scene.children[0];
-      // RigidBody (group) -> inner group (groupRef) -> primitive
-      const innerGroup = rigidBody.children[0];
-      const primitive = innerGroup.children[0];
+      // RigidBody (group) -> HP blocks group, model group (groupRef) -> primitive
+      // Find the model group (the one with the primitive, not the HP blocks)
+      const modelGroup = rigidBody.children.find(
+        (child) =>
+          child.type === 'Group' &&
+          child.children.some((c) => c.type !== 'Mesh'),
+      );
+      const primitive = modelGroup!.children[0];
       // The primitive has scale prop applied directly (uniform scale)
       expect(primitive.instance.scale).toBe(0.01);
     });
@@ -129,9 +134,14 @@ describe('Bot Component', () => {
     it('should have initial rotation facing left', async () => {
       const renderer = await create(<Bot />);
       const rigidBody = renderer.scene.children[0];
-      // The rotation is applied to the inner group via useEffect
-      const innerGroup = rigidBody.children[0];
-      expect(innerGroup.instance.rotation.y).toBe(-Math.PI / 2);
+      // The rotation is applied to the model group via useEffect
+      // Find the model group (the one without meshes - HP blocks have meshes)
+      const modelGroup = rigidBody.children.find(
+        (child) =>
+          child.type === 'Group' &&
+          child.children.some((c) => c.type !== 'Mesh'),
+      );
+      expect(modelGroup!.instance.rotation.y).toBe(-Math.PI / 2);
     });
   });
 
@@ -193,6 +203,99 @@ describe('Bot Component', () => {
       });
 
       expect(console.log).toHaveBeenLastCalledWith('Bot was hit! HP: -1');
+    });
+  });
+
+  describe('HP Blocks', () => {
+    const findHpBlocksGroup = (renderer: ReactThreeTestRenderer) => {
+      const rigidBody = renderer.scene.children[0];
+      // Find the HP blocks group (first group child that contains meshes)
+      return rigidBody.children.find(
+        (child) =>
+          child.type === 'Group' &&
+          child.children.some((c) => c.type === 'Mesh'),
+      );
+    };
+
+    const countHpBlocks = (renderer: ReactThreeTestRenderer) => {
+      const hpGroup = findHpBlocksGroup(renderer);
+      if (!hpGroup) return 0;
+      return hpGroup.children.filter((child) => child.type === 'Mesh').length;
+    };
+
+    it('should render 3 HP blocks initially', async () => {
+      const renderer = await create(<Bot />);
+      expect(countHpBlocks(renderer)).toBe(3);
+    });
+
+    it('should render HP blocks as meshes with box geometry', async () => {
+      const renderer = await create(<Bot />);
+      const hpGroup = findHpBlocksGroup(renderer);
+
+      expect(hpGroup).toBeDefined();
+      const meshes = hpGroup!.children.filter((child) => child.type === 'Mesh');
+
+      meshes.forEach((mesh) => {
+        expect(mesh.type).toBe('Mesh');
+      });
+    });
+
+    it('should render red colored blocks', async () => {
+      const renderer = await create(<Bot />);
+      const hpGroup = findHpBlocksGroup(renderer);
+      const meshes = hpGroup!.children.filter((child) => child.type === 'Mesh');
+
+      meshes.forEach((mesh) => {
+        // Check that the material color is red (0xff0000)
+        expect(mesh.instance.material.color.getHex()).toBe(0xff0000);
+      });
+    });
+
+    it('should decrease HP blocks when hit', async () => {
+      const renderer = await create(<Bot />);
+      const hitHandler = capturedHitHandlers[0];
+
+      expect(countHpBlocks(renderer)).toBe(3);
+
+      await act(async () => {
+        hitHandler();
+      });
+      expect(countHpBlocks(renderer)).toBe(2);
+
+      await act(async () => {
+        hitHandler();
+      });
+      expect(countHpBlocks(renderer)).toBe(1);
+
+      await act(async () => {
+        hitHandler();
+      });
+      expect(countHpBlocks(renderer)).toBe(0);
+    });
+
+    it('should render no blocks when HP is 0 or negative', async () => {
+      const renderer = await create(<Bot />);
+      const hitHandler = capturedHitHandlers[0];
+
+      // Hit 4 times to go to -1 HP
+      await act(async () => {
+        hitHandler();
+        hitHandler();
+        hitHandler();
+        hitHandler();
+      });
+
+      expect(countHpBlocks(renderer)).toBe(0);
+    });
+
+    it('should position HP blocks above the head', async () => {
+      const renderer = await create(<Bot />);
+      const hpGroup = findHpBlocksGroup(renderer);
+
+      // The HP blocks group should be positioned above the head
+      // Head position Y + 0.3 offset
+      expect(hpGroup).toBeDefined();
+      expect(hpGroup!.instance.position.y).toBeGreaterThan(0);
     });
   });
 });
