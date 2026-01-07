@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useMemo, useState } from 'react';
+import { useRef, useEffect, useMemo, useState, useCallback } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useFBX } from '@react-three/drei';
 import { CapsuleCollider, RigidBody } from '@react-three/rapier';
@@ -28,6 +28,15 @@ export function Bot() {
   const [headPosition, setHeadPosition] = useState<[number, number, number]>([
     ...CHARACTER_DEFAULTS.COLLIDERS.HEAD.position,
   ]);
+  const [hp, setHp] = useState(3);
+
+  const handleHit = useCallback(() => {
+    setHp((prevHp) => {
+      const newHp = prevHp - 1;
+      console.log(`Bot was hit! HP: ${newHp}`);
+      return newHp;
+    });
+  }, []);
 
   // Load the skinned model
   const modelFbx = useFBX(CHARACTER_DEFAULTS.MODELS.XBOT);
@@ -146,6 +155,8 @@ export function Bot() {
           CHARACTER_DEFAULTS.COLLIDERS.TORSO.radius,
         ]}
         position={torsoPosition}
+        sensor
+        onIntersectionEnter={handleHit}
       />
       {/* Head capsule */}
       <CapsuleCollider
@@ -154,6 +165,8 @@ export function Bot() {
           CHARACTER_DEFAULTS.COLLIDERS.HEAD.radius,
         ]}
         position={headPosition}
+        sensor
+        onIntersectionEnter={handleHit}
       />
       <group ref={groupRef}>
         <primitive

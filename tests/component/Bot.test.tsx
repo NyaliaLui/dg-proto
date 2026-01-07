@@ -1,7 +1,8 @@
 import '@testing-library/jest-dom';
 import { expect } from '@jest/globals';
-import { create } from '@react-three/test-renderer';
+import { create, ReactThreeTestRenderer } from '@react-three/test-renderer';
 import { Group } from 'three';
+import { act } from 'react';
 import { Bot } from '@/app/components/Bot';
 
 const testScene = new Group();
@@ -59,6 +60,8 @@ jest.mock('three', () => {
   };
 });
 
+let capturedHitHandlers: (() => void)[] = [];
+
 jest.mock('@react-three/rapier', () => ({
   RigidBody: ({
     children,
@@ -67,10 +70,28 @@ jest.mock('@react-three/rapier', () => ({
     children: React.ReactNode;
     position?: [number, number, number];
   }) => <group position={position}>{children}</group>,
-  CapsuleCollider: () => null,
+  CapsuleCollider: ({
+    onIntersectionEnter,
+  }: {
+    onIntersectionEnter?: () => void;
+  }) => {
+    if (onIntersectionEnter) {
+      capturedHitHandlers.push(onIntersectionEnter);
+    }
+    return null;
+  },
 }));
 
 describe('Bot Component', () => {
+  beforeEach(() => {
+    capturedHitHandlers = [];
+    jest.spyOn(console, 'log').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   describe('Rendering', () => {
     it('should render a group element', async () => {
       const renderer = await create(<Bot />);
@@ -111,6 +132,67 @@ describe('Bot Component', () => {
       // The rotation is applied to the inner group via useEffect
       const innerGroup = rigidBody.children[0];
       expect(innerGroup.instance.rotation.y).toBe(-Math.PI / 2);
+    });
+  });
+
+  describe('HP', () => {
+    let renderer: ReactThreeTestRenderer;
+
+    beforeEach(async () => {
+      renderer = await create(<Bot />);
+    });
+
+    afterEach(async () => {
+      await renderer.unmount();
+    });
+
+    it('should register hit handlers on colliders', async () => {
+      // Both torso and head colliders should have hit handlers
+      // Check for at least 2 handlers (from this render)
+      expect(capturedHitHandlers.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('should log message when hit', async () => {
+      const hitHandler = capturedHitHandlers[0];
+
+      await act(async () => {
+        hitHandler();
+      });
+
+      expect(console.log).toHaveBeenCalledWith('Bot was hit! HP: 2');
+    });
+
+    it('should decrease HP on each hit', async () => {
+      const hitHandler = capturedHitHandlers[0];
+
+      await act(async () => {
+        hitHandler();
+      });
+      expect(console.log).toHaveBeenCalledWith('Bot was hit! HP: 2');
+
+      await act(async () => {
+        hitHandler();
+      });
+      expect(console.log).toHaveBeenCalledWith('Bot was hit! HP: 1');
+
+      await act(async () => {
+        hitHandler();
+      });
+      expect(console.log).toHaveBeenCalledWith('Bot was hit! HP: 0');
+    });
+
+    it('should allow HP to go negative', async () => {
+      const hitHandler = capturedHitHandlers[0];
+
+      // Hit 4 times (starting from 3 HP)
+      await act(async () => {
+        hitHandler();
+        hitHandler();
+        hitHandler();
+        hitHandler();
+      });
+
+      expect(console.log).toHaveBeenLastCalledWith('Bot was hit! HP: -1');
     });
   });
 });
