@@ -3,12 +3,16 @@
 import { useRef, useEffect, useMemo, useState, useCallback } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useFBX } from '@react-three/drei';
-import { CapsuleCollider, RigidBody } from '@react-three/rapier';
+import {
+  CapsuleCollider,
+  RigidBody,
+  RapierRigidBody,
+} from '@react-three/rapier';
 import * as THREE from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 import { SkeletonHelper } from 'three';
 
-import { CHARACTER_DEFAULTS } from '@/app/constants';
+import { CHARACTER_DEFAULTS, BOT_DEFAULTS } from '@/app/constants';
 import {
   getAnimation,
   getBoneList,
@@ -23,7 +27,9 @@ interface BotProps {
 }
 
 export function Bot({ id, onDeath }: BotProps) {
-  const groupRef = useRef<THREE.Group>(null);
+  const rigidBodyRef = useRef<RapierRigidBody>(null);
+  const modelRef = useRef<THREE.Group>(null);
+  const lastRotationRef = useRef<number>(-Math.PI / 2);
   const { scene } = useThree();
   const skeletonHelperRef = useRef<SkeletonHelper | null>(null);
   const boneVertexMapRef = useRef<BoneVertexMap | null>(null);
@@ -34,11 +40,13 @@ export function Bot({ id, onDeath }: BotProps) {
     ...CHARACTER_DEFAULTS.COLLIDERS.HEAD.position,
   ]);
   const [hp, setHp] = useState(3);
+  const [isWalking, setIsWalking] = useState(false);
+  const [direction, setDirection] = useState<number>(-1); // 1 = right, -1 = left
+  const wasWalkingRef = useRef(false);
 
   const handleHit = useCallback(() => {
     setHp((prevHp) => {
       const newHp = prevHp - 1;
-      console.log(`Bot was hit! HP: ${newHp}`);
       return newHp;
     });
   }, []);
@@ -53,8 +61,9 @@ export function Bot({ id, onDeath }: BotProps) {
   // Load the skinned model
   const modelFbx = useFBX(CHARACTER_DEFAULTS.MODELS.XBOT);
 
-  // Load idle animation from separate file
+  // Load animations from separate files
   const idleAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.IDLE));
+  const walkAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.WALK));
 
   const mixer = useRef<THREE.AnimationMixer | null>(null);
 
@@ -80,10 +89,28 @@ export function Bot({ id, onDeath }: BotProps) {
     }
   }, [model, scene]);
 
-  // Get the idle animation clip
+  // Get the current animation clip based on walking state
   const currentAnimation = useMemo(() => {
-    return idleAnim;
-  }, [idleAnim]);
+    return isWalking ? walkAnim : idleAnim;
+  }, [isWalking, walkAnim, idleAnim]);
+
+  // Simple patrol behavior: toggle walking every 3 seconds and change direction
+  useEffect(() => {
+    if (!BOT_DEFAULTS.walkEnabled) return;
+
+    const interval = setInterval(() => {
+      setIsWalking((prev) => {
+        if (!prev && !wasWalkingRef.current) {
+          // Starting to walk, change direction
+          setDirection((d) => d * -1);
+        }
+        wasWalkingRef.current = !prev;
+        return !prev;
+      });
+    }, BOT_DEFAULTS.walkDurationMS);
+
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     // Clean up previous mixer
@@ -106,12 +133,6 @@ export function Bot({ id, onDeath }: BotProps) {
     };
   }, [model, currentAnimation]);
 
-  useEffect(() => {
-    if (groupRef.current) {
-      groupRef.current.rotation.y = -Math.PI / 2;
-    }
-  }, []);
-
   useFrame((_state, delta) => {
     if (mixer.current) {
       mixer.current.update(delta);
@@ -126,35 +147,73 @@ export function Bot({ id, onDeath }: BotProps) {
 
       const positions = skeletonHelperRef.current.geometry.attributes.position;
 
-      // Update torso position based on spine bone
-      const spinePos = getBoneWorldPosition(
-        'mixamorigSpine',
-        boneVertexMapRef.current,
-        positions,
-      );
-      if (spinePos) {
-        spinePos.multiplyScalar(CHARACTER_DEFAULTS.SCALE);
-        setTorsoPosition([
-          spinePos.x,
-          spinePos.y + CHARACTER_DEFAULTS.COLLIDERS.TORSO.offset.y,
-          spinePos.z + CHARACTER_DEFAULTS.COLLIDERS.TORSO.offset.z,
-        ]);
+      if (rigidBodyRef.current) {
+        // Update torso position based on spine bone
+        const spinePos = getBoneWorldPosition(
+          'mixamorigSpine',
+          boneVertexMapRef.current,
+          positions,
+        );
+        if (spinePos) {
+          spinePos.multiplyScalar(CHARACTER_DEFAULTS.SCALE);
+          setTorsoPosition([
+            spinePos.x,
+            spinePos.y + CHARACTER_DEFAULTS.COLLIDERS.TORSO.offset.y,
+            spinePos.z + CHARACTER_DEFAULTS.COLLIDERS.TORSO.offset.z,
+          ]);
+        }
+
+        // Update head position based on head bone
+        const headBonePos = getBoneWorldPosition(
+          'mixamorigHead',
+          boneVertexMapRef.current,
+          positions,
+        );
+        if (headBonePos) {
+          headBonePos.multiplyScalar(CHARACTER_DEFAULTS.SCALE);
+          setHeadPosition([
+            headBonePos.x,
+            headBonePos.y + CHARACTER_DEFAULTS.COLLIDERS.HEAD.offset.y,
+            headBonePos.z + CHARACTER_DEFAULTS.COLLIDERS.HEAD.offset.z,
+          ]);
+        }
+      }
+    }
+
+    // Movement and rotation logic
+    if (rigidBodyRef.current) {
+      const moveSpeed = CHARACTER_DEFAULTS.MOVE_SPEED;
+      const velocity = { x: 0, y: 0, z: 0 };
+
+      if (isWalking) {
+        velocity.x = direction * moveSpeed;
+
+        // Set rotation based on direction
+        if (direction === -1) {
+          // Face -X (left)
+          rigidBodyRef.current.setRotation(
+            { x: 0, y: -0.707, z: 0, w: 0.707 },
+            true,
+          );
+          lastRotationRef.current = -Math.PI / 2;
+        } else {
+          // Face +X (right)
+          rigidBodyRef.current.setRotation(
+            { x: 0, y: 0.707, z: 0, w: 0.707 },
+            true,
+          );
+          lastRotationRef.current = Math.PI / 2;
+        }
+      } else {
+        // When idle, maintain last rotation
+        const halfAngle = lastRotationRef.current / 2;
+        rigidBodyRef.current.setRotation(
+          { x: 0, y: Math.sin(halfAngle), z: 0, w: Math.cos(halfAngle) },
+          true,
+        );
       }
 
-      // Update head position based on head bone
-      const headBonePos = getBoneWorldPosition(
-        'mixamorigHead',
-        boneVertexMapRef.current,
-        positions,
-      );
-      if (headBonePos) {
-        headBonePos.multiplyScalar(CHARACTER_DEFAULTS.SCALE);
-        setHeadPosition([
-          headBonePos.x,
-          headBonePos.y + CHARACTER_DEFAULTS.COLLIDERS.HEAD.offset.y,
-          headBonePos.z + CHARACTER_DEFAULTS.COLLIDERS.HEAD.offset.z,
-        ]);
-      }
+      rigidBodyRef.current.setLinvel(velocity, true);
     }
   });
 
@@ -177,7 +236,14 @@ export function Bot({ id, onDeath }: BotProps) {
   }, [hp]);
 
   return (
-    <RigidBody type="fixed" position={[1, 0.9, 0]} colliders={false}>
+    <RigidBody
+      ref={rigidBodyRef}
+      type="dynamic"
+      position={[1, 0.9, 0]}
+      lockRotations
+      enabledRotations={[false, false, false]}
+      colliders={false}
+    >
       {/* Torso capsule */}
       <CapsuleCollider
         args={[
@@ -204,7 +270,7 @@ export function Bot({ id, onDeath }: BotProps) {
       >
         {hpBlocks}
       </group>
-      <group ref={groupRef}>
+      <group ref={modelRef}>
         <primitive
           object={model}
           scale={CHARACTER_DEFAULTS.SCALE}

@@ -34,6 +34,11 @@ export const CHARACTER_DEFAULTS = {
   },
 };
 
+export const BOT_DEFAULTS = {
+  walkEnabled: true,
+  walkDurationMS: 500,
+};
+
 export const CONTROLS_DEFAULTS = {
   MECHANICS_TIMEOUT: 1300,
   KEYBOARD: {
