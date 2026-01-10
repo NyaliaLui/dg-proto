@@ -5,7 +5,7 @@ import { Group } from 'three';
 import { act } from 'react';
 import { Bot } from '@/app/components/Bot';
 import { BotSettings } from '@/app/components/hooks/useBotSettings';
-import { BOT_DEFAULTS } from '@/app/constants';
+import { BOT_DEFAULTS, GAME_DEFAULTS } from '@/app/constants';
 
 const defaultSettings: BotSettings = {
   walkEnabled: BOT_DEFAULTS.walkEnabled,
@@ -239,11 +239,11 @@ describe('Bot Component', () => {
     it('should call onDeath callback when HP reaches zero', async () => {
       const hitHandler = capturedHitHandlers[0];
 
-      // Hit 3 times to reach 0 HP
+      // Hit INITIAL_BOT_HP times to reach 0 HP
       await act(async () => {
-        hitHandler();
-        hitHandler();
-        hitHandler();
+        for (let i = 0; i < GAME_DEFAULTS.INITIAL_BOT_HP; i++) {
+          hitHandler();
+        }
       });
 
       expect(mockOnDeath).toHaveBeenCalledWith('test-bot');
@@ -252,10 +252,11 @@ describe('Bot Component', () => {
     it('should not call onDeath when HP is above zero', async () => {
       const hitHandler = capturedHitHandlers[0];
 
-      // Hit only twice (HP goes to 1)
+      // Hit one less than INITIAL_BOT_HP times (HP goes to 1)
       await act(async () => {
-        hitHandler();
-        hitHandler();
+        for (let i = 0; i < GAME_DEFAULTS.INITIAL_BOT_HP - 1; i++) {
+          hitHandler();
+        }
       });
 
       expect(mockOnDeath).not.toHaveBeenCalled();
@@ -279,14 +280,14 @@ describe('Bot Component', () => {
       return hpGroup.children.filter((child) => child.type === 'Mesh').length;
     };
 
-    it('should render 3 HP blocks initially', async () => {
+    it('should render INITIAL_BOT_HP blocks initially', async () => {
       let renderer: ReactThreeTestRenderer;
       await act(async () => {
         renderer = await create(
           <Bot id="test-bot" settings={defaultSettings} />,
         );
       });
-      expect(countHpBlocks(renderer!)).toBe(3);
+      expect(countHpBlocks(renderer!)).toBe(GAME_DEFAULTS.INITIAL_BOT_HP);
     });
 
     it('should render HP blocks as meshes with box geometry', async () => {
@@ -331,17 +332,17 @@ describe('Bot Component', () => {
       });
       const hitHandler = capturedHitHandlers[0];
 
-      expect(countHpBlocks(renderer!)).toBe(3);
+      expect(countHpBlocks(renderer!)).toBe(GAME_DEFAULTS.INITIAL_BOT_HP);
 
       await act(async () => {
         hitHandler();
       });
-      expect(countHpBlocks(renderer!)).toBe(2);
+      expect(countHpBlocks(renderer!)).toBe(GAME_DEFAULTS.INITIAL_BOT_HP - 1);
 
       await act(async () => {
         hitHandler();
       });
-      expect(countHpBlocks(renderer!)).toBe(1);
+      expect(countHpBlocks(renderer!)).toBe(GAME_DEFAULTS.INITIAL_BOT_HP - 2);
     });
 
     it('should show 0 HP blocks when HP reaches zero', async () => {
@@ -353,11 +354,11 @@ describe('Bot Component', () => {
       });
       const hitHandler = capturedHitHandlers[0];
 
-      // Hit 3 times to reach 0 HP
+      // Hit INITIAL_BOT_HP times to reach 0 HP
       await act(async () => {
-        hitHandler();
-        hitHandler();
-        hitHandler();
+        for (let i = 0; i < GAME_DEFAULTS.INITIAL_BOT_HP; i++) {
+          hitHandler();
+        }
       });
 
       // HP blocks should be 0 (negative HP doesn't render blocks)

@@ -12,7 +12,7 @@ import * as THREE from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 import { SkeletonHelper } from 'three';
 
-import { CHARACTER_DEFAULTS } from '@/app/constants';
+import { CHARACTER_DEFAULTS, GAME_DEFAULTS } from '@/app/constants';
 import { BotSettings } from '@/app/components/hooks/useBotSettings';
 import {
   getAnimation,
@@ -44,7 +44,7 @@ export function Bot({ id, onDeath, settings }: BotProps) {
   const [handPosition, setHandPosition] = useState<[number, number, number]>([
     ...CHARACTER_DEFAULTS.COLLIDERS.HAND.position,
   ]);
-  const [hp, setHp] = useState(3);
+  const [hp, setHp] = useState(GAME_DEFAULTS.INITIAL_BOT_HP);
   const [isWalking, setIsWalking] = useState(false);
   const [isAttacking, setIsAttacking] = useState(false);
   const [direction, setDirection] = useState<number>(-1); // 1 = right, -1 = left
@@ -259,11 +259,11 @@ export function Bot({ id, onDeath, settings }: BotProps) {
     const blockSize = 0.08;
     const gap = 0.04;
     const totalWidth = hp * blockSize + (hp - 1) * gap;
-    const startX = -totalWidth / 2 + blockSize / 2;
+    const startZ = -totalWidth / 2 + blockSize / 2;
 
     for (let i = 0; i < hp; i++) {
       blocks.push(
-        <mesh key={i} position={[startX + i * (blockSize + gap), 0, 0]}>
+        <mesh key={i} position={[0, 0, startZ + i * (blockSize + gap)]}>
           <boxGeometry args={[blockSize, blockSize, blockSize]} />
           <meshStandardMaterial color="red" />
         </mesh>,
