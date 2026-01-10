@@ -11,6 +11,7 @@ import { useKeyboardControls } from '@/app/components/hooks/useKeyboardControls'
 import { Controls } from '@/app/components/Controls';
 import { BotGui } from '@/app/components/BotGui';
 import { HealthBar } from '@/app/components/HealthBar';
+import { GameOver } from '@/app/components/GameOver';
 import { useBotSettings } from '@/app/components/hooks/useBotSettings';
 import { ENVIRONMENT_DEFAULTS, GAME_DEFAULTS } from '@/app/constants';
 
@@ -79,6 +80,7 @@ export default function Home() {
       <Controls updateKey={updateKey} />
       <BotGui settingsRef={settingsRef} onSettingsChange={updateSettings} />
       <HealthBar currentHP={playerHP} maxHP={GAME_DEFAULTS.PLAYER_MAX_HP} />
+      <GameOver show={playerHP <= 0} />
     </div>
   );
 }
