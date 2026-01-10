@@ -24,9 +24,10 @@ import {
 
 interface CharacterProps {
   keys: KeyState;
+  onHit?: () => void;
 }
 
-export function Character({ keys }: CharacterProps) {
+export function Character({ keys, onHit }: CharacterProps) {
   const rigidBodyRef = useRef<RapierRigidBody>(null);
   const modelRef = useRef<THREE.Group>(null);
   const lastRotationRef = useRef<number>(Math.PI / 2);
@@ -235,6 +236,8 @@ export function Character({ keys }: CharacterProps) {
           CHARACTER_DEFAULTS.COLLIDERS.TORSO.radius,
         ]}
         position={torsoPosition}
+        sensor
+        onIntersectionEnter={onHit}
       />
       {/* Head capsule */}
       <CapsuleCollider
@@ -243,6 +246,8 @@ export function Character({ keys }: CharacterProps) {
           CHARACTER_DEFAULTS.COLLIDERS.HEAD.radius,
         ]}
         position={headPosition}
+        sensor
+        onIntersectionEnter={onHit}
       />
       {/* Hand capsule - only active during attack */}
       {keys.q && (

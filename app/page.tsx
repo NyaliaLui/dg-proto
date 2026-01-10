@@ -10,6 +10,7 @@ import { World } from '@/app/components/World';
 import { useKeyboardControls } from '@/app/components/hooks/useKeyboardControls';
 import { Controls } from '@/app/components/Controls';
 import { BotGui } from '@/app/components/BotGui';
+import { HealthBar } from '@/app/components/HealthBar';
 import { useBotSettings } from '@/app/components/hooks/useBotSettings';
 import { ENVIRONMENT_DEFAULTS, GAME_DEFAULTS } from '@/app/constants';
 
@@ -25,6 +26,7 @@ export default function Home() {
   const { keys, updateKey } = useKeyboardControls();
   const { settingsRef, updateSettings } = useBotSettings();
   const [bots, setBots] = useState<Record<string, boolean>>(createInitialBots);
+  const [playerHP, setPlayerHP] = useState(GAME_DEFAULTS.PLAYER_MAX_HP);
 
   const handleBotDeath = useCallback((id: string) => {
     setBots((prevBots) => {
@@ -32,6 +34,10 @@ export default function Home() {
       delete newBots[id];
       return newBots;
     });
+  }, []);
+
+  const handlePlayerHit = useCallback(() => {
+    setPlayerHP((prevHP) => Math.max(0, prevHP - 10));
   }, []);
 
   const botComponents = useMemo(() => {
@@ -61,7 +67,7 @@ export default function Home() {
         />
         <Physics gravity={[0, 0, 0]} debug={ENVIRONMENT_DEFAULTS.physics.debug}>
           {botComponents}
-          <Character keys={keys} />
+          <Character keys={keys} onHit={handlePlayerHit} />
         </Physics>
         <World />
         <OrbitControls
@@ -72,6 +78,7 @@ export default function Home() {
       </Canvas>
       <Controls updateKey={updateKey} />
       <BotGui settingsRef={settingsRef} onSettingsChange={updateSettings} />
+      <HealthBar currentHP={playerHP} maxHP={GAME_DEFAULTS.PLAYER_MAX_HP} />
     </div>
   );
 }

@@ -11,8 +11,12 @@ const testScene = new Group();
 const mockSetLinvel = jest.fn();
 const mockSetRotation = jest.fn();
 
+// Store captured onIntersectionEnter callbacks for testing
+const capturedColliderCallbacks: { [key: string]: (() => void) | undefined } =
+  {};
+
 // Store mocks in a module-level object that can be accessed inside jest.mock
-const mocks = { mockSetLinvel, mockSetRotation };
+const mocks = { mockSetLinvel, mockSetRotation, capturedColliderCallbacks };
 
 // Create a mock animation clip
 const mockAnimationClip = {
@@ -72,6 +76,7 @@ jest.mock('three', () => {
 
 jest.mock('@react-three/rapier', () => {
   const React = jest.requireActual('react');
+  let colliderIndex = 0;
   return {
     RigidBody: React.forwardRef(function MockRigidBody(
       {
@@ -88,9 +93,25 @@ jest.mock('@react-three/rapier', () => {
         setRotation: mocks.mockSetRotation,
         translation: () => ({ x: 0, y: 0, z: 0 }),
       }));
+      // Reset collider index when RigidBody renders
+      colliderIndex = 0;
       return <group position={position}>{children}</group>;
     }),
-    CapsuleCollider: () => null,
+    CapsuleCollider: ({
+      onIntersectionEnter,
+      sensor,
+    }: {
+      onIntersectionEnter?: () => void;
+      sensor?: boolean;
+    }) => {
+      // Capture onIntersectionEnter callbacks for torso (0) and head (1)
+      if (sensor && onIntersectionEnter) {
+        const colliderName = colliderIndex === 0 ? 'torso' : 'head';
+        mocks.capturedColliderCallbacks[colliderName] = onIntersectionEnter;
+      }
+      colliderIndex++;
+      return null;
+    },
   };
 });
 
@@ -199,6 +220,60 @@ describe('Character Component', () => {
         { x: 0, y: 1, z: 0, w: 0 },
         true,
       );
+    });
+  });
+
+  describe('Hit Detection', () => {
+    beforeEach(() => {
+      // Clear captured callbacks before each test
+      mocks.capturedColliderCallbacks.torso = undefined;
+      mocks.capturedColliderCallbacks.head = undefined;
+    });
+
+    it('should call onHit when torso collider is hit', async () => {
+      const mockOnHit = jest.fn();
+      await create(<Character keys={mockKeys} onHit={mockOnHit} />);
+
+      // Simulate torso hit
+      if (mocks.capturedColliderCallbacks.torso) {
+        mocks.capturedColliderCallbacks.torso();
+      }
+
+      expect(mockOnHit).toHaveBeenCalledTimes(1);
+    });
+
+    it('should call onHit when head collider is hit', async () => {
+      const mockOnHit = jest.fn();
+      await create(<Character keys={mockKeys} onHit={mockOnHit} />);
+
+      // Simulate head hit
+      if (mocks.capturedColliderCallbacks.head) {
+        mocks.capturedColliderCallbacks.head();
+      }
+
+      expect(mockOnHit).toHaveBeenCalledTimes(1);
+    });
+
+    it('should call onHit multiple times for multiple hits', async () => {
+      const mockOnHit = jest.fn();
+      await create(<Character keys={mockKeys} onHit={mockOnHit} />);
+
+      // Simulate multiple hits
+      if (mocks.capturedColliderCallbacks.torso) {
+        mocks.capturedColliderCallbacks.torso();
+        mocks.capturedColliderCallbacks.torso();
+      }
+      if (mocks.capturedColliderCallbacks.head) {
+        mocks.capturedColliderCallbacks.head();
+      }
+
+      expect(mockOnHit).toHaveBeenCalledTimes(3);
+    });
+
+    it('should not throw when onHit is not provided', async () => {
+      await expect(
+        create(<Character keys={mockKeys} />),
+      ).resolves.not.toThrow();
     });
   });
 });
