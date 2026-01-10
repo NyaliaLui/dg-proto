@@ -41,6 +41,9 @@ export function Bot({ id, onDeath, settings }: BotProps) {
   const [headPosition, setHeadPosition] = useState<[number, number, number]>([
     ...CHARACTER_DEFAULTS.COLLIDERS.HEAD.position,
   ]);
+  const [handPosition, setHandPosition] = useState<[number, number, number]>([
+    ...CHARACTER_DEFAULTS.COLLIDERS.HAND.position,
+  ]);
   const [hp, setHp] = useState(3);
   const [isWalking, setIsWalking] = useState(false);
   const [isAttacking, setIsAttacking] = useState(false);
@@ -194,6 +197,23 @@ export function Bot({ id, onDeath, settings }: BotProps) {
             headBonePos.z + CHARACTER_DEFAULTS.COLLIDERS.HEAD.offset.z,
           ]);
         }
+
+        // Update hand position (only during attack)
+        if (isAttacking) {
+          const leftHandPos = getBoneWorldPosition(
+            'mixamorigLeftHand',
+            boneVertexMapRef.current,
+            positions,
+          );
+          if (leftHandPos) {
+            leftHandPos.multiplyScalar(CHARACTER_DEFAULTS.SCALE);
+            setHandPosition([
+              leftHandPos.x,
+              leftHandPos.y + CHARACTER_DEFAULTS.COLLIDERS.HAND.offset.y,
+              leftHandPos.z + CHARACTER_DEFAULTS.COLLIDERS.HAND.offset.z,
+            ]);
+          }
+        }
       }
     }
 
@@ -281,6 +301,16 @@ export function Bot({ id, onDeath, settings }: BotProps) {
         sensor
         onIntersectionEnter={handleHit}
       />
+      {/* Hand capsule - only active during attack */}
+      {isAttacking && (
+        <CapsuleCollider
+          args={[
+            CHARACTER_DEFAULTS.COLLIDERS.HAND.halfHeight,
+            CHARACTER_DEFAULTS.COLLIDERS.HAND.radius,
+          ]}
+          position={handPosition}
+        />
+      )}
       {/* HP blocks floating above head */}
       <group
         position={[headPosition[0], headPosition[1] + 0.3, headPosition[2]]}
