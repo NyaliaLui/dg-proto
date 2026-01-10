@@ -43,6 +43,7 @@ export function Bot({ id, onDeath, settings }: BotProps) {
   ]);
   const [hp, setHp] = useState(3);
   const [isWalking, setIsWalking] = useState(false);
+  const [isAttacking, setIsAttacking] = useState(false);
   const [direction, setDirection] = useState<number>(-1); // 1 = right, -1 = left
   const wasWalkingRef = useRef(false);
 
@@ -66,6 +67,7 @@ export function Bot({ id, onDeath, settings }: BotProps) {
   // Load animations from separate files
   const idleAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.IDLE));
   const walkAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.WALK));
+  const punchAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.NORMAL));
 
   const mixer = useRef<THREE.AnimationMixer | null>(null);
 
@@ -91,10 +93,12 @@ export function Bot({ id, onDeath, settings }: BotProps) {
     }
   }, [model, scene]);
 
-  // Get the current animation clip based on walking state
+  // Get the current animation clip based on state (attack > walk > idle)
   const currentAnimation = useMemo(() => {
-    return isWalking ? walkAnim : idleAnim;
-  }, [isWalking, walkAnim, idleAnim]);
+    if (isAttacking) return punchAnim;
+    if (isWalking) return walkAnim;
+    return idleAnim;
+  }, [isAttacking, isWalking, punchAnim, walkAnim, idleAnim]);
 
   // Simple patrol behavior: toggle walking every walkDurationMS and change direction
   useEffect(() => {
@@ -112,6 +116,18 @@ export function Bot({ id, onDeath, settings }: BotProps) {
 
     return () => clearInterval(interval);
   }, [settings.walkEnabled, settings.walkDurationMS]);
+
+  // Attack behavior: toggle attacking every attackDurationMS
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsAttacking((prev) => {
+        if (!settings.attackEnabled) return false;
+        return !prev;
+      });
+    }, settings.attackDurationMS);
+
+    return () => clearInterval(interval);
+  }, [settings.attackEnabled, settings.attackDurationMS]);
 
   useEffect(() => {
     // Clean up previous mixer

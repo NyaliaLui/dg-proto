@@ -10,6 +10,8 @@ import { BOT_DEFAULTS } from '@/app/constants';
 const defaultSettings: BotSettings = {
   walkEnabled: BOT_DEFAULTS.walkEnabled,
   walkDurationMS: BOT_DEFAULTS.walkDurationMS,
+  attackEnabled: BOT_DEFAULTS.attackEnabled,
+  attackDurationMS: BOT_DEFAULTS.attackDurationMS,
 };
 
 const testScene = new Group();
@@ -428,6 +430,8 @@ describe('Bot Component', () => {
       const fastWalkSettings: BotSettings = {
         walkEnabled: true,
         walkDurationMS: 10,
+        attackEnabled: false,
+        attackDurationMS: 1500,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -454,6 +458,8 @@ describe('Bot Component', () => {
       const fastWalkSettings: BotSettings = {
         walkEnabled: true,
         walkDurationMS: 10,
+        attackEnabled: false,
+        attackDurationMS: 1500,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -499,6 +505,8 @@ describe('Bot Component', () => {
       const disabledWalkSettings: BotSettings = {
         walkEnabled: false,
         walkDurationMS: 10,
+        attackEnabled: false,
+        attackDurationMS: 1500,
       };
 
       let renderer: ReactThreeTestRenderer;

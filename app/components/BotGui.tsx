@@ -30,6 +30,14 @@ export function BotGui({ settingsRef, onSettingsChange }: BotGuiProps) {
       .add(settingsRef.current, 'walkDurationMS', 100, 5000, 100)
       .name('Walk Duration (ms)')
       .onChange(onSettingsChange);
+    gui
+      .add(settingsRef.current, 'attackEnabled')
+      .name('Attack Enabled')
+      .onChange(onSettingsChange);
+    gui
+      .add(settingsRef.current, 'attackDurationMS', 100, 5000, 100)
+      .name('Attack Duration (ms)')
+      .onChange(onSettingsChange);
 
     return () => {
       gui.destroy();
