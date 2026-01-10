@@ -259,11 +259,11 @@ export function Bot({ id, onDeath, settings }: BotProps) {
     const blockSize = 0.08;
     const gap = 0.04;
     const totalWidth = hp * blockSize + (hp - 1) * gap;
-    const startX = -totalWidth / 2 + blockSize / 2;
+    const startZ = -totalWidth / 2 + blockSize / 2;
 
     for (let i = 0; i < hp; i++) {
       blocks.push(
-        <mesh key={i} position={[startX + i * (blockSize + gap), 0, 0]}>
+        <mesh key={i} position={[0, 0, startZ + i * (blockSize + gap)]}>
           <boxGeometry args={[blockSize, blockSize, blockSize]} />
           <meshStandardMaterial color="red" />
         </mesh>,
