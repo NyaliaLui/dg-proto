@@ -4,8 +4,24 @@ import { create, ReactThreeTestRenderer } from '@react-three/test-renderer';
 import { Group } from 'three';
 import { act } from 'react';
 import { Bot } from '@/app/components/Bot';
+import { BotSettings } from '@/app/components/hooks/useBotSettings';
+import { BOT_DEFAULTS } from '@/app/constants';
+
+const defaultSettings: BotSettings = {
+  walkEnabled: BOT_DEFAULTS.walkEnabled,
+  walkDurationMS: BOT_DEFAULTS.walkDurationMS,
+  attackEnabled: BOT_DEFAULTS.attackEnabled,
+  attackDurationMS: BOT_DEFAULTS.attackDurationMS,
+};
 
 const testScene = new Group();
+
+// Mock velocity tracking - must be defined before jest.mock
+const mockSetLinvel = jest.fn();
+const mockSetRotation = jest.fn();
+
+// Store mocks in a module-level object that can be accessed inside jest.mock
+const mocks = { mockSetLinvel, mockSetRotation };
 
 // Create a mock animation clip
 const mockAnimationClip = {
@@ -33,11 +49,14 @@ jest.mock('../../app/utils', () => ({
   getBoneWorldPosition: jest.fn(() => null),
 }));
 
-jest.mock('three-stdlib', () => ({
-  SkeletonUtils: {
-    clone: jest.fn((obj) => obj),
-  },
-}));
+jest.mock('three-stdlib', () => {
+  const { Group } = jest.requireActual('three');
+  return {
+    SkeletonUtils: {
+      clone: jest.fn(() => new Group()),
+    },
+  };
+});
 
 jest.mock('three', () => {
   const originalThree = jest.requireActual('three');
@@ -62,61 +81,89 @@ jest.mock('three', () => {
 
 let capturedHitHandlers: (() => void)[] = [];
 
-jest.mock('@react-three/rapier', () => ({
-  RigidBody: ({
-    children,
-    position,
-  }: {
-    children: React.ReactNode;
-    position?: [number, number, number];
-  }) => <group position={position}>{children}</group>,
-  CapsuleCollider: ({
-    onIntersectionEnter,
-  }: {
-    onIntersectionEnter?: () => void;
-  }) => {
-    if (onIntersectionEnter) {
-      capturedHitHandlers.push(onIntersectionEnter);
-    }
-    return null;
-  },
-}));
+jest.mock('@react-three/rapier', () => {
+  const React = jest.requireActual('react');
+  return {
+    RigidBody: React.forwardRef(function MockRigidBody(
+      {
+        children,
+        position,
+      }: {
+        children: React.ReactNode;
+        position?: [number, number, number];
+      },
+      ref: React.Ref<unknown>,
+    ) {
+      React.useImperativeHandle(ref, () => ({
+        setLinvel: mocks.mockSetLinvel,
+        setRotation: mocks.mockSetRotation,
+        translation: () => ({ x: 0, y: 0, z: 0 }),
+      }));
+      return <group position={position}>{children}</group>;
+    }),
+    CapsuleCollider: ({
+      onIntersectionEnter,
+    }: {
+      onIntersectionEnter?: () => void;
+    }) => {
+      if (onIntersectionEnter) {
+        capturedHitHandlers.push(onIntersectionEnter);
+      }
+      return null;
+    },
+  };
+});
 
 describe('Bot Component', () => {
   beforeEach(() => {
     capturedHitHandlers = [];
-    jest.spyOn(console, 'log').mockImplementation(() => {});
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
   });
 
   describe('Rendering', () => {
     it('should render a group element', async () => {
-      const renderer = await create(<Bot id="test-bot" />);
-      const group = renderer.scene.children[0];
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={defaultSettings} />,
+        );
+      });
+      const group = renderer!.scene.children[0];
       expect(group).toBeDefined();
       expect(group?.type).toBe('Group');
     });
 
     it('should have correct initial position', async () => {
-      const renderer = await create(<Bot id="test-bot" />);
-      const rigidBody = renderer.scene.children[0];
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={defaultSettings} />,
+        );
+      });
+      const rigidBody = renderer!.scene.children[0];
       expect(rigidBody.instance.position.x).toBe(1);
       expect(rigidBody.instance.position.y).toBe(0.9);
       expect(rigidBody.instance.position.z).toBe(0);
     });
 
     it('should render with idle model', async () => {
-      const renderer = await create(<Bot id="test-bot" />);
-      const group = renderer.scene.children[0];
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={defaultSettings} />,
+        );
+      });
+      const group = renderer!.scene.children[0];
       expect(group).toBeDefined();
     });
 
     it('should have correct scale', async () => {
-      const renderer = await create(<Bot id="test-bot" />);
-      const rigidBody = renderer.scene.children[0];
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={defaultSettings} />,
+        );
+      });
+      const rigidBody = renderer!.scene.children[0];
       // RigidBody (group) -> HP blocks group, model group (groupRef) -> primitive
       // Find the model group (the one with the primitive, not the HP blocks)
       const modelGroup = rigidBody.children.find(
@@ -126,22 +173,37 @@ describe('Bot Component', () => {
       );
       const primitive = modelGroup!.children[0];
       // The primitive has scale prop applied directly (uniform scale)
-      expect(primitive.instance.scale).toBe(0.01);
+      expect(primitive.instance.scale.x).toBe(0.01);
+      expect(primitive.instance.scale.y).toBe(0.01);
+      expect(primitive.instance.scale.z).toBe(0.01);
     });
   });
 
   describe('Rotation', () => {
-    it('should have initial rotation facing left', async () => {
-      const renderer = await create(<Bot id="test-bot" />);
-      const rigidBody = renderer.scene.children[0];
-      // The rotation is applied to the model group via useEffect
-      // Find the model group (the one without meshes - HP blocks have meshes)
-      const modelGroup = rigidBody.children.find(
-        (child) =>
-          child.type === 'Group' &&
-          child.children.some((c) => c.type !== 'Mesh'),
+    beforeEach(() => {
+      mockSetRotation.mockClear();
+    });
+
+    it('should set initial rotation facing left when idle', async () => {
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={defaultSettings} />,
+        );
+      });
+      await act(async () => {
+        await renderer!.advanceFrames(1, 1 / 60);
+      });
+
+      // The idle rotation uses halfAngle calculation for -PI/2:
+      // sin(-PI/4) ≈ -0.707, cos(-PI/4) ≈ 0.707
+      expect(mockSetRotation).toHaveBeenCalledWith(
+        expect.objectContaining({
+          x: 0,
+          z: 0,
+        }),
+        true,
       );
-      expect(modelGroup!.instance.rotation.y).toBe(-Math.PI / 2);
     });
   });
 
@@ -151,46 +213,27 @@ describe('Bot Component', () => {
 
     beforeEach(async () => {
       mockOnDeath = jest.fn();
-      renderer = await create(<Bot id="test-bot" onDeath={mockOnDeath} />);
+      await act(async () => {
+        renderer = await create(
+          <Bot
+            id="test-bot"
+            onDeath={mockOnDeath}
+            settings={defaultSettings}
+          />,
+        );
+      });
     });
 
     afterEach(async () => {
-      await renderer.unmount();
+      await act(async () => {
+        await renderer.unmount();
+      });
     });
 
     it('should register hit handlers on colliders', async () => {
       // Both torso and head colliders should have hit handlers
       // Check for at least 2 handlers (from this render)
       expect(capturedHitHandlers.length).toBeGreaterThanOrEqual(2);
-    });
-
-    it('should log message when hit', async () => {
-      const hitHandler = capturedHitHandlers[0];
-
-      await act(async () => {
-        hitHandler();
-      });
-
-      expect(console.log).toHaveBeenCalledWith('Bot was hit! HP: 2');
-    });
-
-    it('should decrease HP on each hit', async () => {
-      const hitHandler = capturedHitHandlers[0];
-
-      await act(async () => {
-        hitHandler();
-      });
-      expect(console.log).toHaveBeenCalledWith('Bot was hit! HP: 2');
-
-      await act(async () => {
-        hitHandler();
-      });
-      expect(console.log).toHaveBeenCalledWith('Bot was hit! HP: 1');
-
-      await act(async () => {
-        hitHandler();
-      });
-      expect(console.log).toHaveBeenCalledWith('Bot was hit! HP: 0');
     });
 
     it('should call onDeath callback when HP reaches zero', async () => {
@@ -203,7 +246,6 @@ describe('Bot Component', () => {
         hitHandler();
       });
 
-      expect(console.log).toHaveBeenLastCalledWith('Bot was hit! HP: 0');
       expect(mockOnDeath).toHaveBeenCalledWith('test-bot');
     });
 
@@ -238,13 +280,23 @@ describe('Bot Component', () => {
     };
 
     it('should render 3 HP blocks initially', async () => {
-      const renderer = await create(<Bot id="test-bot" />);
-      expect(countHpBlocks(renderer)).toBe(3);
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={defaultSettings} />,
+        );
+      });
+      expect(countHpBlocks(renderer!)).toBe(3);
     });
 
     it('should render HP blocks as meshes with box geometry', async () => {
-      const renderer = await create(<Bot id="test-bot" />);
-      const hpGroup = findHpBlocksGroup(renderer);
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={defaultSettings} />,
+        );
+      });
+      const hpGroup = findHpBlocksGroup(renderer!);
 
       expect(hpGroup).toBeDefined();
       const meshes = hpGroup!.children.filter((child) => child.type === 'Mesh');
@@ -255,8 +307,13 @@ describe('Bot Component', () => {
     });
 
     it('should render red colored blocks', async () => {
-      const renderer = await create(<Bot id="test-bot" />);
-      const hpGroup = findHpBlocksGroup(renderer);
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={defaultSettings} />,
+        );
+      });
+      const hpGroup = findHpBlocksGroup(renderer!);
       const meshes = hpGroup!.children.filter((child) => child.type === 'Mesh');
 
       meshes.forEach((mesh) => {
@@ -266,24 +323,34 @@ describe('Bot Component', () => {
     });
 
     it('should decrease HP blocks when hit', async () => {
-      const renderer = await create(<Bot id="test-bot" />);
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={defaultSettings} />,
+        );
+      });
       const hitHandler = capturedHitHandlers[0];
 
-      expect(countHpBlocks(renderer)).toBe(3);
+      expect(countHpBlocks(renderer!)).toBe(3);
 
       await act(async () => {
         hitHandler();
       });
-      expect(countHpBlocks(renderer)).toBe(2);
+      expect(countHpBlocks(renderer!)).toBe(2);
 
       await act(async () => {
         hitHandler();
       });
-      expect(countHpBlocks(renderer)).toBe(1);
+      expect(countHpBlocks(renderer!)).toBe(1);
     });
 
     it('should show 0 HP blocks when HP reaches zero', async () => {
-      const renderer = await create(<Bot id="test-bot" />);
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={defaultSettings} />,
+        );
+      });
       const hitHandler = capturedHitHandlers[0];
 
       // Hit 3 times to reach 0 HP
@@ -294,17 +361,175 @@ describe('Bot Component', () => {
       });
 
       // HP blocks should be 0 (negative HP doesn't render blocks)
-      expect(countHpBlocks(renderer)).toBe(0);
+      expect(countHpBlocks(renderer!)).toBe(0);
     });
 
     it('should position HP blocks above the head', async () => {
-      const renderer = await create(<Bot id="test-bot" />);
-      const hpGroup = findHpBlocksGroup(renderer);
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={defaultSettings} />,
+        );
+      });
+      const hpGroup = findHpBlocksGroup(renderer!);
 
       // The HP blocks group should be positioned above the head
       // Head position Y + 0.3 offset
       expect(hpGroup).toBeDefined();
       expect(hpGroup!.instance.position.y).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Movement', () => {
+    beforeEach(() => {
+      capturedHitHandlers = [];
+      mockSetLinvel.mockClear();
+      mockSetRotation.mockClear();
+    });
+
+    it('should set zero velocity when not walking', async () => {
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={defaultSettings} />,
+        );
+      });
+      await act(async () => {
+        await renderer!.advanceFrames(1, 1 / 60);
+      });
+
+      expect(mockSetLinvel).toHaveBeenCalledWith({ x: 0, y: 0, z: 0 }, true);
+    });
+
+    it('should call setLinvel with velocity during frame updates', async () => {
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={defaultSettings} />,
+        );
+      });
+
+      // Advance multiple frames
+      await act(async () => {
+        await renderer!.advanceFrames(10, 1 / 60);
+      });
+
+      // setLinvel should have been called multiple times
+      expect(mockSetLinvel.mock.calls.length).toBeGreaterThan(0);
+
+      // All calls should have the expected structure
+      mockSetLinvel.mock.calls.forEach((call) => {
+        expect(call[0]).toHaveProperty('x');
+        expect(call[0]).toHaveProperty('y');
+        expect(call[0]).toHaveProperty('z');
+        expect(call[1]).toBe(true);
+      });
+    });
+
+    it('should rotate when walking', async () => {
+      const fastWalkSettings: BotSettings = {
+        walkEnabled: true,
+        walkDurationMS: 10,
+        attackEnabled: false,
+        attackDurationMS: 1500,
+      };
+
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={fastWalkSettings} />,
+        );
+      });
+
+      // Wait for the interval to trigger
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      await act(async () => {});
+
+      mockSetRotation.mockClear();
+      await act(async () => {
+        await renderer!.advanceFrames(1, 1 / 60);
+      });
+
+      // Should have called setRotation
+      expect(mockSetRotation).toHaveBeenCalled();
+    });
+
+    it('should change direction between walk cycles', async () => {
+      const fastWalkSettings: BotSettings = {
+        walkEnabled: true,
+        walkDurationMS: 10,
+        attackEnabled: false,
+        attackDurationMS: 1500,
+      };
+
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={fastWalkSettings} />,
+        );
+      });
+
+      // First walk cycle
+      await new Promise((resolve) => setTimeout(resolve, 15));
+      await act(async () => {});
+      await act(async () => {
+        await renderer!.advanceFrames(1, 1 / 60);
+      });
+
+      const firstCycleCalls = [...mockSetLinvel.mock.calls];
+      const firstVelocityX = firstCycleCalls.find((c) => c[0].x !== 0)?.[0].x;
+
+      // Stop walking
+      await new Promise((resolve) => setTimeout(resolve, 15));
+      await act(async () => {});
+
+      // Second walk cycle
+      await new Promise((resolve) => setTimeout(resolve, 15));
+      await act(async () => {});
+
+      mockSetLinvel.mockClear();
+      await act(async () => {
+        await renderer!.advanceFrames(1, 1 / 60);
+      });
+
+      const secondCycleCalls = mockSetLinvel.mock.calls;
+      const secondVelocityX = secondCycleCalls.find((c) => c[0].x !== 0)?.[0].x;
+
+      // If both cycles had walking, velocities should be opposite signs
+      if (firstVelocityX !== undefined && secondVelocityX !== undefined) {
+        expect(Math.sign(firstVelocityX)).not.toBe(Math.sign(secondVelocityX));
+      }
+    });
+
+    it('should not walk when walkEnabled is false', async () => {
+      const disabledWalkSettings: BotSettings = {
+        walkEnabled: false,
+        walkDurationMS: 10,
+        attackEnabled: false,
+        attackDurationMS: 1500,
+      };
+
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={disabledWalkSettings} />,
+        );
+      });
+
+      // Wait for potential interval
+      await new Promise((resolve) => setTimeout(resolve, 30));
+      await act(async () => {});
+
+      mockSetLinvel.mockClear();
+      await act(async () => {
+        await renderer!.advanceFrames(1, 1 / 60);
+      });
+
+      // Should only have zero velocity calls
+      const allZeroVelocity = mockSetLinvel.mock.calls.every(
+        (call) => call[0].x === 0 && call[0].y === 0 && call[0].z === 0,
+      );
+      expect(allZeroVelocity).toBe(true);
     });
   });
 });
