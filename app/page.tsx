@@ -9,6 +9,8 @@ import { Bot } from '@/app/components/Bot';
 import { World } from '@/app/components/World';
 import { useKeyboardControls } from '@/app/components/hooks/useKeyboardControls';
 import { Controls } from '@/app/components/Controls';
+import { BotGui } from '@/app/components/BotGui';
+import { useBotSettings } from '@/app/components/hooks/useBotSettings';
 import { ENVIRONMENT_DEFAULTS, GAME_DEFAULTS } from '@/app/constants';
 
 function createInitialBots(): Record<string, boolean> {
@@ -21,6 +23,7 @@ function createInitialBots(): Record<string, boolean> {
 
 export default function Home() {
   const { keys, updateKey } = useKeyboardControls();
+  const { settingsRef, updateSettings } = useBotSettings();
   const [bots, setBots] = useState<Record<string, boolean>>(createInitialBots);
 
   const handleBotDeath = useCallback((id: string) => {
@@ -33,9 +36,14 @@ export default function Home() {
 
   const botComponents = useMemo(() => {
     return Object.keys(bots).map((id) => (
-      <Bot key={id} id={id} onDeath={handleBotDeath} />
+      <Bot
+        key={id}
+        id={id}
+        onDeath={handleBotDeath}
+        settings={settingsRef.current}
+      />
     ));
-  }, [bots, handleBotDeath]);
+  }, [bots, handleBotDeath, settingsRef]);
 
   return (
     <div className="flex h-screen w-full bg-zinc-900">
@@ -63,6 +71,7 @@ export default function Home() {
         />
       </Canvas>
       <Controls updateKey={updateKey} />
+      <BotGui settingsRef={settingsRef} onSettingsChange={updateSettings} />
     </div>
   );
 }

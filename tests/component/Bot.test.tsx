@@ -4,7 +4,13 @@ import { create, ReactThreeTestRenderer } from '@react-three/test-renderer';
 import { Group } from 'three';
 import { act } from 'react';
 import { Bot } from '@/app/components/Bot';
-import { CHARACTER_DEFAULTS, BOT_DEFAULTS } from '@/app/constants';
+import { BotSettings } from '@/app/components/hooks/useBotSettings';
+import { BOT_DEFAULTS } from '@/app/constants';
+
+const defaultSettings: BotSettings = {
+  walkEnabled: BOT_DEFAULTS.walkEnabled,
+  walkDurationMS: BOT_DEFAULTS.walkDurationMS,
+};
 
 const testScene = new Group();
 
@@ -113,29 +119,49 @@ describe('Bot Component', () => {
 
   describe('Rendering', () => {
     it('should render a group element', async () => {
-      const renderer = await create(<Bot id="test-bot" />);
-      const group = renderer.scene.children[0];
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={defaultSettings} />,
+        );
+      });
+      const group = renderer!.scene.children[0];
       expect(group).toBeDefined();
       expect(group?.type).toBe('Group');
     });
 
     it('should have correct initial position', async () => {
-      const renderer = await create(<Bot id="test-bot" />);
-      const rigidBody = renderer.scene.children[0];
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={defaultSettings} />,
+        );
+      });
+      const rigidBody = renderer!.scene.children[0];
       expect(rigidBody.instance.position.x).toBe(1);
       expect(rigidBody.instance.position.y).toBe(0.9);
       expect(rigidBody.instance.position.z).toBe(0);
     });
 
     it('should render with idle model', async () => {
-      const renderer = await create(<Bot id="test-bot" />);
-      const group = renderer.scene.children[0];
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={defaultSettings} />,
+        );
+      });
+      const group = renderer!.scene.children[0];
       expect(group).toBeDefined();
     });
 
     it('should have correct scale', async () => {
-      const renderer = await create(<Bot id="test-bot" />);
-      const rigidBody = renderer.scene.children[0];
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={defaultSettings} />,
+        );
+      });
+      const rigidBody = renderer!.scene.children[0];
       // RigidBody (group) -> HP blocks group, model group (groupRef) -> primitive
       // Find the model group (the one with the primitive, not the HP blocks)
       const modelGroup = rigidBody.children.find(
@@ -157,8 +183,15 @@ describe('Bot Component', () => {
     });
 
     it('should set initial rotation facing left when idle', async () => {
-      const renderer = await create(<Bot id="test-bot" />);
-      await renderer.advanceFrames(1, 1 / 60);
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={defaultSettings} />,
+        );
+      });
+      await act(async () => {
+        await renderer!.advanceFrames(1, 1 / 60);
+      });
 
       // The idle rotation uses halfAngle calculation for -PI/2:
       // sin(-PI/4) ≈ -0.707, cos(-PI/4) ≈ 0.707
@@ -178,11 +211,21 @@ describe('Bot Component', () => {
 
     beforeEach(async () => {
       mockOnDeath = jest.fn();
-      renderer = await create(<Bot id="test-bot" onDeath={mockOnDeath} />);
+      await act(async () => {
+        renderer = await create(
+          <Bot
+            id="test-bot"
+            onDeath={mockOnDeath}
+            settings={defaultSettings}
+          />,
+        );
+      });
     });
 
     afterEach(async () => {
-      await renderer.unmount();
+      await act(async () => {
+        await renderer.unmount();
+      });
     });
 
     it('should register hit handlers on colliders', async () => {
@@ -235,13 +278,23 @@ describe('Bot Component', () => {
     };
 
     it('should render 3 HP blocks initially', async () => {
-      const renderer = await create(<Bot id="test-bot" />);
-      expect(countHpBlocks(renderer)).toBe(3);
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={defaultSettings} />,
+        );
+      });
+      expect(countHpBlocks(renderer!)).toBe(3);
     });
 
     it('should render HP blocks as meshes with box geometry', async () => {
-      const renderer = await create(<Bot id="test-bot" />);
-      const hpGroup = findHpBlocksGroup(renderer);
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={defaultSettings} />,
+        );
+      });
+      const hpGroup = findHpBlocksGroup(renderer!);
 
       expect(hpGroup).toBeDefined();
       const meshes = hpGroup!.children.filter((child) => child.type === 'Mesh');
@@ -252,8 +305,13 @@ describe('Bot Component', () => {
     });
 
     it('should render red colored blocks', async () => {
-      const renderer = await create(<Bot id="test-bot" />);
-      const hpGroup = findHpBlocksGroup(renderer);
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={defaultSettings} />,
+        );
+      });
+      const hpGroup = findHpBlocksGroup(renderer!);
       const meshes = hpGroup!.children.filter((child) => child.type === 'Mesh');
 
       meshes.forEach((mesh) => {
@@ -263,24 +321,34 @@ describe('Bot Component', () => {
     });
 
     it('should decrease HP blocks when hit', async () => {
-      const renderer = await create(<Bot id="test-bot" />);
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={defaultSettings} />,
+        );
+      });
       const hitHandler = capturedHitHandlers[0];
 
-      expect(countHpBlocks(renderer)).toBe(3);
+      expect(countHpBlocks(renderer!)).toBe(3);
 
       await act(async () => {
         hitHandler();
       });
-      expect(countHpBlocks(renderer)).toBe(2);
+      expect(countHpBlocks(renderer!)).toBe(2);
 
       await act(async () => {
         hitHandler();
       });
-      expect(countHpBlocks(renderer)).toBe(1);
+      expect(countHpBlocks(renderer!)).toBe(1);
     });
 
     it('should show 0 HP blocks when HP reaches zero', async () => {
-      const renderer = await create(<Bot id="test-bot" />);
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={defaultSettings} />,
+        );
+      });
       const hitHandler = capturedHitHandlers[0];
 
       // Hit 3 times to reach 0 HP
@@ -291,12 +359,17 @@ describe('Bot Component', () => {
       });
 
       // HP blocks should be 0 (negative HP doesn't render blocks)
-      expect(countHpBlocks(renderer)).toBe(0);
+      expect(countHpBlocks(renderer!)).toBe(0);
     });
 
     it('should position HP blocks above the head', async () => {
-      const renderer = await create(<Bot id="test-bot" />);
-      const hpGroup = findHpBlocksGroup(renderer);
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={defaultSettings} />,
+        );
+      });
+      const hpGroup = findHpBlocksGroup(renderer!);
 
       // The HP blocks group should be positioned above the head
       // Head position Y + 0.3 offset
@@ -313,17 +386,31 @@ describe('Bot Component', () => {
     });
 
     it('should set zero velocity when not walking', async () => {
-      const renderer = await create(<Bot id="test-bot" />);
-      await renderer.advanceFrames(1, 1 / 60);
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={defaultSettings} />,
+        );
+      });
+      await act(async () => {
+        await renderer!.advanceFrames(1, 1 / 60);
+      });
 
       expect(mockSetLinvel).toHaveBeenCalledWith({ x: 0, y: 0, z: 0 }, true);
     });
 
     it('should call setLinvel with velocity during frame updates', async () => {
-      const renderer = await create(<Bot id="test-bot" />);
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={defaultSettings} />,
+        );
+      });
 
       // Advance multiple frames
-      await renderer.advanceFrames(10, 1 / 60);
+      await act(async () => {
+        await renderer!.advanceFrames(10, 1 / 60);
+      });
 
       // setLinvel should have been called multiple times
       expect(mockSetLinvel.mock.calls.length).toBeGreaterThan(0);
@@ -338,35 +425,50 @@ describe('Bot Component', () => {
     });
 
     it('should rotate when walking', async () => {
-      const originalWalkDurationMS = BOT_DEFAULTS.walkDurationMS;
-      BOT_DEFAULTS.walkDurationMS = 10;
+      const fastWalkSettings: BotSettings = {
+        walkEnabled: true,
+        walkDurationMS: 10,
+      };
 
-      const renderer = await create(<Bot id="test-bot" />);
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={fastWalkSettings} />,
+        );
+      });
 
       // Wait for the interval to trigger
       await new Promise((resolve) => setTimeout(resolve, 20));
       await act(async () => {});
 
       mockSetRotation.mockClear();
-      await renderer.advanceFrames(1, 1 / 60);
+      await act(async () => {
+        await renderer!.advanceFrames(1, 1 / 60);
+      });
 
       // Should have called setRotation
       expect(mockSetRotation).toHaveBeenCalled();
-
-      // Restore
-      BOT_DEFAULTS.walkDurationMS = originalWalkDurationMS;
     });
 
     it('should change direction between walk cycles', async () => {
-      const originalWalkDurationMS = BOT_DEFAULTS.walkDurationMS;
-      BOT_DEFAULTS.walkDurationMS = 10;
+      const fastWalkSettings: BotSettings = {
+        walkEnabled: true,
+        walkDurationMS: 10,
+      };
 
-      const renderer = await create(<Bot id="test-bot" />);
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={fastWalkSettings} />,
+        );
+      });
 
       // First walk cycle
       await new Promise((resolve) => setTimeout(resolve, 15));
       await act(async () => {});
-      await renderer.advanceFrames(1, 1 / 60);
+      await act(async () => {
+        await renderer!.advanceFrames(1, 1 / 60);
+      });
 
       const firstCycleCalls = [...mockSetLinvel.mock.calls];
       const firstVelocityX = firstCycleCalls.find((c) => c[0].x !== 0)?.[0].x;
@@ -380,7 +482,9 @@ describe('Bot Component', () => {
       await act(async () => {});
 
       mockSetLinvel.mockClear();
-      await renderer.advanceFrames(1, 1 / 60);
+      await act(async () => {
+        await renderer!.advanceFrames(1, 1 / 60);
+      });
 
       const secondCycleCalls = mockSetLinvel.mock.calls;
       const secondVelocityX = secondCycleCalls.find((c) => c[0].x !== 0)?.[0].x;
@@ -389,36 +493,35 @@ describe('Bot Component', () => {
       if (firstVelocityX !== undefined && secondVelocityX !== undefined) {
         expect(Math.sign(firstVelocityX)).not.toBe(Math.sign(secondVelocityX));
       }
-
-      // Restore
-      BOT_DEFAULTS.walkDurationMS = originalWalkDurationMS;
     });
 
     it('should not walk when walkEnabled is false', async () => {
-      const originalWalkEnabled = BOT_DEFAULTS.walkEnabled;
-      const originalWalkDurationMS = BOT_DEFAULTS.walkDurationMS;
+      const disabledWalkSettings: BotSettings = {
+        walkEnabled: false,
+        walkDurationMS: 10,
+      };
 
-      BOT_DEFAULTS.walkEnabled = false;
-      BOT_DEFAULTS.walkDurationMS = 10;
-
-      const renderer = await create(<Bot id="test-bot" />);
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={disabledWalkSettings} />,
+        );
+      });
 
       // Wait for potential interval
       await new Promise((resolve) => setTimeout(resolve, 30));
       await act(async () => {});
 
       mockSetLinvel.mockClear();
-      await renderer.advanceFrames(1, 1 / 60);
+      await act(async () => {
+        await renderer!.advanceFrames(1, 1 / 60);
+      });
 
       // Should only have zero velocity calls
       const allZeroVelocity = mockSetLinvel.mock.calls.every(
         (call) => call[0].x === 0 && call[0].y === 0 && call[0].z === 0,
       );
       expect(allZeroVelocity).toBe(true);
-
-      // Restore
-      BOT_DEFAULTS.walkEnabled = originalWalkEnabled;
-      BOT_DEFAULTS.walkDurationMS = originalWalkDurationMS;
     });
   });
 });

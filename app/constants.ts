@@ -35,7 +35,7 @@ export const CHARACTER_DEFAULTS = {
 };
 
 export const BOT_DEFAULTS = {
-  walkEnabled: true,
+  walkEnabled: false,
   walkDurationMS: 500,
 };
 

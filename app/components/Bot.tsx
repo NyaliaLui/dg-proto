@@ -12,7 +12,8 @@ import * as THREE from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 import { SkeletonHelper } from 'three';
 
-import { CHARACTER_DEFAULTS, BOT_DEFAULTS } from '@/app/constants';
+import { CHARACTER_DEFAULTS } from '@/app/constants';
+import { BotSettings } from '@/app/components/hooks/useBotSettings';
 import {
   getAnimation,
   getBoneList,
@@ -24,9 +25,10 @@ import {
 interface BotProps {
   id: string;
   onDeath?: (id: string) => void;
+  settings: BotSettings;
 }
 
-export function Bot({ id, onDeath }: BotProps) {
+export function Bot({ id, onDeath, settings }: BotProps) {
   const rigidBodyRef = useRef<RapierRigidBody>(null);
   const modelRef = useRef<THREE.Group>(null);
   const lastRotationRef = useRef<number>(-Math.PI / 2);
@@ -94,12 +96,11 @@ export function Bot({ id, onDeath }: BotProps) {
     return isWalking ? walkAnim : idleAnim;
   }, [isWalking, walkAnim, idleAnim]);
 
-  // Simple patrol behavior: toggle walking every 3 seconds and change direction
+  // Simple patrol behavior: toggle walking every walkDurationMS and change direction
   useEffect(() => {
-    if (!BOT_DEFAULTS.walkEnabled) return;
-
     const interval = setInterval(() => {
       setIsWalking((prev) => {
+        if (!settings.walkEnabled) return false;
         if (!prev && !wasWalkingRef.current) {
           // Starting to walk, change direction
           setDirection((d) => d * -1);
@@ -107,10 +108,10 @@ export function Bot({ id, onDeath }: BotProps) {
         wasWalkingRef.current = !prev;
         return !prev;
       });
-    }, BOT_DEFAULTS.walkDurationMS);
+    }, settings.walkDurationMS);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [settings.walkEnabled, settings.walkDurationMS]);
 
   useEffect(() => {
     // Clean up previous mixer
