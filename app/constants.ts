@@ -63,6 +63,7 @@ export const CONTROLS_DEFAULTS = {
 
 export const GAME_DEFAULTS = {
   INITIAL_BOT_COUNT: 1,
+  INITIAL_BOT_HP: 3,
   PLAYER_MAX_HP: 100,
 };
 
