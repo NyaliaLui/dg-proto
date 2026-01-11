@@ -124,10 +124,10 @@ describe('Character Component', () => {
   const mockKeys = CONTROLS_DEFAULTS.KEYBOARD;
   const defaultSettings: DebugSettings = {
     debugMode: false,
-    walkEnabled: BOT_DEFAULTS.walkEnabled,
-    walkDurationMS: BOT_DEFAULTS.walkDurationMS,
-    attackEnabled: BOT_DEFAULTS.attackEnabled,
-    attackDurationMS: BOT_DEFAULTS.attackDurationMS,
+    enableBotWalk: BOT_DEFAULTS.enableBotWalk,
+    botWalkDurationMS: BOT_DEFAULTS.botWalkDurationMS,
+    enableBotAttack: BOT_DEFAULTS.enableBotAttack,
+    botAttackDurationMS: BOT_DEFAULTS.botAttackDurationMS,
   };
 
   describe('Rendering', () => {

@@ -3,18 +3,18 @@ import { BOT_DEFAULTS } from '@/app/constants';
 
 export interface DebugSettings {
   debugMode: boolean;
-  walkEnabled: boolean;
-  walkDurationMS: number;
-  attackEnabled: boolean;
-  attackDurationMS: number;
+  enableBotWalk: boolean;
+  botWalkDurationMS: number;
+  enableBotAttack: boolean;
+  botAttackDurationMS: number;
 }
 
 export const DEFAULT_DEBUG_SETTINGS: DebugSettings = {
   debugMode: false,
-  walkEnabled: BOT_DEFAULTS.walkEnabled,
-  walkDurationMS: BOT_DEFAULTS.walkDurationMS,
-  attackEnabled: BOT_DEFAULTS.attackEnabled,
-  attackDurationMS: BOT_DEFAULTS.attackDurationMS,
+  enableBotWalk: BOT_DEFAULTS.enableBotWalk,
+  botWalkDurationMS: BOT_DEFAULTS.botWalkDurationMS,
+  enableBotAttack: BOT_DEFAULTS.enableBotAttack,
+  botAttackDurationMS: BOT_DEFAULTS.botAttackDurationMS,
 };
 
 export function useDebugSettings() {

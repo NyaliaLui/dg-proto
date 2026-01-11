@@ -35,10 +35,10 @@ export const CHARACTER_DEFAULTS = {
 };
 
 export const BOT_DEFAULTS = {
-  walkEnabled: false,
-  walkDurationMS: 500,
-  attackEnabled: false,
-  attackDurationMS: 1500,
+  enableBotWalk: false,
+  botWalkDurationMS: 500,
+  enableBotAttack: false,
+  botAttackDurationMS: 1500,
 };
 
 export const CONTROLS_DEFAULTS = {

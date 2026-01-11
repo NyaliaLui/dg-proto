@@ -37,22 +37,26 @@ export function DebugGui({ settings, onSettingsChange }: DebugGuiProps) {
       .name('Debug Mode')
       .onChange((value: boolean) => onSettingsChange({ debugMode: value }));
     gui
-      .add(settingsObjRef.current, 'walkEnabled')
-      .name('Walk Enabled')
-      .onChange((value: boolean) => onSettingsChange({ walkEnabled: value }));
+      .add(settingsObjRef.current, 'enableBotWalk')
+      .name('Enable Bot Walk')
+      .onChange((value: boolean) => onSettingsChange({ enableBotWalk: value }));
     gui
-      .add(settingsObjRef.current, 'walkDurationMS', 100, 5000, 100)
-      .name('Walk Duration (ms)')
-      .onChange((value: number) => onSettingsChange({ walkDurationMS: value }));
-    gui
-      .add(settingsObjRef.current, 'attackEnabled')
-      .name('Attack Enabled')
-      .onChange((value: boolean) => onSettingsChange({ attackEnabled: value }));
-    gui
-      .add(settingsObjRef.current, 'attackDurationMS', 100, 5000, 100)
-      .name('Attack Duration (ms)')
+      .add(settingsObjRef.current, 'botWalkDurationMS', 100, 5000, 100)
+      .name('Bot Walk Duration (ms)')
       .onChange((value: number) =>
-        onSettingsChange({ attackDurationMS: value }),
+        onSettingsChange({ botWalkDurationMS: value }),
+      );
+    gui
+      .add(settingsObjRef.current, 'enableBotAttack')
+      .name('Enable Bot Attack')
+      .onChange((value: boolean) =>
+        onSettingsChange({ enableBotAttack: value }),
+      );
+    gui
+      .add(settingsObjRef.current, 'botAttackDurationMS', 100, 5000, 100)
+      .name('Bot Attack Duration (ms)')
+      .onChange((value: number) =>
+        onSettingsChange({ botAttackDurationMS: value }),
       );
 
     return () => {

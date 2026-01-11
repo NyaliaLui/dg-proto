@@ -9,10 +9,10 @@ import { BOT_DEFAULTS, GAME_DEFAULTS } from '@/app/constants';
 
 const defaultSettings: DebugSettings = {
   debugMode: false,
-  walkEnabled: BOT_DEFAULTS.walkEnabled,
-  walkDurationMS: BOT_DEFAULTS.walkDurationMS,
-  attackEnabled: BOT_DEFAULTS.attackEnabled,
-  attackDurationMS: BOT_DEFAULTS.attackDurationMS,
+  enableBotWalk: BOT_DEFAULTS.enableBotWalk,
+  botWalkDurationMS: BOT_DEFAULTS.botWalkDurationMS,
+  enableBotAttack: BOT_DEFAULTS.enableBotAttack,
+  botAttackDurationMS: BOT_DEFAULTS.botAttackDurationMS,
 };
 
 const testScene = new Group();
@@ -431,10 +431,10 @@ describe('Bot Component', () => {
     it('should rotate when walking', async () => {
       const fastWalkSettings: DebugSettings = {
         debugMode: false,
-        walkEnabled: true,
-        walkDurationMS: 10,
-        attackEnabled: false,
-        attackDurationMS: 1500,
+        enableBotWalk: true,
+        botWalkDurationMS: 10,
+        enableBotAttack: false,
+        botAttackDurationMS: 1500,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -460,10 +460,10 @@ describe('Bot Component', () => {
     it('should change direction between walk cycles', async () => {
       const fastWalkSettings: DebugSettings = {
         debugMode: false,
-        walkEnabled: true,
-        walkDurationMS: 10,
-        attackEnabled: false,
-        attackDurationMS: 1500,
+        enableBotWalk: true,
+        botWalkDurationMS: 10,
+        enableBotAttack: false,
+        botAttackDurationMS: 1500,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -505,13 +505,13 @@ describe('Bot Component', () => {
       }
     });
 
-    it('should not walk when walkEnabled is false', async () => {
+    it('should not walk when enableBotWalk is false', async () => {
       const disabledWalkSettings: DebugSettings = {
         debugMode: false,
-        walkEnabled: false,
-        walkDurationMS: 10,
-        attackEnabled: false,
-        attackDurationMS: 1500,
+        enableBotWalk: false,
+        botWalkDurationMS: 10,
+        enableBotAttack: false,
+        botAttackDurationMS: 1500,
       };
 
       let renderer: ReactThreeTestRenderer;
