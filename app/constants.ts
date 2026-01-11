@@ -67,6 +67,10 @@ export const GAME_DEFAULTS = {
   PLAYER_MAX_HP: 100,
 };
 
+export const DEFAULT_COLORS = {
+  HP_RED: '#f05252',
+};
+
 export const ENVIRONMENT_DEFAULTS = {
   enableShadows: true,
   ambientLight: {

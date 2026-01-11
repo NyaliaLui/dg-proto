@@ -5,7 +5,7 @@ import { Group } from 'three';
 import { act } from 'react';
 import { Bot } from '@/app/components/Bot';
 import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
-import { BOT_DEFAULTS, GAME_DEFAULTS } from '@/app/constants';
+import { BOT_DEFAULTS, GAME_DEFAULTS, DEFAULT_COLORS } from '@/app/constants';
 
 const defaultSettings: DebugSettings = {
   debugMode: false,
@@ -318,9 +318,12 @@ describe('Bot Component', () => {
       const hpGroup = findHpBlocksGroup(renderer!);
       const meshes = hpGroup!.children.filter((child) => child.type === 'Mesh');
 
+      // Convert hex string '#f05252' to number 0xf05252
+      const expectedHex = parseInt(DEFAULT_COLORS.HP_RED.slice(1), 16);
+
       meshes.forEach((mesh) => {
-        // Check that the material color is red (0xff0000)
-        expect(mesh.instance.material.color.getHex()).toBe(0xff0000);
+        // Check that the material color is HP red
+        expect(mesh.instance.material.color.getHex()).toBe(expectedHex);
       });
     });
 

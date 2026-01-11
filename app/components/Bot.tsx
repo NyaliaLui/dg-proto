@@ -12,7 +12,11 @@ import * as THREE from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 import { SkeletonHelper } from 'three';
 
-import { CHARACTER_DEFAULTS, GAME_DEFAULTS } from '@/app/constants';
+import {
+  CHARACTER_DEFAULTS,
+  GAME_DEFAULTS,
+  DEFAULT_COLORS,
+} from '@/app/constants';
 import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
 import {
   getAnimation,
@@ -266,7 +270,7 @@ export function Bot({ id, onDeath, settings }: BotProps) {
       blocks.push(
         <mesh key={i} position={[0, 0, startZ + i * (blockSize + gap)]}>
           <boxGeometry args={[blockSize, blockSize, blockSize]} />
-          <meshStandardMaterial color="red" />
+          <meshStandardMaterial color={DEFAULT_COLORS.HP_RED} />
         </mesh>,
       );
     }
