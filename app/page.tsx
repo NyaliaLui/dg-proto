@@ -9,10 +9,10 @@ import { Bot } from '@/app/components/Bot';
 import { World } from '@/app/components/World';
 import { useKeyboardControls } from '@/app/components/hooks/useKeyboardControls';
 import { Controls } from '@/app/components/Controls';
-import { BotGui } from '@/app/components/BotGui';
+import { DebugGui } from '@/app/components/DebugGui';
 import { HealthBar } from '@/app/components/HealthBar';
 import { GameOver } from '@/app/components/GameOver';
-import { useBotSettings } from '@/app/components/hooks/useBotSettings';
+import { useDebugSettings } from '@/app/components/hooks/useDebugSettings';
 import { ENVIRONMENT_DEFAULTS, GAME_DEFAULTS } from '@/app/constants';
 
 function createInitialBots(): Record<string, boolean> {
@@ -25,7 +25,7 @@ function createInitialBots(): Record<string, boolean> {
 
 export default function Home() {
   const { keys, updateKey } = useKeyboardControls();
-  const { settingsRef, updateSettings } = useBotSettings();
+  const { settings, updateSettings } = useDebugSettings();
   const [bots, setBots] = useState<Record<string, boolean>>(createInitialBots);
   const [playerHP, setPlayerHP] = useState(GAME_DEFAULTS.PLAYER_MAX_HP);
 
@@ -43,14 +43,9 @@ export default function Home() {
 
   const botComponents = useMemo(() => {
     return Object.keys(bots).map((id) => (
-      <Bot
-        key={id}
-        id={id}
-        onDeath={handleBotDeath}
-        settings={settingsRef.current}
-      />
+      <Bot key={id} id={id} onDeath={handleBotDeath} settings={settings} />
     ));
-  }, [bots, handleBotDeath, settingsRef]);
+  }, [bots, handleBotDeath, settings]);
 
   return (
     <div className="flex h-screen w-full bg-zinc-900">
@@ -66,9 +61,9 @@ export default function Home() {
           position={ENVIRONMENT_DEFAULTS.directionalLight.position}
           intensity={ENVIRONMENT_DEFAULTS.directionalLight.intensity}
         />
-        <Physics gravity={[0, 0, 0]} debug={ENVIRONMENT_DEFAULTS.physics.debug}>
+        <Physics gravity={[0, 0, 0]} debug={settings.debugMode}>
           {botComponents}
-          <Character keys={keys} onHit={handlePlayerHit} />
+          <Character keys={keys} onHit={handlePlayerHit} settings={settings} />
         </Physics>
         <World />
         <OrbitControls
@@ -78,7 +73,7 @@ export default function Home() {
         />
       </Canvas>
       <Controls updateKey={updateKey} />
-      <BotGui settingsRef={settingsRef} onSettingsChange={updateSettings} />
+      <DebugGui settings={settings} onSettingsChange={updateSettings} />
       <HealthBar currentHP={playerHP} maxHP={GAME_DEFAULTS.PLAYER_MAX_HP} />
       <GameOver show={playerHP <= 0} />
     </div>

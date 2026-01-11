@@ -12,8 +12,12 @@ import * as THREE from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 import { SkeletonHelper } from 'three';
 
-import { CHARACTER_DEFAULTS, GAME_DEFAULTS } from '@/app/constants';
-import { BotSettings } from '@/app/components/hooks/useBotSettings';
+import {
+  CHARACTER_DEFAULTS,
+  GAME_DEFAULTS,
+  DEFAULT_COLORS,
+} from '@/app/constants';
+import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
 import {
   getAnimation,
   getBoneList,
@@ -25,7 +29,7 @@ import {
 interface BotProps {
   id: string;
   onDeath?: (id: string) => void;
-  settings: BotSettings;
+  settings: DebugSettings;
 }
 
 export function Bot({ id, onDeath, settings }: BotProps) {
@@ -81,6 +85,7 @@ export function Bot({ id, onDeath, settings }: BotProps) {
   useEffect(() => {
     if (model) {
       const helper = new SkeletonHelper(model);
+      helper.visible = settings.debugMode;
       const bones = getBoneList(model);
       const boneVertexMap = makeBoneVertexMap(bones);
 
@@ -94,7 +99,7 @@ export function Bot({ id, onDeath, settings }: BotProps) {
         boneVertexMapRef.current = null;
       };
     }
-  }, [model, scene]);
+  }, [model, scene, settings.debugMode]);
 
   // Get the current animation clip based on state (attack > walk > idle)
   const currentAnimation = useMemo(() => {
@@ -103,11 +108,11 @@ export function Bot({ id, onDeath, settings }: BotProps) {
     return idleAnim;
   }, [isAttacking, isWalking, punchAnim, walkAnim, idleAnim]);
 
-  // Simple patrol behavior: toggle walking every walkDurationMS and change direction
+  // Simple patrol behavior: toggle walking every botWalkDurationMS and change direction
   useEffect(() => {
     const interval = setInterval(() => {
       setIsWalking((prev) => {
-        if (!settings.walkEnabled) return false;
+        if (!settings.enableBotWalk) return false;
         if (!prev && !wasWalkingRef.current) {
           // Starting to walk, change direction
           setDirection((d) => d * -1);
@@ -115,22 +120,22 @@ export function Bot({ id, onDeath, settings }: BotProps) {
         wasWalkingRef.current = !prev;
         return !prev;
       });
-    }, settings.walkDurationMS);
+    }, settings.botWalkDurationMS);
 
     return () => clearInterval(interval);
-  }, [settings.walkEnabled, settings.walkDurationMS]);
+  }, [settings.enableBotWalk, settings.botWalkDurationMS]);
 
-  // Attack behavior: toggle attacking every attackDurationMS
+  // Attack behavior: toggle attacking every botAttackDurationMS
   useEffect(() => {
     const interval = setInterval(() => {
       setIsAttacking((prev) => {
-        if (!settings.attackEnabled) return false;
+        if (!settings.enableBotAttack) return false;
         return !prev;
       });
-    }, settings.attackDurationMS);
+    }, settings.botAttackDurationMS);
 
     return () => clearInterval(interval);
-  }, [settings.attackEnabled, settings.attackDurationMS]);
+  }, [settings.enableBotAttack, settings.botAttackDurationMS]);
 
   useEffect(() => {
     // Clean up previous mixer
@@ -265,7 +270,7 @@ export function Bot({ id, onDeath, settings }: BotProps) {
       blocks.push(
         <mesh key={i} position={[0, 0, startZ + i * (blockSize + gap)]}>
           <boxGeometry args={[blockSize, blockSize, blockSize]} />
-          <meshStandardMaterial color="red" />
+          <meshStandardMaterial color={DEFAULT_COLORS.HP_RED} />
         </mesh>,
       );
     }

@@ -35,10 +35,10 @@ export const CHARACTER_DEFAULTS = {
 };
 
 export const BOT_DEFAULTS = {
-  walkEnabled: false,
-  walkDurationMS: 500,
-  attackEnabled: false,
-  attackDurationMS: 1500,
+  enableBotWalk: false,
+  botWalkDurationMS: 500,
+  enableBotAttack: false,
+  botAttackDurationMS: 1500,
 };
 
 export const CONTROLS_DEFAULTS = {
@@ -67,6 +67,10 @@ export const GAME_DEFAULTS = {
   PLAYER_MAX_HP: 100,
 };
 
+export const DEFAULT_COLORS = {
+  HP_RED: '#f05252',
+};
+
 export const ENVIRONMENT_DEFAULTS = {
   enableShadows: true,
   ambientLight: {
@@ -90,8 +94,5 @@ export const ENVIRONMENT_DEFAULTS = {
   texture: {
     ground: '/textures/grass.jpg',
     sky: '/textures/sky.jpg',
-  },
-  physics: {
-    debug: process.env.NEXT_PUBLIC_PHYSICS_DEBUG === 'true',
   },
 };

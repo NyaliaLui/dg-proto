@@ -4,14 +4,15 @@ import { create, ReactThreeTestRenderer } from '@react-three/test-renderer';
 import { Group } from 'three';
 import { act } from 'react';
 import { Bot } from '@/app/components/Bot';
-import { BotSettings } from '@/app/components/hooks/useBotSettings';
-import { BOT_DEFAULTS, GAME_DEFAULTS } from '@/app/constants';
+import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
+import { BOT_DEFAULTS, GAME_DEFAULTS, DEFAULT_COLORS } from '@/app/constants';
 
-const defaultSettings: BotSettings = {
-  walkEnabled: BOT_DEFAULTS.walkEnabled,
-  walkDurationMS: BOT_DEFAULTS.walkDurationMS,
-  attackEnabled: BOT_DEFAULTS.attackEnabled,
-  attackDurationMS: BOT_DEFAULTS.attackDurationMS,
+const defaultSettings: DebugSettings = {
+  debugMode: false,
+  enableBotWalk: BOT_DEFAULTS.enableBotWalk,
+  botWalkDurationMS: BOT_DEFAULTS.botWalkDurationMS,
+  enableBotAttack: BOT_DEFAULTS.enableBotAttack,
+  botAttackDurationMS: BOT_DEFAULTS.botAttackDurationMS,
 };
 
 const testScene = new Group();
@@ -317,9 +318,12 @@ describe('Bot Component', () => {
       const hpGroup = findHpBlocksGroup(renderer!);
       const meshes = hpGroup!.children.filter((child) => child.type === 'Mesh');
 
+      // Convert hex string '#f05252' to number 0xf05252
+      const expectedHex = parseInt(DEFAULT_COLORS.HP_RED.slice(1), 16);
+
       meshes.forEach((mesh) => {
-        // Check that the material color is red (0xff0000)
-        expect(mesh.instance.material.color.getHex()).toBe(0xff0000);
+        // Check that the material color is HP red
+        expect(mesh.instance.material.color.getHex()).toBe(expectedHex);
       });
     });
 
@@ -428,11 +432,12 @@ describe('Bot Component', () => {
     });
 
     it('should rotate when walking', async () => {
-      const fastWalkSettings: BotSettings = {
-        walkEnabled: true,
-        walkDurationMS: 10,
-        attackEnabled: false,
-        attackDurationMS: 1500,
+      const fastWalkSettings: DebugSettings = {
+        debugMode: false,
+        enableBotWalk: true,
+        botWalkDurationMS: 10,
+        enableBotAttack: false,
+        botAttackDurationMS: 1500,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -456,11 +461,12 @@ describe('Bot Component', () => {
     });
 
     it('should change direction between walk cycles', async () => {
-      const fastWalkSettings: BotSettings = {
-        walkEnabled: true,
-        walkDurationMS: 10,
-        attackEnabled: false,
-        attackDurationMS: 1500,
+      const fastWalkSettings: DebugSettings = {
+        debugMode: false,
+        enableBotWalk: true,
+        botWalkDurationMS: 10,
+        enableBotAttack: false,
+        botAttackDurationMS: 1500,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -502,12 +508,13 @@ describe('Bot Component', () => {
       }
     });
 
-    it('should not walk when walkEnabled is false', async () => {
-      const disabledWalkSettings: BotSettings = {
-        walkEnabled: false,
-        walkDurationMS: 10,
-        attackEnabled: false,
-        attackDurationMS: 1500,
+    it('should not walk when enableBotWalk is false', async () => {
+      const disabledWalkSettings: DebugSettings = {
+        debugMode: false,
+        enableBotWalk: false,
+        botWalkDurationMS: 10,
+        enableBotAttack: false,
+        botAttackDurationMS: 1500,
       };
 
       let renderer: ReactThreeTestRenderer;
