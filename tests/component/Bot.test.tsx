@@ -8,6 +8,7 @@ import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
 import { BOT_DEFAULTS, GAME_DEFAULTS } from '@/app/constants';
 
 const defaultSettings: DebugSettings = {
+  debugMode: false,
   walkEnabled: BOT_DEFAULTS.walkEnabled,
   walkDurationMS: BOT_DEFAULTS.walkDurationMS,
   attackEnabled: BOT_DEFAULTS.attackEnabled,
@@ -429,6 +430,7 @@ describe('Bot Component', () => {
 
     it('should rotate when walking', async () => {
       const fastWalkSettings: DebugSettings = {
+        debugMode: false,
         walkEnabled: true,
         walkDurationMS: 10,
         attackEnabled: false,
@@ -457,6 +459,7 @@ describe('Bot Component', () => {
 
     it('should change direction between walk cycles', async () => {
       const fastWalkSettings: DebugSettings = {
+        debugMode: false,
         walkEnabled: true,
         walkDurationMS: 10,
         attackEnabled: false,
@@ -504,6 +507,7 @@ describe('Bot Component', () => {
 
     it('should not walk when walkEnabled is false', async () => {
       const disabledWalkSettings: DebugSettings = {
+        debugMode: false,
         walkEnabled: false,
         walkDurationMS: 10,
         attackEnabled: false,

@@ -81,6 +81,7 @@ export function Bot({ id, onDeath, settings }: BotProps) {
   useEffect(() => {
     if (model) {
       const helper = new SkeletonHelper(model);
+      helper.visible = settings.debugMode;
       const bones = getBoneList(model);
       const boneVertexMap = makeBoneVertexMap(bones);
 
@@ -94,7 +95,7 @@ export function Bot({ id, onDeath, settings }: BotProps) {
         boneVertexMapRef.current = null;
       };
     }
-  }, [model, scene]);
+  }, [model, scene, settings.debugMode]);
 
   // Get the current animation clip based on state (attack > walk > idle)
   const currentAnimation = useMemo(() => {

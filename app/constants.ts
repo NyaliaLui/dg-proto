@@ -91,7 +91,4 @@ export const ENVIRONMENT_DEFAULTS = {
     ground: '/textures/grass.jpg',
     sky: '/textures/sky.jpg',
   },
-  physics: {
-    debug: process.env.NEXT_PUBLIC_PHYSICS_DEBUG === 'true',
-  },
 };

@@ -14,6 +14,7 @@ import { SkeletonHelper } from 'three';
 
 import { CHARACTER_DEFAULTS } from '@/app/constants';
 import { KeyState } from '@/app/components/hooks/useKeyboardControls';
+import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
 import {
   getAnimation,
   getBoneList,
@@ -25,9 +26,10 @@ import {
 interface CharacterProps {
   keys: KeyState;
   onHit?: () => void;
+  settings: DebugSettings;
 }
 
-export function Character({ keys, onHit }: CharacterProps) {
+export function Character({ keys, onHit, settings }: CharacterProps) {
   const rigidBodyRef = useRef<RapierRigidBody>(null);
   const modelRef = useRef<THREE.Group>(null);
   const lastRotationRef = useRef<number>(Math.PI / 2);
@@ -64,6 +66,7 @@ export function Character({ keys, onHit }: CharacterProps) {
   useEffect(() => {
     if (model) {
       const helper = new SkeletonHelper(model);
+      helper.visible = settings.debugMode;
       const bones = getBoneList(model);
       const boneVertexMap = makeBoneVertexMap(bones);
 
@@ -77,7 +80,7 @@ export function Character({ keys, onHit }: CharacterProps) {
         boneVertexMapRef.current = null;
       };
     }
-  }, [model, scene]);
+  }, [model, scene, settings.debugMode]);
 
   const mixer = useRef<THREE.AnimationMixer | null>(null);
 

@@ -1,16 +1,26 @@
 'use client';
 
-import { useEffect, useRef, RefObject } from 'react';
+import { useEffect, useRef } from 'react';
 import GUI from 'lil-gui';
-import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
+import {
+  DebugSettings,
+  DEFAULT_DEBUG_SETTINGS,
+} from '@/app/components/hooks/useDebugSettings';
 
 interface DebugGuiProps {
-  settingsRef: RefObject<DebugSettings>;
-  onSettingsChange: () => void;
+  settings: DebugSettings;
+  onSettingsChange: (newSettings: Partial<DebugSettings>) => void;
 }
 
-export function DebugGui({ settingsRef, onSettingsChange }: DebugGuiProps) {
+export function DebugGui({ settings, onSettingsChange }: DebugGuiProps) {
   const guiRef = useRef<GUI | null>(null);
+  // lil-gui requires a mutable object to bind to
+  const settingsObjRef = useRef<DebugSettings>({ ...DEFAULT_DEBUG_SETTINGS });
+
+  // Sync the ref with incoming settings
+  useEffect(() => {
+    settingsObjRef.current = { ...settings };
+  }, [settings]);
 
   useEffect(() => {
     const gui = new GUI({ title: 'Debug Settings' });
@@ -21,29 +31,35 @@ export function DebugGui({ settingsRef, onSettingsChange }: DebugGuiProps) {
     gui.domElement.style.top = '0';
     gui.domElement.style.right = '0';
 
-    // Add controls that modify the ref and trigger re-render
+    // Add controls that modify the ref and call onSettingsChange
     gui
-      .add(settingsRef.current, 'walkEnabled')
+      .add(settingsObjRef.current, 'debugMode')
+      .name('Debug Mode')
+      .onChange((value: boolean) => onSettingsChange({ debugMode: value }));
+    gui
+      .add(settingsObjRef.current, 'walkEnabled')
       .name('Walk Enabled')
-      .onChange(onSettingsChange);
+      .onChange((value: boolean) => onSettingsChange({ walkEnabled: value }));
     gui
-      .add(settingsRef.current, 'walkDurationMS', 100, 5000, 100)
+      .add(settingsObjRef.current, 'walkDurationMS', 100, 5000, 100)
       .name('Walk Duration (ms)')
-      .onChange(onSettingsChange);
+      .onChange((value: number) => onSettingsChange({ walkDurationMS: value }));
     gui
-      .add(settingsRef.current, 'attackEnabled')
+      .add(settingsObjRef.current, 'attackEnabled')
       .name('Attack Enabled')
-      .onChange(onSettingsChange);
+      .onChange((value: boolean) => onSettingsChange({ attackEnabled: value }));
     gui
-      .add(settingsRef.current, 'attackDurationMS', 100, 5000, 100)
+      .add(settingsObjRef.current, 'attackDurationMS', 100, 5000, 100)
       .name('Attack Duration (ms)')
-      .onChange(onSettingsChange);
+      .onChange((value: number) =>
+        onSettingsChange({ attackDurationMS: value }),
+      );
 
     return () => {
       gui.destroy();
       guiRef.current = null;
     };
-  }, [settingsRef, onSettingsChange]);
+  }, [onSettingsChange]);
 
   return null;
 }
