@@ -13,7 +13,7 @@ import { SkeletonUtils } from 'three-stdlib';
 import { SkeletonHelper } from 'three';
 
 import { CHARACTER_DEFAULTS, GAME_DEFAULTS } from '@/app/constants';
-import { BotSettings } from '@/app/components/hooks/useBotSettings';
+import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
 import {
   getAnimation,
   getBoneList,
@@ -25,7 +25,7 @@ import {
 interface BotProps {
   id: string;
   onDeath?: (id: string) => void;
-  settings: BotSettings;
+  settings: DebugSettings;
 }
 
 export function Bot({ id, onDeath, settings }: BotProps) {

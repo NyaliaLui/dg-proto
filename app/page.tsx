@@ -9,10 +9,10 @@ import { Bot } from '@/app/components/Bot';
 import { World } from '@/app/components/World';
 import { useKeyboardControls } from '@/app/components/hooks/useKeyboardControls';
 import { Controls } from '@/app/components/Controls';
-import { BotGui } from '@/app/components/BotGui';
+import { DebugGui } from '@/app/components/DebugGui';
 import { HealthBar } from '@/app/components/HealthBar';
 import { GameOver } from '@/app/components/GameOver';
-import { useBotSettings } from '@/app/components/hooks/useBotSettings';
+import { useDebugSettings } from '@/app/components/hooks/useDebugSettings';
 import { ENVIRONMENT_DEFAULTS, GAME_DEFAULTS } from '@/app/constants';
 
 function createInitialBots(): Record<string, boolean> {
@@ -25,7 +25,7 @@ function createInitialBots(): Record<string, boolean> {
 
 export default function Home() {
   const { keys, updateKey } = useKeyboardControls();
-  const { settingsRef, updateSettings } = useBotSettings();
+  const { settingsRef, updateSettings } = useDebugSettings();
   const [bots, setBots] = useState<Record<string, boolean>>(createInitialBots);
   const [playerHP, setPlayerHP] = useState(GAME_DEFAULTS.PLAYER_MAX_HP);
 
@@ -78,7 +78,7 @@ export default function Home() {
         />
       </Canvas>
       <Controls updateKey={updateKey} />
-      <BotGui settingsRef={settingsRef} onSettingsChange={updateSettings} />
+      <DebugGui settingsRef={settingsRef} onSettingsChange={updateSettings} />
       <HealthBar currentHP={playerHP} maxHP={GAME_DEFAULTS.PLAYER_MAX_HP} />
       <GameOver show={playerHP <= 0} />
     </div>

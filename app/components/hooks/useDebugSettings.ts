@@ -1,17 +1,17 @@
 import { useRef, useCallback, useState } from 'react';
 import { BOT_DEFAULTS } from '@/app/constants';
 
-export interface BotSettings {
+export interface DebugSettings {
   walkEnabled: boolean;
   walkDurationMS: number;
   attackEnabled: boolean;
   attackDurationMS: number;
 }
 
-export function useBotSettings() {
+export function useDebugSettings() {
   const [, forceRender] = useState(0);
 
-  const settingsRef = useRef<BotSettings>({
+  const settingsRef = useRef<DebugSettings>({
     walkEnabled: BOT_DEFAULTS.walkEnabled,
     walkDurationMS: BOT_DEFAULTS.walkDurationMS,
     attackEnabled: BOT_DEFAULTS.attackEnabled,

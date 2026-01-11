@@ -4,10 +4,10 @@ import { create, ReactThreeTestRenderer } from '@react-three/test-renderer';
 import { Group } from 'three';
 import { act } from 'react';
 import { Bot } from '@/app/components/Bot';
-import { BotSettings } from '@/app/components/hooks/useBotSettings';
+import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
 import { BOT_DEFAULTS, GAME_DEFAULTS } from '@/app/constants';
 
-const defaultSettings: BotSettings = {
+const defaultSettings: DebugSettings = {
   walkEnabled: BOT_DEFAULTS.walkEnabled,
   walkDurationMS: BOT_DEFAULTS.walkDurationMS,
   attackEnabled: BOT_DEFAULTS.attackEnabled,
@@ -428,7 +428,7 @@ describe('Bot Component', () => {
     });
 
     it('should rotate when walking', async () => {
-      const fastWalkSettings: BotSettings = {
+      const fastWalkSettings: DebugSettings = {
         walkEnabled: true,
         walkDurationMS: 10,
         attackEnabled: false,
@@ -456,7 +456,7 @@ describe('Bot Component', () => {
     });
 
     it('should change direction between walk cycles', async () => {
-      const fastWalkSettings: BotSettings = {
+      const fastWalkSettings: DebugSettings = {
         walkEnabled: true,
         walkDurationMS: 10,
         attackEnabled: false,
@@ -503,7 +503,7 @@ describe('Bot Component', () => {
     });
 
     it('should not walk when walkEnabled is false', async () => {
-      const disabledWalkSettings: BotSettings = {
+      const disabledWalkSettings: DebugSettings = {
         walkEnabled: false,
         walkDurationMS: 10,
         attackEnabled: false,

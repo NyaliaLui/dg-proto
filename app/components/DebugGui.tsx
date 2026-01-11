@@ -1,19 +1,19 @@
 'use client';
 
-import { useEffect, useRef, MutableRefObject } from 'react';
+import { useEffect, useRef, RefObject } from 'react';
 import GUI from 'lil-gui';
-import { BotSettings } from '@/app/components/hooks/useBotSettings';
+import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
 
-interface BotGuiProps {
-  settingsRef: MutableRefObject<BotSettings>;
+interface DebugGuiProps {
+  settingsRef: RefObject<DebugSettings>;
   onSettingsChange: () => void;
 }
 
-export function BotGui({ settingsRef, onSettingsChange }: BotGuiProps) {
+export function DebugGui({ settingsRef, onSettingsChange }: DebugGuiProps) {
   const guiRef = useRef<GUI | null>(null);
 
   useEffect(() => {
-    const gui = new GUI({ title: 'Bot Settings' });
+    const gui = new GUI({ title: 'Debug Settings' });
     guiRef.current = gui;
 
     // Position in top right corner
