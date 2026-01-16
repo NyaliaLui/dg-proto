@@ -46,10 +46,10 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
   const skeletonHelperRef = useRef<SkeletonHelper | null>(null);
   const boneVertexMapRef = useRef<BoneVertexMap | null>(null);
 
-  // Determine if character is moving
+  // Determine if character is moving (not moving if attacking)
   const moving = useMemo(() => {
-    return keys.w || keys.s || keys.a || keys.d;
-  }, [keys.w, keys.s, keys.a, keys.d]);
+    return !keys.q && (keys.w || keys.s || keys.a || keys.d);
+  }, [keys.q, keys.w, keys.s, keys.a, keys.d]);
 
   // Load the skinned model
   const modelFbx = useFBX(CHARACTER_DEFAULTS.MODELS.XBOT);
