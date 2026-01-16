@@ -227,7 +227,8 @@ export function Bot({ id, onDeath, settings }: BotProps) {
       const moveSpeed = CHARACTER_DEFAULTS.MOVE_SPEED;
       const velocity = { x: 0, y: 0, z: 0 };
 
-      if (isWalking) {
+      // Block movement during attacks - attacks take priority
+      if (isWalking && !isAttacking) {
         velocity.x = direction * moveSpeed;
 
         // Set rotation based on direction
@@ -246,7 +247,7 @@ export function Bot({ id, onDeath, settings }: BotProps) {
           );
           lastRotationRef.current = Math.PI / 2;
         }
-      } else {
+      } else if (!isWalking || isAttacking) {
         // When idle, maintain last rotation
         const halfAngle = lastRotationRef.current / 2;
         rigidBodyRef.current.setRotation(
