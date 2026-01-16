@@ -539,5 +539,71 @@ describe('Bot Component', () => {
       );
       expect(allZeroVelocity).toBe(true);
     });
+
+    it('should set zero velocity when attacking even while walking is enabled', async () => {
+      // Settings where both walk and attack are enabled with fast intervals
+      const attackWhileWalkingSettings: DebugSettings = {
+        debugMode: false,
+        enableBotWalk: true,
+        botWalkDurationMS: 10,
+        enableBotAttack: true,
+        botAttackDurationMS: 10,
+      };
+
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={attackWhileWalkingSettings} />,
+        );
+      });
+
+      // Wait for both walk and attack intervals to trigger
+      await new Promise((resolve) => setTimeout(resolve, 25));
+      await act(async () => {});
+
+      mockSetLinvel.mockClear();
+      await act(async () => {
+        await renderer!.advanceFrames(1, 1 / 60);
+      });
+
+      // When attacking, velocity should be zero regardless of walking state
+      // We verify by checking that zero velocity is called at least once during attack
+      const hasZeroVelocity = mockSetLinvel.mock.calls.some(
+        (call) => call[0].x === 0 && call[0].y === 0 && call[0].z === 0,
+      );
+      expect(hasZeroVelocity).toBe(true);
+    });
+
+    it('should not move when only attacking (walk disabled)', async () => {
+      const attackOnlySettings: DebugSettings = {
+        debugMode: false,
+        enableBotWalk: false,
+        botWalkDurationMS: 1500,
+        enableBotAttack: true,
+        botAttackDurationMS: 10,
+      };
+
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Bot id="test-bot" settings={attackOnlySettings} />,
+        );
+      });
+
+      // Wait for attack interval to trigger
+      await new Promise((resolve) => setTimeout(resolve, 15));
+      await act(async () => {});
+
+      mockSetLinvel.mockClear();
+      await act(async () => {
+        await renderer!.advanceFrames(1, 1 / 60);
+      });
+
+      // Should only have zero velocity calls since walk is disabled
+      const allZeroVelocity = mockSetLinvel.mock.calls.every(
+        (call) => call[0].x === 0 && call[0].y === 0 && call[0].z === 0,
+      );
+      expect(allZeroVelocity).toBe(true);
+    });
   });
 });
