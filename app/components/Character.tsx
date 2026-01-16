@@ -184,30 +184,33 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
       const moveSpeed = CHARACTER_DEFAULTS.MOVE_SPEED;
       const velocity = { x: 0, y: 0, z: 0 };
 
-      // WASD movement with rotation to face direction
-      if (keys.w) {
-        velocity.z = -moveSpeed;
-        rigidBodyRef.current.setRotation({ x: 0, y: 1, z: 0, w: 0 }, true); // Face -Z
-      }
-      if (keys.s) {
-        velocity.z = moveSpeed;
-        rigidBodyRef.current.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true); // Face +Z
-      }
-      if (keys.a) {
-        velocity.x = -moveSpeed;
-        rigidBodyRef.current.setRotation(
-          { x: 0, y: -0.707, z: 0, w: 0.707 },
-          true,
-        ); // Face -X
-        lastRotationRef.current = -Math.PI / 2;
-      }
-      if (keys.d) {
-        velocity.x = moveSpeed;
-        rigidBodyRef.current.setRotation(
-          { x: 0, y: 0.707, z: 0, w: 0.707 },
-          true,
-        ); // Face +X
-        lastRotationRef.current = Math.PI / 2;
+      // Block movement during attacks - attacks take priority
+      if (!keys.q) {
+        // WASD movement with rotation to face direction
+        if (keys.w) {
+          velocity.z = -moveSpeed;
+          rigidBodyRef.current.setRotation({ x: 0, y: 1, z: 0, w: 0 }, true); // Face -Z
+        }
+        if (keys.s) {
+          velocity.z = moveSpeed;
+          rigidBodyRef.current.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true); // Face +Z
+        }
+        if (keys.a) {
+          velocity.x = -moveSpeed;
+          rigidBodyRef.current.setRotation(
+            { x: 0, y: -0.707, z: 0, w: 0.707 },
+            true,
+          ); // Face -X
+          lastRotationRef.current = -Math.PI / 2;
+        }
+        if (keys.d) {
+          velocity.x = moveSpeed;
+          rigidBodyRef.current.setRotation(
+            { x: 0, y: 0.707, z: 0, w: 0.707 },
+            true,
+          ); // Face +X
+          lastRotationRef.current = Math.PI / 2;
+        }
       }
 
       rigidBodyRef.current.setLinvel(velocity, true);
