@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { CONTROLS_DEFAULTS } from '@/app/constants';
 
 export type { KeyState, KeyHandlerFn, SetKeyStateFn };
-export { useKeyboardControls };
+export { useKeyboardControls, isAttacking };
 
 interface KeyState {
   w: boolean;
@@ -19,6 +19,13 @@ interface KeyState {
 
 type KeyHandlerFn = (keys: KeyState) => void;
 type SetKeyStateFn = (key: keyof KeyState, value: boolean) => void;
+
+/**
+ * Returns true if any attack button (Q or E) is pressed.
+ */
+function isAttacking(keys: KeyState): boolean {
+  return keys.q || keys.e;
+}
 
 function useKeyboardControls() {
   const [keys, setKeys] = useState<KeyState>(CONTROLS_DEFAULTS.KEYBOARD);
