@@ -299,6 +299,17 @@ describe('Character Component', () => {
         true,
       );
     });
+
+    it('should set zero velocity when attacking with E key', async () => {
+      const attackingWithE = { ...mockKeys, e: true, w: true };
+      const renderer = await create(
+        <Character keys={attackingWithE} settings={defaultSettings} />,
+      );
+      await renderer.advanceFrames(1, 1 / 60);
+
+      // E key attack takes priority - velocity should be zero
+      expect(mockSetLinvel).toHaveBeenCalledWith({ x: 0, y: 0, z: 0 }, true);
+    });
   });
 
   describe('Hit Detection', () => {
