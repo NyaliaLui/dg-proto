@@ -13,7 +13,10 @@ import { SkeletonUtils } from 'three-stdlib';
 import { SkeletonHelper } from 'three';
 
 import { CHARACTER_DEFAULTS } from '@/app/constants';
-import { KeyState } from '@/app/components/hooks/useKeyboardControls';
+import {
+  KeyState,
+  isAttacking,
+} from '@/app/components/hooks/useKeyboardControls';
 import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
 import {
   getAnimation,
@@ -48,8 +51,8 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
 
   // Determine if character is moving (not moving if attacking)
   const moving = useMemo(() => {
-    return !keys.q && (keys.w || keys.s || keys.a || keys.d);
-  }, [keys.q, keys.w, keys.s, keys.a, keys.d]);
+    return !isAttacking(keys) && (keys.w || keys.s || keys.a || keys.d);
+  }, [keys]);
 
   // Load the skinned model
   const modelFbx = useFBX(CHARACTER_DEFAULTS.MODELS.XBOT);
@@ -86,14 +89,14 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
 
   // Determine which animation to play based on state
   const currentAnimation = useMemo(() => {
-    if (keys.q) {
+    if (isAttacking(keys)) {
       return punchAnim;
     }
     if (moving) {
       return walkAnim;
     }
     return idleAnim;
-  }, [keys.q, moving, idleAnim, walkAnim, punchAnim]);
+  }, [keys, moving, idleAnim, walkAnim, punchAnim]);
 
   useEffect(() => {
     // Clean up previous mixer
@@ -162,7 +165,7 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
         }
 
         // Update hand position (only during attack)
-        if (keys.q) {
+        if (isAttacking(keys)) {
           const leftHandPos = getBoneWorldPosition(
             'mixamorigLeftHand',
             boneVertexMapRef.current,
@@ -185,7 +188,7 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
       const velocity = { x: 0, y: 0, z: 0 };
 
       // Block movement during attacks - attacks take priority
-      if (!keys.q) {
+      if (!isAttacking(keys)) {
         // WASD movement with rotation to face direction
         if (keys.w) {
           velocity.z = -moveSpeed;
@@ -256,7 +259,7 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
         onIntersectionEnter={onHit}
       />
       {/* Hand capsule - only active during attack */}
-      {keys.q && (
+      {isAttacking(keys) && (
         <CapsuleCollider
           args={[
             CHARACTER_DEFAULTS.COLLIDERS.HAND.halfHeight,
