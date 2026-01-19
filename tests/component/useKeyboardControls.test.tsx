@@ -1,7 +1,10 @@
 import '@testing-library/jest-dom';
 import { renderHook, act } from '@testing-library/react';
 import { expect, describe, it } from '@jest/globals';
-import { useKeyboardControls } from '@/app/components/hooks/useKeyboardControls';
+import {
+  useKeyboardControls,
+  isAttacking,
+} from '@/app/components/hooks/useKeyboardControls';
 import { CONTROLS_DEFAULTS } from '@/app/constants';
 
 describe('useKeyboardControls Hook', () => {
@@ -203,5 +206,38 @@ describe('useKeyboardControls Hook', () => {
 
       removeEventListenerSpy.mockRestore();
     });
+  });
+});
+
+describe('isAttacking utility function', () => {
+  const defaultKeys = { ...CONTROLS_DEFAULTS.KEYBOARD };
+
+  it('should return false when no attack keys are pressed', () => {
+    expect(isAttacking(defaultKeys)).toBe(false);
+  });
+
+  it('should return true when Q key is pressed', () => {
+    const keys = { ...defaultKeys, q: true };
+    expect(isAttacking(keys)).toBe(true);
+  });
+
+  it('should return true when E key is pressed', () => {
+    const keys = { ...defaultKeys, e: true };
+    expect(isAttacking(keys)).toBe(true);
+  });
+
+  it('should return true when both Q and E keys are pressed', () => {
+    const keys = { ...defaultKeys, q: true, e: true };
+    expect(isAttacking(keys)).toBe(true);
+  });
+
+  it('should return false when only movement keys are pressed', () => {
+    const keys = { ...defaultKeys, w: true, a: true, s: true, d: true };
+    expect(isAttacking(keys)).toBe(false);
+  });
+
+  it('should return true when attack key is pressed along with movement keys', () => {
+    const keys = { ...defaultKeys, w: true, q: true };
+    expect(isAttacking(keys)).toBe(true);
   });
 });

@@ -253,6 +253,63 @@ describe('Character Component', () => {
         true,
       );
     });
+
+    it('should set zero velocity when attacking even with W key pressed', async () => {
+      const attackingWithMovementKeys = { ...mockKeys, q: true, w: true };
+      const renderer = await create(
+        <Character
+          keys={attackingWithMovementKeys}
+          settings={defaultSettings}
+        />,
+      );
+      await renderer.advanceFrames(1, 1 / 60);
+
+      // Attack takes priority - velocity should be zero
+      expect(mockSetLinvel).toHaveBeenCalledWith({ x: 0, y: 0, z: 0 }, true);
+    });
+
+    it('should set zero velocity when attacking even with all movement keys pressed', async () => {
+      const attackingWithAllMovement = {
+        ...mockKeys,
+        q: true,
+        w: true,
+        a: true,
+        s: true,
+        d: true,
+      };
+      const renderer = await create(
+        <Character keys={attackingWithAllMovement} settings={defaultSettings} />,
+      );
+      await renderer.advanceFrames(1, 1 / 60);
+
+      // Attack takes priority - velocity should be zero
+      expect(mockSetLinvel).toHaveBeenCalledWith({ x: 0, y: 0, z: 0 }, true);
+    });
+
+    it('should allow movement when not attacking', async () => {
+      const movingKeys = { ...mockKeys, w: true, q: false };
+      const renderer = await create(
+        <Character keys={movingKeys} settings={defaultSettings} />,
+      );
+      await renderer.advanceFrames(1, 1 / 60);
+
+      // Not attacking, so movement should work
+      expect(mockSetLinvel).toHaveBeenCalledWith(
+        { x: 0, y: 0, z: -CHARACTER_DEFAULTS.MOVE_SPEED },
+        true,
+      );
+    });
+
+    it('should set zero velocity when attacking with E key', async () => {
+      const attackingWithE = { ...mockKeys, e: true, w: true };
+      const renderer = await create(
+        <Character keys={attackingWithE} settings={defaultSettings} />,
+      );
+      await renderer.advanceFrames(1, 1 / 60);
+
+      // E key attack takes priority - velocity should be zero
+      expect(mockSetLinvel).toHaveBeenCalledWith({ x: 0, y: 0, z: 0 }, true);
+    });
   });
 
   describe('Hit Detection', () => {
