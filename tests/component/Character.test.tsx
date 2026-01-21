@@ -298,6 +298,34 @@ describe('Character Component', () => {
       );
     });
 
+    it('should rotate to face -X when A key is pressed', async () => {
+      const movingKeys = { ...mockKeys, a: true };
+      const renderer = await create(
+        <Character keys={movingKeys} settings={defaultSettings} />,
+      );
+      await renderer.advanceFrames(1, 1 / 60);
+
+      // A key should rotate to face -X direction
+      expect(mockSetRotation).toHaveBeenCalledWith(
+        { x: 0, y: -0.707, z: 0, w: 0.707 },
+        true,
+      );
+    });
+
+    it('should rotate to face +X when D key is pressed', async () => {
+      const movingKeys = { ...mockKeys, d: true };
+      const renderer = await create(
+        <Character keys={movingKeys} settings={defaultSettings} />,
+      );
+      await renderer.advanceFrames(1, 1 / 60);
+
+      // D key should rotate to face +X direction
+      expect(mockSetRotation).toHaveBeenCalledWith(
+        { x: 0, y: 0.707, z: 0, w: 0.707 },
+        true,
+      );
+    });
+
     it('should set zero velocity when attacking even with W key pressed', async () => {
       const attackingWithMovementKeys = { ...mockKeys, q: true, w: true };
       const renderer = await create(
