@@ -195,7 +195,6 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
         }
         if (keys.s) {
           velocity.z = moveSpeed;
-          rigidBodyRef.current.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true); // Face +Z
         }
         if (keys.a) {
           velocity.x = -moveSpeed;

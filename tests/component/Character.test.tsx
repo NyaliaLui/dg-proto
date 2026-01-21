@@ -254,6 +254,20 @@ describe('Character Component', () => {
       );
     });
 
+    it('should not rotate to face +Z direction when S key is pressed', async () => {
+      const movingKeys = { ...mockKeys, s: true };
+      const renderer = await create(
+        <Character keys={movingKeys} settings={defaultSettings} />,
+      );
+      await renderer.advanceFrames(1, 1 / 60);
+
+      // S key should NOT rotate to face +Z direction (the old behavior)
+      expect(mockSetRotation).not.toHaveBeenCalledWith(
+        { x: 0, y: 0, z: 0, w: 1 },
+        true,
+      );
+    });
+
     it('should set zero velocity when attacking even with W key pressed', async () => {
       const attackingWithMovementKeys = { ...mockKeys, q: true, w: true };
       const renderer = await create(
