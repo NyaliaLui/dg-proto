@@ -34,15 +34,9 @@ export const CHARACTER_DEFAULTS = {
   },
 };
 
-export const BOT_DEFAULTS = {
-  enableBotWalk: false,
-  botWalkDurationMS: 500,
-  enableBotAttack: false,
-  botAttackDurationMS: 1500,
-};
-
 export const CONTROLS_DEFAULTS = {
-  MECHANICS_TIMEOUT: 1300,
+  // It takes approx 32 frames to execute attack animation
+  MECHANICS_TIMEOUT: 320,
   KEYBOARD: {
     w: false,
     a: false,
@@ -59,6 +53,13 @@ export const CONTROLS_DEFAULTS = {
     KNOB_RADIUS: 12,
     DEAD_ZONE: 0.1,
   },
+};
+
+export const BOT_DEFAULTS = {
+  enableBotWalk: false,
+  botWalkDurationMS: 500,
+  enableBotAttack: false,
+  botAttackDurationMS: CONTROLS_DEFAULTS.MECHANICS_TIMEOUT,
 };
 
 export const GAME_DEFAULTS = {
