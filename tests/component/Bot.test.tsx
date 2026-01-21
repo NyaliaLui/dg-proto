@@ -61,22 +61,28 @@ jest.mock('three-stdlib', () => {
 
 jest.mock('three', () => {
   const originalThree = jest.requireActual('three');
-  return {
-    ...originalThree,
-    SkeletonHelper: jest.fn().mockImplementation(() => ({
-      visible: true,
-      update: jest.fn(),
-      updateMatrixWorld: jest.fn(),
-      geometry: {
-        attributes: {
-          position: {
-            getX: jest.fn(() => 0),
-            getY: jest.fn(() => 0),
-            getZ: jest.fn(() => 0),
-          },
+
+  // Create a mock SkeletonHelper that extends Object3D
+  class MockSkeletonHelper extends originalThree.Object3D {
+    geometry = {
+      attributes: {
+        position: {
+          getX: jest.fn(() => 0),
+          getY: jest.fn(() => 0),
+          getZ: jest.fn(() => 0),
         },
       },
-    })),
+    };
+
+    constructor() {
+      super();
+      this.visible = true;
+    }
+  }
+
+  return {
+    ...originalThree,
+    SkeletonHelper: MockSkeletonHelper,
   };
 });
 
