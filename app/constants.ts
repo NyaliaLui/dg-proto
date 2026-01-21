@@ -8,7 +8,7 @@ export const CHARACTER_DEFAULTS = {
   ANIMATIONS: {
     IDLE: '/models/IdleWithoutSkin.fbx',
     WALK: '/models/WalkingWithoutSkin.fbx',
-    NORMAL: '/models/PunchingWithoutSkin.fbx',
+    NORMAL: '/models/PunchingWithoutSkin2.fbx',
   },
   SCALE: 0.01,
   COLLIDERS: {
