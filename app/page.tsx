@@ -24,8 +24,8 @@ function createInitialBots(): Record<string, boolean> {
 }
 
 export default function Home() {
-  const { keys, updateKey } = useKeyboardControls();
   const { settings, updateSettings } = useDebugSettings();
+  const { keys, updateKey } = useKeyboardControls(settings);
   const [bots, setBots] = useState<Record<string, boolean>>(createInitialBots);
   const [playerHP, setPlayerHP] = useState(GAME_DEFAULTS.PLAYER_MAX_HP);
 
@@ -72,7 +72,7 @@ export default function Home() {
           enableRotate={ENVIRONMENT_DEFAULTS.orbitControls.enableRotate}
         />
       </Canvas>
-      <Controls updateKey={updateKey} />
+      <Controls updateKey={updateKey} settings={settings} />
       <DebugGui settings={settings} onSettingsChange={updateSettings} />
       <HealthBar currentHP={playerHP} maxHP={GAME_DEFAULTS.PLAYER_MAX_HP} />
       <GameOver show={playerHP <= 0} />

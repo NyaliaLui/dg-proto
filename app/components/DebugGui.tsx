@@ -53,11 +53,9 @@ export function DebugGui({ settings, onSettingsChange }: DebugGuiProps) {
         onSettingsChange({ enableBotAttack: value }),
       );
     gui
-      .add(settingsObjRef.current, 'botAttackDurationMS', 100, 5000, 100)
-      .name('Bot Attack Duration (ms)')
-      .onChange((value: number) =>
-        onSettingsChange({ botAttackDurationMS: value }),
-      );
+      .add(settingsObjRef.current, 'attackSpeed', 100, 5000, 100)
+      .name('Attack Speed (ms)')
+      .onChange((value: number) => onSettingsChange({ attackSpeed: value }));
 
     return () => {
       gui.destroy();

@@ -6,7 +6,7 @@ export interface DebugSettings {
   enableBotWalk: boolean;
   botWalkDurationMS: number;
   enableBotAttack: boolean;
-  botAttackDurationMS: number;
+  attackSpeed: number;
 }
 
 export const DEFAULT_DEBUG_SETTINGS: DebugSettings = {
@@ -14,7 +14,7 @@ export const DEFAULT_DEBUG_SETTINGS: DebugSettings = {
   enableBotWalk: BOT_DEFAULTS.enableBotWalk,
   botWalkDurationMS: BOT_DEFAULTS.botWalkDurationMS,
   enableBotAttack: BOT_DEFAULTS.enableBotAttack,
-  botAttackDurationMS: BOT_DEFAULTS.botAttackDurationMS,
+  attackSpeed: BOT_DEFAULTS.attackSpeed,
 };
 
 export function useDebugSettings() {

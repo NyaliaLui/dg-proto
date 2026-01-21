@@ -133,7 +133,7 @@ describe('Character Component', () => {
     enableBotWalk: BOT_DEFAULTS.enableBotWalk,
     botWalkDurationMS: BOT_DEFAULTS.botWalkDurationMS,
     enableBotAttack: BOT_DEFAULTS.enableBotAttack,
-    botAttackDurationMS: BOT_DEFAULTS.botAttackDurationMS,
+    attackSpeed: BOT_DEFAULTS.attackSpeed,
   };
 
   describe('Rendering', () => {

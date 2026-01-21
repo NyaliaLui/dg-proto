@@ -132,10 +132,10 @@ export function Bot({ id, onDeath, settings }: BotProps) {
         if (!settings.enableBotAttack) return false;
         return !prev;
       });
-    }, settings.botAttackDurationMS);
+    }, settings.attackSpeed);
 
     return () => clearInterval(interval);
-  }, [settings.enableBotAttack, settings.botAttackDurationMS]);
+  }, [settings.enableBotAttack, settings.attackSpeed]);
 
   useEffect(() => {
     // Clean up previous mixer
