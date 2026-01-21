@@ -192,11 +192,9 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
         // WASD movement with rotation to face direction
         if (keys.w) {
           velocity.z = -moveSpeed;
-          rigidBodyRef.current.setRotation({ x: 0, y: 1, z: 0, w: 0 }, true); // Face -Z
         }
         if (keys.s) {
           velocity.z = moveSpeed;
-          rigidBodyRef.current.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true); // Face +Z
         }
         if (keys.a) {
           velocity.x = -moveSpeed;
@@ -213,6 +211,15 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
             true,
           ); // Face +X
           lastRotationRef.current = Math.PI / 2;
+        }
+
+        // Apply last horizontal rotation when moving vertically without horizontal input
+        if ((keys.w || keys.s) && !keys.a && !keys.d) {
+          const halfAngle = lastRotationRef.current / 2;
+          rigidBodyRef.current.setRotation(
+            { x: 0, y: Math.sin(halfAngle), z: 0, w: Math.cos(halfAngle) },
+            true,
+          );
         }
       }
 

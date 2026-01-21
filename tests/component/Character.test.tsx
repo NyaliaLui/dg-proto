@@ -60,22 +60,28 @@ jest.mock('three-stdlib', () => {
 
 jest.mock('three', () => {
   const originalThree = jest.requireActual('three');
-  return {
-    ...originalThree,
-    SkeletonHelper: jest.fn().mockImplementation(() => ({
-      visible: true,
-      update: jest.fn(),
-      updateMatrixWorld: jest.fn(),
-      geometry: {
-        attributes: {
-          position: {
-            getX: jest.fn(() => 0),
-            getY: jest.fn(() => 0),
-            getZ: jest.fn(() => 0),
-          },
+
+  // Create a mock SkeletonHelper that extends Object3D
+  class MockSkeletonHelper extends originalThree.Object3D {
+    geometry = {
+      attributes: {
+        position: {
+          getX: jest.fn(() => 0),
+          getY: jest.fn(() => 0),
+          getZ: jest.fn(() => 0),
         },
       },
-    })),
+    };
+
+    constructor() {
+      super();
+      this.visible = true;
+    }
+  }
+
+  return {
+    ...originalThree,
+    SkeletonHelper: MockSkeletonHelper,
   };
 });
 
@@ -240,16 +246,88 @@ describe('Character Component', () => {
       expect(mockSetLinvel).toHaveBeenCalledWith({ x: 0, y: 0, z: 0 }, true);
     });
 
-    it('should rotate character to face movement direction', async () => {
+    it('should not rotate to face -Z direction when W key is pressed', async () => {
       const movingKeys = { ...mockKeys, w: true };
       const renderer = await create(
         <Character keys={movingKeys} settings={defaultSettings} />,
       );
       await renderer.advanceFrames(1, 1 / 60);
 
-      // W key should rotate to face -Z direction
-      expect(mockSetRotation).toHaveBeenCalledWith(
+      // W key should NOT rotate to face -Z direction (the old behavior)
+      expect(mockSetRotation).not.toHaveBeenCalledWith(
         { x: 0, y: 1, z: 0, w: 0 },
+        true,
+      );
+    });
+
+    it('should not rotate to face +Z direction when S key is pressed', async () => {
+      const movingKeys = { ...mockKeys, s: true };
+      const renderer = await create(
+        <Character keys={movingKeys} settings={defaultSettings} />,
+      );
+      await renderer.advanceFrames(1, 1 / 60);
+
+      // S key should NOT rotate to face +Z direction (the old behavior)
+      expect(mockSetRotation).not.toHaveBeenCalledWith(
+        { x: 0, y: 0, z: 0, w: 1 },
+        true,
+      );
+    });
+
+    it('should maintain last horizontal rotation when W key is pressed', async () => {
+      const movingKeys = { ...mockKeys, w: true };
+      const renderer = await create(
+        <Character keys={movingKeys} settings={defaultSettings} />,
+      );
+      await renderer.advanceFrames(1, 1 / 60);
+
+      // Default lastRotationRef is Math.PI / 2 (facing +X)
+      const halfAngle = Math.PI / 4;
+      expect(mockSetRotation).toHaveBeenCalledWith(
+        { x: 0, y: Math.sin(halfAngle), z: 0, w: Math.cos(halfAngle) },
+        true,
+      );
+    });
+
+    it('should maintain last horizontal rotation when S key is pressed', async () => {
+      const movingKeys = { ...mockKeys, s: true };
+      const renderer = await create(
+        <Character keys={movingKeys} settings={defaultSettings} />,
+      );
+      await renderer.advanceFrames(1, 1 / 60);
+
+      // Default lastRotationRef is Math.PI / 2 (facing +X)
+      const halfAngle = Math.PI / 4;
+      expect(mockSetRotation).toHaveBeenCalledWith(
+        { x: 0, y: Math.sin(halfAngle), z: 0, w: Math.cos(halfAngle) },
+        true,
+      );
+    });
+
+    it('should rotate to face -X when A key is pressed', async () => {
+      const movingKeys = { ...mockKeys, a: true };
+      const renderer = await create(
+        <Character keys={movingKeys} settings={defaultSettings} />,
+      );
+      await renderer.advanceFrames(1, 1 / 60);
+
+      // A key should rotate to face -X direction
+      expect(mockSetRotation).toHaveBeenCalledWith(
+        { x: 0, y: -0.707, z: 0, w: 0.707 },
+        true,
+      );
+    });
+
+    it('should rotate to face +X when D key is pressed', async () => {
+      const movingKeys = { ...mockKeys, d: true };
+      const renderer = await create(
+        <Character keys={movingKeys} settings={defaultSettings} />,
+      );
+      await renderer.advanceFrames(1, 1 / 60);
+
+      // D key should rotate to face +X direction
+      expect(mockSetRotation).toHaveBeenCalledWith(
+        { x: 0, y: 0.707, z: 0, w: 0.707 },
         true,
       );
     });
@@ -278,7 +356,10 @@ describe('Character Component', () => {
         d: true,
       };
       const renderer = await create(
-        <Character keys={attackingWithAllMovement} settings={defaultSettings} />,
+        <Character
+          keys={attackingWithAllMovement}
+          settings={defaultSettings}
+        />,
       );
       await renderer.advanceFrames(1, 1 / 60);
 

@@ -61,22 +61,28 @@ jest.mock('three-stdlib', () => {
 
 jest.mock('three', () => {
   const originalThree = jest.requireActual('three');
-  return {
-    ...originalThree,
-    SkeletonHelper: jest.fn().mockImplementation(() => ({
-      visible: true,
-      update: jest.fn(),
-      updateMatrixWorld: jest.fn(),
-      geometry: {
-        attributes: {
-          position: {
-            getX: jest.fn(() => 0),
-            getY: jest.fn(() => 0),
-            getZ: jest.fn(() => 0),
-          },
+
+  // Create a mock SkeletonHelper that extends Object3D
+  class MockSkeletonHelper extends originalThree.Object3D {
+    geometry = {
+      attributes: {
+        position: {
+          getX: jest.fn(() => 0),
+          getY: jest.fn(() => 0),
+          getZ: jest.fn(() => 0),
         },
       },
-    })),
+    };
+
+    constructor() {
+      super();
+      this.visible = true;
+    }
+  }
+
+  return {
+    ...originalThree,
+    SkeletonHelper: MockSkeletonHelper,
   };
 });
 
@@ -118,6 +124,11 @@ jest.mock('@react-three/rapier', () => {
 describe('Bot Component', () => {
   beforeEach(() => {
     capturedHitHandlers = [];
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   describe('Rendering', () => {
@@ -447,9 +458,10 @@ describe('Bot Component', () => {
         );
       });
 
-      // Wait for the interval to trigger
-      await new Promise((resolve) => setTimeout(resolve, 20));
-      await act(async () => {});
+      // Advance timers to trigger the interval
+      await act(async () => {
+        jest.advanceTimersByTime(20);
+      });
 
       mockSetRotation.mockClear();
       await act(async () => {
@@ -477,8 +489,9 @@ describe('Bot Component', () => {
       });
 
       // First walk cycle
-      await new Promise((resolve) => setTimeout(resolve, 15));
-      await act(async () => {});
+      await act(async () => {
+        jest.advanceTimersByTime(15);
+      });
       await act(async () => {
         await renderer!.advanceFrames(1, 1 / 60);
       });
@@ -487,12 +500,14 @@ describe('Bot Component', () => {
       const firstVelocityX = firstCycleCalls.find((c) => c[0].x !== 0)?.[0].x;
 
       // Stop walking
-      await new Promise((resolve) => setTimeout(resolve, 15));
-      await act(async () => {});
+      await act(async () => {
+        jest.advanceTimersByTime(15);
+      });
 
       // Second walk cycle
-      await new Promise((resolve) => setTimeout(resolve, 15));
-      await act(async () => {});
+      await act(async () => {
+        jest.advanceTimersByTime(15);
+      });
 
       mockSetLinvel.mockClear();
       await act(async () => {
@@ -524,9 +539,10 @@ describe('Bot Component', () => {
         );
       });
 
-      // Wait for potential interval
-      await new Promise((resolve) => setTimeout(resolve, 30));
-      await act(async () => {});
+      // Advance timers for potential interval
+      await act(async () => {
+        jest.advanceTimersByTime(30);
+      });
 
       mockSetLinvel.mockClear();
       await act(async () => {
@@ -557,9 +573,10 @@ describe('Bot Component', () => {
         );
       });
 
-      // Wait for both walk and attack intervals to trigger
-      await new Promise((resolve) => setTimeout(resolve, 25));
-      await act(async () => {});
+      // Advance timers to trigger both walk and attack intervals
+      await act(async () => {
+        jest.advanceTimersByTime(25);
+      });
 
       mockSetLinvel.mockClear();
       await act(async () => {
@@ -590,9 +607,10 @@ describe('Bot Component', () => {
         );
       });
 
-      // Wait for attack interval to trigger
-      await new Promise((resolve) => setTimeout(resolve, 15));
-      await act(async () => {});
+      // Advance timers to trigger attack interval
+      await act(async () => {
+        jest.advanceTimersByTime(15);
+      });
 
       mockSetLinvel.mockClear();
       await act(async () => {
