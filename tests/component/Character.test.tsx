@@ -240,15 +240,15 @@ describe('Character Component', () => {
       expect(mockSetLinvel).toHaveBeenCalledWith({ x: 0, y: 0, z: 0 }, true);
     });
 
-    it('should rotate character to face movement direction', async () => {
+    it('should not rotate to face -Z direction when W key is pressed', async () => {
       const movingKeys = { ...mockKeys, w: true };
       const renderer = await create(
         <Character keys={movingKeys} settings={defaultSettings} />,
       );
       await renderer.advanceFrames(1, 1 / 60);
 
-      // W key should rotate to face -Z direction
-      expect(mockSetRotation).toHaveBeenCalledWith(
+      // W key should NOT rotate to face -Z direction (the old behavior)
+      expect(mockSetRotation).not.toHaveBeenCalledWith(
         { x: 0, y: 1, z: 0, w: 0 },
         true,
       );

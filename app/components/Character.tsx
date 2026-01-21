@@ -192,7 +192,6 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
         // WASD movement with rotation to face direction
         if (keys.w) {
           velocity.z = -moveSpeed;
-          rigidBodyRef.current.setRotation({ x: 0, y: 1, z: 0, w: 0 }, true); // Face -Z
         }
         if (keys.s) {
           velocity.z = moveSpeed;
