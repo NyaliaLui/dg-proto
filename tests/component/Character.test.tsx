@@ -268,6 +268,36 @@ describe('Character Component', () => {
       );
     });
 
+    it('should maintain last horizontal rotation when W key is pressed', async () => {
+      const movingKeys = { ...mockKeys, w: true };
+      const renderer = await create(
+        <Character keys={movingKeys} settings={defaultSettings} />,
+      );
+      await renderer.advanceFrames(1, 1 / 60);
+
+      // Default lastRotationRef is Math.PI / 2 (facing +X)
+      const halfAngle = Math.PI / 4;
+      expect(mockSetRotation).toHaveBeenCalledWith(
+        { x: 0, y: Math.sin(halfAngle), z: 0, w: Math.cos(halfAngle) },
+        true,
+      );
+    });
+
+    it('should maintain last horizontal rotation when S key is pressed', async () => {
+      const movingKeys = { ...mockKeys, s: true };
+      const renderer = await create(
+        <Character keys={movingKeys} settings={defaultSettings} />,
+      );
+      await renderer.advanceFrames(1, 1 / 60);
+
+      // Default lastRotationRef is Math.PI / 2 (facing +X)
+      const halfAngle = Math.PI / 4;
+      expect(mockSetRotation).toHaveBeenCalledWith(
+        { x: 0, y: Math.sin(halfAngle), z: 0, w: Math.cos(halfAngle) },
+        true,
+      );
+    });
+
     it('should set zero velocity when attacking even with W key pressed', async () => {
       const attackingWithMovementKeys = { ...mockKeys, q: true, w: true };
       const renderer = await create(
@@ -292,7 +322,10 @@ describe('Character Component', () => {
         d: true,
       };
       const renderer = await create(
-        <Character keys={attackingWithAllMovement} settings={defaultSettings} />,
+        <Character
+          keys={attackingWithAllMovement}
+          settings={defaultSettings}
+        />,
       );
       await renderer.advanceFrames(1, 1 / 60);
 

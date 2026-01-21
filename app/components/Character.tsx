@@ -212,6 +212,15 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
           ); // Face +X
           lastRotationRef.current = Math.PI / 2;
         }
+
+        // Apply last horizontal rotation when moving vertically without horizontal input
+        if ((keys.w || keys.s) && !keys.a && !keys.d) {
+          const halfAngle = lastRotationRef.current / 2;
+          rigidBodyRef.current.setRotation(
+            { x: 0, y: Math.sin(halfAngle), z: 0, w: Math.cos(halfAngle) },
+            true,
+          );
+        }
       }
 
       rigidBodyRef.current.setLinvel(velocity, true);
