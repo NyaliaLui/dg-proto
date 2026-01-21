@@ -3,8 +3,8 @@ import { useRef } from 'react';
 
 import { SetKeyStateFn } from '@/app/components/hooks/useKeyboardControls';
 import { useAnalogControls } from '@/app/components/hooks/useAnalogControls';
+import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
 import { CONTROLS_TEST_IDS } from '@/app/test-ids';
-import { CONTROLS_DEFAULTS } from '../constants';
 
 export type { AnalogStickProps, OnscreenKeysProps, ControlsProps };
 export { AnalogStick, OnscreenKeys, Controls };
@@ -55,9 +55,10 @@ function AnalogStick({ updateKey }: AnalogStickProps) {
 
 interface OnscreenKeysProps {
   updateKey: SetKeyStateFn;
+  settings: DebugSettings;
 }
 
-function OnscreenKeys({ updateKey }: OnscreenKeysProps) {
+function OnscreenKeys({ updateKey, settings }: OnscreenKeysProps) {
   const smallButtonClass =
     'w-12 h-12 bg-gray-700 bg-opacity-80 border-1 border-gray-500 rounded-full flex items-center justify-center cursor-pointer select-none active:bg-gray-600 transition-colors text-white font-semibold text-xs';
   const largeButtonClass =
@@ -67,7 +68,7 @@ function OnscreenKeys({ updateKey }: OnscreenKeysProps) {
   const handleMechanics = (key: 'q' | 'e' | 'p' | 'space') => {
     setTimeout(() => {
       updateKey(key, false);
-    }, CONTROLS_DEFAULTS.MECHANICS_TIMEOUT);
+    }, settings.attackSpeed);
   };
 
   return (
@@ -137,9 +138,10 @@ function OnscreenKeys({ updateKey }: OnscreenKeysProps) {
 
 interface ControlsProps {
   updateKey: SetKeyStateFn;
+  settings: DebugSettings;
 }
 
-function Controls({ updateKey }: ControlsProps) {
+function Controls({ updateKey, settings }: ControlsProps) {
   return (
     <>
       {/* Analog Stick */}
@@ -149,7 +151,7 @@ function Controls({ updateKey }: ControlsProps) {
 
       {/* Onscreen Keys */}
       <div className="lg:hidden fixed bottom-1/12 right-1/12 z-50">
-        <OnscreenKeys updateKey={updateKey} />
+        <OnscreenKeys updateKey={updateKey} settings={settings} />
       </div>
     </>
   );

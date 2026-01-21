@@ -2,6 +2,7 @@
 import { useState, useCallback, useEffect } from 'react';
 
 import { CONTROLS_DEFAULTS } from '@/app/constants';
+import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
 
 export type { KeyState, KeyHandlerFn, SetKeyStateFn };
 export { useKeyboardControls, isAttacking };
@@ -27,7 +28,7 @@ function isAttacking(keys: KeyState): boolean {
   return keys.q || keys.e;
 }
 
-function useKeyboardControls() {
+function useKeyboardControls(settings: DebugSettings) {
   const [keys, setKeys] = useState<KeyState>(CONTROLS_DEFAULTS.KEYBOARD);
 
   const updateKey = useCallback((key: keyof KeyState, value: boolean) => {
@@ -110,13 +111,9 @@ function useKeyboardControls() {
       };
 
       keyUps.handleMove(key);
-      setTimeout(
-        keyUps.handleMechanics,
-        CONTROLS_DEFAULTS.MECHANICS_TIMEOUT,
-        key,
-      );
+      setTimeout(keyUps.handleMechanics, settings.attackSpeed, key);
     },
-    [updateKey],
+    [updateKey, settings],
   );
 
   useEffect(() => {

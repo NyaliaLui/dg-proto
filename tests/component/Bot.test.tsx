@@ -12,7 +12,7 @@ const defaultSettings: DebugSettings = {
   enableBotWalk: BOT_DEFAULTS.enableBotWalk,
   botWalkDurationMS: BOT_DEFAULTS.botWalkDurationMS,
   enableBotAttack: BOT_DEFAULTS.enableBotAttack,
-  botAttackDurationMS: BOT_DEFAULTS.botAttackDurationMS,
+  attackSpeed: BOT_DEFAULTS.attackSpeed,
 };
 
 const testScene = new Group();
@@ -448,7 +448,7 @@ describe('Bot Component', () => {
         enableBotWalk: true,
         botWalkDurationMS: 10,
         enableBotAttack: false,
-        botAttackDurationMS: 1500,
+        attackSpeed: 1500,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -478,7 +478,7 @@ describe('Bot Component', () => {
         enableBotWalk: true,
         botWalkDurationMS: 10,
         enableBotAttack: false,
-        botAttackDurationMS: 1500,
+        attackSpeed: 1500,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -529,7 +529,7 @@ describe('Bot Component', () => {
         enableBotWalk: false,
         botWalkDurationMS: 10,
         enableBotAttack: false,
-        botAttackDurationMS: 1500,
+        attackSpeed: 1500,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -563,7 +563,7 @@ describe('Bot Component', () => {
         enableBotWalk: true,
         botWalkDurationMS: 10,
         enableBotAttack: true,
-        botAttackDurationMS: 10,
+        attackSpeed: 10,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -597,7 +597,7 @@ describe('Bot Component', () => {
         enableBotWalk: false,
         botWalkDurationMS: 1500,
         enableBotAttack: true,
-        botAttackDurationMS: 10,
+        attackSpeed: 10,
       };
 
       let renderer: ReactThreeTestRenderer;

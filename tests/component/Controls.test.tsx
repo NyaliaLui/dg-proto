@@ -3,10 +3,18 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { expect, describe, it } from '@jest/globals';
 import { Controls, AnalogStick, OnscreenKeys } from '@/app/components/Controls';
 import { CONTROLS_TEST_IDS } from '@/app/test-ids';
-import { CONTROLS_DEFAULTS } from '@/app/constants';
+import { BOT_DEFAULTS } from '@/app/constants';
+import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
 
 describe('Controls Component', () => {
   const mockUpdateKey = jest.fn();
+  const defaultSettings: DebugSettings = {
+    debugMode: false,
+    enableBotWalk: BOT_DEFAULTS.enableBotWalk,
+    botWalkDurationMS: BOT_DEFAULTS.botWalkDurationMS,
+    enableBotAttack: BOT_DEFAULTS.enableBotAttack,
+    attackSpeed: BOT_DEFAULTS.attackSpeed,
+  };
 
   beforeEach(() => {
     mockUpdateKey.mockClear();
@@ -14,7 +22,7 @@ describe('Controls Component', () => {
 
   describe('Controls', () => {
     it('should render AnalogStick and OnscreenKeys', () => {
-      render(<Controls updateKey={mockUpdateKey} />);
+      render(<Controls updateKey={mockUpdateKey} settings={defaultSettings} />);
 
       const analogStick = screen.getByTestId(CONTROLS_TEST_IDS.ANALOG_STICK);
       const onscreenKeys = screen.getByTestId(CONTROLS_TEST_IDS.ONSCREEN_KEYS);
@@ -42,7 +50,9 @@ describe('Controls Component', () => {
 
   describe('OnscreenKeys', () => {
     it('should render all action buttons', () => {
-      render(<OnscreenKeys updateKey={mockUpdateKey} />);
+      render(
+        <OnscreenKeys updateKey={mockUpdateKey} settings={defaultSettings} />,
+      );
 
       const jumpButton = screen.getByTestId(CONTROLS_TEST_IDS.JUMP_BUTTON);
       const specialButton = screen.getByTestId(
@@ -58,7 +68,9 @@ describe('Controls Component', () => {
     });
 
     it('should call updateKey with space true on jump button mouse down', () => {
-      render(<OnscreenKeys updateKey={mockUpdateKey} />);
+      render(
+        <OnscreenKeys updateKey={mockUpdateKey} settings={defaultSettings} />,
+      );
       const jumpButton = screen.getByTestId(CONTROLS_TEST_IDS.JUMP_BUTTON);
 
       fireEvent.mouseDown(jumpButton);
@@ -66,7 +78,9 @@ describe('Controls Component', () => {
     });
 
     it('should call updateKey with space false on jump button mouse up', () => {
-      render(<OnscreenKeys updateKey={mockUpdateKey} />);
+      render(
+        <OnscreenKeys updateKey={mockUpdateKey} settings={defaultSettings} />,
+      );
       const jumpButton = screen.getByTestId(CONTROLS_TEST_IDS.JUMP_BUTTON);
 
       fireEvent.mouseUp(jumpButton);
@@ -75,12 +89,14 @@ describe('Controls Component', () => {
         () => {
           expect(mockUpdateKey).toHaveBeenCalledWith('space', false);
         },
-        { timeout: CONTROLS_DEFAULTS.MECHANICS_TIMEOUT },
+        { timeout: BOT_DEFAULTS.attackSpeed },
       );
     });
 
     it('should call updateKey with q true on normal button mouse down', () => {
-      render(<OnscreenKeys updateKey={mockUpdateKey} />);
+      render(
+        <OnscreenKeys updateKey={mockUpdateKey} settings={defaultSettings} />,
+      );
       const normalButton = screen.getByTestId(CONTROLS_TEST_IDS.NORMAL_BUTTON);
 
       fireEvent.mouseDown(normalButton);
@@ -88,7 +104,9 @@ describe('Controls Component', () => {
     });
 
     it('should call updateKey with e true on special button mouse down', () => {
-      render(<OnscreenKeys updateKey={mockUpdateKey} />);
+      render(
+        <OnscreenKeys updateKey={mockUpdateKey} settings={defaultSettings} />,
+      );
       const specialButton = screen.getByTestId(
         CONTROLS_TEST_IDS.SPECIAL_BUTTON,
       );
@@ -98,7 +116,9 @@ describe('Controls Component', () => {
     });
 
     it('should call updateKey with p true on item button mouse down', () => {
-      render(<OnscreenKeys updateKey={mockUpdateKey} />);
+      render(
+        <OnscreenKeys updateKey={mockUpdateKey} settings={defaultSettings} />,
+      );
       const itemButton = screen.getByTestId(CONTROLS_TEST_IDS.ITEM_BUTTON);
 
       fireEvent.mouseDown(itemButton);
@@ -106,7 +126,9 @@ describe('Controls Component', () => {
     });
 
     it('should have correct aria-labels for all buttons', () => {
-      render(<OnscreenKeys updateKey={mockUpdateKey} />);
+      render(
+        <OnscreenKeys updateKey={mockUpdateKey} settings={defaultSettings} />,
+      );
 
       expect(screen.getByLabelText('Jump')).toBeInTheDocument();
       expect(screen.getByLabelText('Special')).toBeInTheDocument();

@@ -59,7 +59,7 @@ export const BOT_DEFAULTS = {
   enableBotWalk: false,
   botWalkDurationMS: 500,
   enableBotAttack: false,
-  botAttackDurationMS: CONTROLS_DEFAULTS.MECHANICS_TIMEOUT,
+  attackSpeed: CONTROLS_DEFAULTS.MECHANICS_TIMEOUT,
 };
 
 export const GAME_DEFAULTS = {
