@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useControls } from 'leva';
+import { Leva, useControls } from 'leva';
 import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
 
 interface DebugGuiProps {
@@ -56,5 +56,5 @@ export function DebugGui({ settings, onSettingsChange }: DebugGuiProps) {
     onSettingsChange,
   ]);
 
-  return null;
+  return <Leva />;
 }
