@@ -8,6 +8,7 @@ import { LEVA_THEMES } from '@/app/constants';
 interface DebugGuiProps {
   settings: DebugSettings;
   onSettingsChange: (newSettings: Partial<DebugSettings>) => void;
+  hidden?: boolean;
 }
 
 type ScreenSize = 'mobile' | 'tablet' | 'desktop';
@@ -36,7 +37,11 @@ function useScreenSize(): ScreenSize {
   return screenSize;
 }
 
-export function DebugGui({ settings, onSettingsChange }: DebugGuiProps) {
+export function DebugGui({
+  settings,
+  onSettingsChange,
+  hidden = true,
+}: DebugGuiProps) {
   const screenSize = useScreenSize();
   const theme = LEVA_THEMES[screenSize];
 
@@ -86,5 +91,11 @@ export function DebugGui({ settings, onSettingsChange }: DebugGuiProps) {
     onSettingsChange,
   ]);
 
-  return <Leva hidden titleBar={{ title: 'Debug Settings' }} theme={theme} />;
+  return (
+    <Leva
+      hidden={hidden}
+      titleBar={{ title: 'Debug Settings' }}
+      theme={theme}
+    />
+  );
 }

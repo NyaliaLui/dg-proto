@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import {
   expect,
   describe,
@@ -32,8 +32,47 @@ describe('DebugGui Component', () => {
         />,
       );
 
-      // Leva is hidden, so the container should be empty
+      // Leva is hidden by default, so the container should be in the document
       expect(container).toBeInTheDocument();
+    });
+
+    it('should be hidden by default', () => {
+      render(
+        <DebugGui
+          settings={DEFAULT_DEBUG_SETTINGS}
+          onSettingsChange={mockOnSettingsChange}
+        />,
+      );
+
+      // When hidden, Leva panel should not be visible
+      const levaPanel = document.querySelector('.leva-c-kWgxhW');
+      expect(levaPanel).toBeNull();
+    });
+
+    it('should show panel when hidden is false', () => {
+      render(
+        <DebugGui
+          settings={DEFAULT_DEBUG_SETTINGS}
+          onSettingsChange={mockOnSettingsChange}
+          hidden={false}
+        />,
+      );
+
+      // When not hidden, Leva panel should be visible with Debug Settings
+      expect(screen.getByText('Show Hit & Hurt Boxes')).toBeInTheDocument();
+    });
+
+    it('should hide panel when hidden is true', () => {
+      render(
+        <DebugGui
+          settings={DEFAULT_DEBUG_SETTINGS}
+          onSettingsChange={mockOnSettingsChange}
+          hidden={true}
+        />,
+      );
+
+      // When hidden, control labels should not be in the document
+      expect(screen.queryByText('Show Hit & Hurt Boxes')).toBeNull();
     });
   });
 

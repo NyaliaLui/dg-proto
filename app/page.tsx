@@ -14,6 +14,7 @@ import { HealthBar } from '@/app/components/HealthBar';
 import { GameOver } from '@/app/components/GameOver';
 import { useDebugSettings } from '@/app/components/hooks/useDebugSettings';
 import { ENVIRONMENT_DEFAULTS, GAME_DEFAULTS } from '@/app/constants';
+import { Button } from 'flowbite-react';
 
 function createInitialBots(): Record<string, boolean> {
   const bots: Record<string, boolean> = {};
@@ -28,6 +29,7 @@ export default function Home() {
   const { keys, updateKey } = useKeyboardControls(settings);
   const [bots, setBots] = useState<Record<string, boolean>>(createInitialBots);
   const [playerHP, setPlayerHP] = useState(GAME_DEFAULTS.PLAYER_MAX_HP);
+  const [debugGuiHidden, setDebugGuiHidden] = useState(true);
 
   const handleBotDeath = useCallback((id: string) => {
     setBots((prevBots) => {
@@ -73,7 +75,19 @@ export default function Home() {
         />
       </Canvas>
       <Controls updateKey={updateKey} settings={settings} />
-      <DebugGui settings={settings} onSettingsChange={updateSettings} />
+      <Button
+        onClick={() => setDebugGuiHidden((prev) => !prev)}
+        color="gray"
+        size="sm"
+        className="absolute top-4 right-4"
+      >
+        Debug Settings
+      </Button>
+      <DebugGui
+        settings={settings}
+        onSettingsChange={updateSettings}
+        hidden={debugGuiHidden}
+      />
       <HealthBar currentHP={playerHP} maxHP={GAME_DEFAULTS.PLAYER_MAX_HP} />
       <GameOver show={playerHP <= 0} />
     </div>
