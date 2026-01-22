@@ -97,3 +97,39 @@ export const ENVIRONMENT_DEFAULTS = {
     sky: '/textures/sky.jpg',
   },
 };
+
+export const LEVA_THEMES = {
+  mobile: {
+    sizes: {
+      rootWidth: '300px',
+      controlWidth: '120px',
+      titleBarHeight: '32px',
+      rowHeight: '28px',
+    },
+    fontSizes: {
+      root: '10px',
+    },
+  },
+  tablet: {
+    sizes: {
+      rootWidth: '330px',
+      controlWidth: '140px',
+      titleBarHeight: '36px',
+      rowHeight: '30px',
+    },
+    fontSizes: {
+      root: '11px',
+    },
+  },
+  desktop: {
+    sizes: {
+      rootWidth: '360px',
+      controlWidth: '160px',
+      titleBarHeight: '40px',
+      rowHeight: '32px',
+    },
+    fontSizes: {
+      root: '12px',
+    },
+  },
+};
