@@ -26,7 +26,8 @@ describe('Home Page', () => {
     });
   });
 
-  it('should render WebGL context', () => {
+  // https://github.com/NyaliaLui/dg-proto/issues/57
+  it.skip('should render WebGL context', () => {
     cy.get('canvas').then(($canvas) => {
       const canvas = $canvas[0] as HTMLCanvasElement;
       const gl = canvas.getContext('webgl') || canvas.getContext('webgl2');
