@@ -56,9 +56,6 @@ export function DebugGui({
     },
     botWalkDurationMS: {
       value: settings.botWalkDurationMS,
-      min: 100,
-      max: 1000,
-      step: 100,
       label: 'Bot Walk Duration (ms)',
     },
     enableBotAttack: {
@@ -67,9 +64,6 @@ export function DebugGui({
     },
     attackSpeed: {
       value: settings.attackSpeed,
-      min: 100,
-      max: 1000,
-      step: 100,
       label: 'Attack Speed (ms)',
     },
   });

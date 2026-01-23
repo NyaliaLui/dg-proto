@@ -101,24 +101,24 @@ export const ENVIRONMENT_DEFAULTS = {
 export const LEVA_THEMES = {
   mobile: {
     sizes: {
-      rootWidth: '300px',
-      controlWidth: '120px',
-      titleBarHeight: '32px',
-      rowHeight: '28px',
+      rootWidth: '210px',
+      controlWidth: '48px',
+      titleBarHeight: '24px',
+      rowHeight: '24px',
     },
     fontSizes: {
-      root: '10px',
+      root: '9px',
     },
   },
   tablet: {
     sizes: {
-      rootWidth: '330px',
-      controlWidth: '140px',
+      rootWidth: '300px',
+      controlWidth: '72px',
       titleBarHeight: '36px',
       rowHeight: '30px',
     },
     fontSizes: {
-      root: '11px',
+      root: '12px',
     },
   },
   desktop: {

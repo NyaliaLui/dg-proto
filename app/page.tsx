@@ -78,7 +78,7 @@ export default function Home() {
       <Button
         onClick={() => setDebugGuiHidden((prev) => !prev)}
         color="gray"
-        size="sm"
+        size="xs"
         className="absolute top-4 right-4"
       >
         Debug Settings
