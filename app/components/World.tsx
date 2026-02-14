@@ -8,6 +8,7 @@ import { ENVIRONMENT_DEFAULTS } from '@/app/constants';
 
 export { World };
 
+// Renders the ground plane and sky background
 function World() {
   const grass = useTexture(ENVIRONMENT_DEFAULTS.texture.ground);
   grass.wrapS = grass.wrapT = RepeatWrapping;
