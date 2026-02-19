@@ -19,5 +19,16 @@ const config: Config = {
   testMatch: ['**/tests/component/*.tsx'],
 };
 
-// createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
-export default createJestConfig(config);
+// Override transformIgnorePatterns after next/jest resolves to ensure ESM deps are transpiled
+const jestConfig = async () => {
+  const nextConfig = await createJestConfig(config)();
+  return {
+    ...nextConfig,
+    transformIgnorePatterns: [
+      'node_modules/(?!(debounce|flowbite-react)/)',
+      '^.+\\.module\\.(css|sass|scss)$',
+    ],
+  };
+};
+
+export default jestConfig;
