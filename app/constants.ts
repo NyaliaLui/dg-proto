@@ -4,11 +4,12 @@ export const CHARACTER_DEFAULTS = {
   MOVE_SPEED: 3,
   MODELS: {
     XBOT: '/models/XBot.fbx',
+    PALADIN: '/models/Paladin.fbx',
   },
   ANIMATIONS: {
     IDLE: '/models/IdleWithoutSkin.fbx',
     WALK: '/models/WalkingWithoutSkin.fbx',
-    NORMAL: '/models/PunchingWithoutSkin2.fbx',
+    NORMAL: '/models/SlashWithoutSkin.fbx',
   },
   SCALE: 0.01,
   COLLIDERS: {

@@ -55,12 +55,12 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
   }, [keys]);
 
   // Load the skinned model
-  const modelFbx = useFBX(CHARACTER_DEFAULTS.MODELS.XBOT);
+  const modelFbx = useFBX(CHARACTER_DEFAULTS.MODELS.PALADIN);
 
   // Load animations from separate files
   const idleAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.IDLE));
   const walkAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.WALK));
-  const punchAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.NORMAL));
+  const normalAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.NORMAL));
 
   // Clone the model so it can be used independently
   const model = useMemo(() => SkeletonUtils.clone(modelFbx), [modelFbx]);
@@ -90,13 +90,13 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
   // Determine which animation to play based on state
   const currentAnimation = useMemo(() => {
     if (isAttacking(keys)) {
-      return punchAnim;
+      return normalAnim;
     }
     if (moving) {
       return walkAnim;
     }
     return idleAnim;
-  }, [keys, moving, idleAnim, walkAnim, punchAnim]);
+  }, [keys, moving, idleAnim, walkAnim, normalAnim]);
 
   useEffect(() => {
     // Clean up previous mixer
