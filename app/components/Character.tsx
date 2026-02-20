@@ -5,6 +5,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useFBX } from '@react-three/drei';
 import {
   CapsuleCollider,
+  CylinderCollider,
   RigidBody,
   RapierRigidBody,
 } from '@react-three/rapier';
@@ -42,8 +43,8 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
   const [headPosition, setHeadPosition] = useState<[number, number, number]>([
     ...CHARACTER_DEFAULTS.COLLIDERS.HEAD.position,
   ]);
-  const [handPosition, setHandPosition] = useState<[number, number, number]>([
-    ...CHARACTER_DEFAULTS.COLLIDERS.HAND.position,
+  const [swordPosition, setSwordPosition] = useState<[number, number, number]>([
+    ...CHARACTER_DEFAULTS.COLLIDERS.SWORD.position,
   ]);
   const { scene } = useThree();
   const skeletonHelperRef = useRef<SkeletonHelper | null>(null);
@@ -164,19 +165,19 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
           ]);
         }
 
-        // Update hand position (only during attack)
+        // Update sword position (only during attack)
         if (isAttacking(keys)) {
-          const leftHandPos = getBoneWorldPosition(
-            'mixamorigLeftHand',
+          const swordPos = getBoneWorldPosition(
+            'mixamorigSword_joint',
             boneVertexMapRef.current,
             positions,
           );
-          if (leftHandPos) {
-            leftHandPos.multiplyScalar(CHARACTER_DEFAULTS.SCALE);
-            setHandPosition([
-              leftHandPos.x,
-              leftHandPos.y + CHARACTER_DEFAULTS.COLLIDERS.HAND.offset.y,
-              leftHandPos.z + CHARACTER_DEFAULTS.COLLIDERS.HAND.offset.z,
+          if (swordPos) {
+            swordPos.multiplyScalar(CHARACTER_DEFAULTS.SCALE);
+            setSwordPosition([
+              swordPos.x,
+              swordPos.y + CHARACTER_DEFAULTS.COLLIDERS.SWORD.offset.y,
+              swordPos.z + CHARACTER_DEFAULTS.COLLIDERS.SWORD.offset.z,
             ]);
           }
         }
@@ -265,16 +266,17 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
         sensor
         onIntersectionEnter={onHit}
       />
-      {/* Hand capsule - only active during attack */}
-      {isAttacking(keys) && (
-        <CapsuleCollider
-          args={[
-            CHARACTER_DEFAULTS.COLLIDERS.HAND.halfHeight,
-            CHARACTER_DEFAULTS.COLLIDERS.HAND.radius,
-          ]}
-          position={handPosition}
-        />
-      )}
+      {/* Sword cylinder - only active during attack */}
+      {/* {isAttacking(keys) && ( */}
+      <CylinderCollider
+        args={[
+          CHARACTER_DEFAULTS.COLLIDERS.SWORD.halfHeight,
+          CHARACTER_DEFAULTS.COLLIDERS.SWORD.radius,
+        ]}
+        position={swordPosition}
+        rotation={[Math.PI / 2, 0, 0]}
+      />
+      {/* )} */}
       <group ref={modelRef}>
         <primitive
           object={model}

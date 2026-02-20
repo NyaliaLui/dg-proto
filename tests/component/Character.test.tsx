@@ -123,6 +123,7 @@ jest.mock('@react-three/rapier', () => {
       colliderIndex++;
       return null;
     },
+    CylinderCollider: () => null,
   };
 });
 

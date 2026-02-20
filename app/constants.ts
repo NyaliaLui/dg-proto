@@ -32,6 +32,12 @@ export const CHARACTER_DEFAULTS = {
       position: [0, 0.4, 0.75] as const,
       offset: { y: -0.89, z: 0 },
     },
+    SWORD: {
+      halfHeight: 0.4,
+      radius: 0.05,
+      position: [0, 0.4, 0.75] as const,
+      offset: { y: -0.89, z: 0 },
+    },
   },
 };
 
