@@ -5,7 +5,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useFBX } from '@react-three/drei';
 import {
   CapsuleCollider,
-  CylinderCollider,
+  ConvexHullCollider,
   RigidBody,
   RapierRigidBody,
 } from '@react-three/rapier';
@@ -24,6 +24,7 @@ import {
   getBoneList,
   makeBoneVertexMap,
   getBoneWorldPosition,
+  makeFanVertices,
   BoneVertexMap,
 } from '@/app/utils';
 
@@ -46,6 +47,17 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
   const [swordPosition, setSwordPosition] = useState<[number, number, number]>([
     ...CHARACTER_DEFAULTS.COLLIDERS.SWORD.position,
   ]);
+  const fanVertices = useMemo(
+    () =>
+      makeFanVertices(
+        CHARACTER_DEFAULTS.COLLIDERS.SWORD.innerRadius,
+        CHARACTER_DEFAULTS.COLLIDERS.SWORD.outerRadius,
+        CHARACTER_DEFAULTS.COLLIDERS.SWORD.halfAngle,
+        CHARACTER_DEFAULTS.COLLIDERS.SWORD.halfThickness,
+        CHARACTER_DEFAULTS.COLLIDERS.SWORD.segments,
+      ),
+    [],
+  );
   const { scene } = useThree();
   const skeletonHelperRef = useRef<SkeletonHelper | null>(null);
   const boneVertexMapRef = useRef<BoneVertexMap | null>(null);
@@ -168,7 +180,7 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
         // Update sword position (only during attack)
         if (isAttacking(keys)) {
           const swordPos = getBoneWorldPosition(
-            'mixamorigSword_joint',
+            'mixamorigSpine1',
             boneVertexMapRef.current,
             positions,
           );
@@ -266,17 +278,14 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
         sensor
         onIntersectionEnter={onHit}
       />
-      {/* Sword cylinder - only active during attack */}
-      {/* {isAttacking(keys) && ( */}
-      <CylinderCollider
-        args={[
-          CHARACTER_DEFAULTS.COLLIDERS.SWORD.halfHeight,
-          CHARACTER_DEFAULTS.COLLIDERS.SWORD.radius,
-        ]}
-        position={swordPosition}
-        rotation={[Math.PI / 2, 0, 0]}
-      />
-      {/* )} */}
+      {/* Sword fan collider - only active during attack */}
+      {isAttacking(keys) && (
+        <ConvexHullCollider
+          args={[fanVertices]}
+          position={swordPosition}
+          rotation={[0, 0, -Math.PI / 5]}
+        />
+      )}
       <group ref={modelRef}>
         <primitive
           object={model}

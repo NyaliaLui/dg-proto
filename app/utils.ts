@@ -65,6 +65,40 @@ export function makeBoneVertexMap(bones: THREE.Bone[]): BoneVertexMap {
 }
 
 /**
+ * Generates vertices for a fan (circular sector) shape in the XZ plane.
+ * The fan is centered at the origin with the arc facing +Z.
+ */
+export function makeFanVertices(
+  innerRadius: number,
+  outerRadius: number,
+  halfAngle: number,
+  halfThickness: number,
+  segments: number,
+): Float32Array {
+  const pts: number[] = [];
+
+  // Generate points on both the top and bottom faces for thickness
+  for (const y of [-halfThickness, halfThickness]) {
+    // Origin point
+    pts.push(0, y, 0);
+
+    // Inner arc
+    for (let i = 0; i <= segments; i++) {
+      const theta = -halfAngle + (2 * halfAngle * i) / segments;
+      pts.push(innerRadius * Math.sin(theta), y, innerRadius * Math.cos(theta));
+    }
+
+    // Outer arc
+    for (let i = 0; i <= segments; i++) {
+      const theta = -halfAngle + (2 * halfAngle * i) / segments;
+      pts.push(outerRadius * Math.sin(theta), y, outerRadius * Math.cos(theta));
+    }
+  }
+
+  return new Float32Array(pts);
+}
+
+/**
  * Gets the world position of a bone from the SkeletonHelper's geometry buffer.
  * Call helper.update() before this to ensure positions are current.
  */
