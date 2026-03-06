@@ -5,15 +5,15 @@ import {
   useKeyboardControls,
   isAttacking,
 } from '@/app/components/hooks/useKeyboardControls';
-import { CONTROLS_DEFAULTS, BOT_DEFAULTS } from '@/app/constants';
+import { CONTROLS_DEFAULTS, BARBARIAN_DEFAULTS } from '@/app/constants';
 import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
 
 const defaultSettings: DebugSettings = {
   debugMode: false,
-  enableBotWalk: BOT_DEFAULTS.enableBotWalk,
-  botWalkDurationMS: BOT_DEFAULTS.botWalkDurationMS,
-  enableBotAttack: BOT_DEFAULTS.enableBotAttack,
-  attackSpeed: BOT_DEFAULTS.attackSpeed,
+  enableBarbarianWalk: BARBARIAN_DEFAULTS.enableBarbarianWalk,
+  barbarianWalkDurationMS: BARBARIAN_DEFAULTS.barbarianWalkDurationMS,
+  enableBarbarianAttack: BARBARIAN_DEFAULTS.enableBarbarianAttack,
+  attackSpeed: BARBARIAN_DEFAULTS.attackSpeed,
 };
 
 describe('useKeyboardControls Hook', () => {

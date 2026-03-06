@@ -1,20 +1,20 @@
 import { useState, useCallback } from 'react';
-import { BOT_DEFAULTS } from '@/app/constants';
+import { BARBARIAN_DEFAULTS } from '@/app/constants';
 
 export interface DebugSettings {
   debugMode: boolean;
-  enableBotWalk: boolean;
-  botWalkDurationMS: number;
-  enableBotAttack: boolean;
+  enableBarbarianWalk: boolean;
+  barbarianWalkDurationMS: number;
+  enableBarbarianAttack: boolean;
   attackSpeed: number;
 }
 
 export const DEFAULT_DEBUG_SETTINGS: DebugSettings = {
   debugMode: false,
-  enableBotWalk: BOT_DEFAULTS.enableBotWalk,
-  botWalkDurationMS: BOT_DEFAULTS.botWalkDurationMS,
-  enableBotAttack: BOT_DEFAULTS.enableBotAttack,
-  attackSpeed: BOT_DEFAULTS.attackSpeed,
+  enableBarbarianWalk: BARBARIAN_DEFAULTS.enableBarbarianWalk,
+  barbarianWalkDurationMS: BARBARIAN_DEFAULTS.barbarianWalkDurationMS,
+  enableBarbarianAttack: BARBARIAN_DEFAULTS.enableBarbarianAttack,
+  attackSpeed: BARBARIAN_DEFAULTS.attackSpeed,
 };
 
 export function useDebugSettings() {

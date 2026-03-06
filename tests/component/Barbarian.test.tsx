@@ -3,16 +3,20 @@ import { expect } from '@jest/globals';
 import { create, ReactThreeTestRenderer } from '@react-three/test-renderer';
 import { Group } from 'three';
 import { act } from 'react';
-import { Bot } from '@/app/components/Bot';
+import { Barbarian } from '@/app/components/Barbarian';
 import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
-import { BOT_DEFAULTS, GAME_DEFAULTS, DEFAULT_COLORS } from '@/app/constants';
+import {
+  BARBARIAN_DEFAULTS,
+  GAME_DEFAULTS,
+  DEFAULT_COLORS,
+} from '@/app/constants';
 
 const defaultSettings: DebugSettings = {
   debugMode: false,
-  enableBotWalk: BOT_DEFAULTS.enableBotWalk,
-  botWalkDurationMS: BOT_DEFAULTS.botWalkDurationMS,
-  enableBotAttack: BOT_DEFAULTS.enableBotAttack,
-  attackSpeed: BOT_DEFAULTS.attackSpeed,
+  enableBarbarianWalk: BARBARIAN_DEFAULTS.enableBarbarianWalk,
+  barbarianWalkDurationMS: BARBARIAN_DEFAULTS.barbarianWalkDurationMS,
+  enableBarbarianAttack: BARBARIAN_DEFAULTS.enableBarbarianAttack,
+  attackSpeed: BARBARIAN_DEFAULTS.attackSpeed,
 };
 
 const testScene = new Group();
@@ -121,7 +125,7 @@ jest.mock('@react-three/rapier', () => {
   };
 });
 
-describe('Bot Component', () => {
+describe('Barbarian Component', () => {
   beforeEach(() => {
     capturedHitHandlers = [];
     jest.useFakeTimers();
@@ -136,7 +140,7 @@ describe('Bot Component', () => {
       let renderer: ReactThreeTestRenderer;
       await act(async () => {
         renderer = await create(
-          <Bot id="test-bot" settings={defaultSettings} />,
+          <Barbarian id="test-barbarian" settings={defaultSettings} />,
         );
       });
       const group = renderer!.scene.children[0];
@@ -148,7 +152,7 @@ describe('Bot Component', () => {
       let renderer: ReactThreeTestRenderer;
       await act(async () => {
         renderer = await create(
-          <Bot id="test-bot" settings={defaultSettings} />,
+          <Barbarian id="test-barbarian" settings={defaultSettings} />,
         );
       });
       const rigidBody = renderer!.scene.children[0];
@@ -161,7 +165,7 @@ describe('Bot Component', () => {
       let renderer: ReactThreeTestRenderer;
       await act(async () => {
         renderer = await create(
-          <Bot id="test-bot" settings={defaultSettings} />,
+          <Barbarian id="test-barbarian" settings={defaultSettings} />,
         );
       });
       const group = renderer!.scene.children[0];
@@ -172,7 +176,7 @@ describe('Bot Component', () => {
       let renderer: ReactThreeTestRenderer;
       await act(async () => {
         renderer = await create(
-          <Bot id="test-bot" settings={defaultSettings} />,
+          <Barbarian id="test-barbarian" settings={defaultSettings} />,
         );
       });
       const rigidBody = renderer!.scene.children[0];
@@ -200,7 +204,7 @@ describe('Bot Component', () => {
       let renderer: ReactThreeTestRenderer;
       await act(async () => {
         renderer = await create(
-          <Bot id="test-bot" settings={defaultSettings} />,
+          <Barbarian id="test-barbarian" settings={defaultSettings} />,
         );
       });
       await act(async () => {
@@ -227,8 +231,8 @@ describe('Bot Component', () => {
       mockOnDeath = jest.fn();
       await act(async () => {
         renderer = await create(
-          <Bot
-            id="test-bot"
+          <Barbarian
+            id="test-barbarian"
             onDeath={mockOnDeath}
             settings={defaultSettings}
           />,
@@ -251,22 +255,22 @@ describe('Bot Component', () => {
     it('should call onDeath callback when HP reaches zero', async () => {
       const hitHandler = capturedHitHandlers[0];
 
-      // Hit INITIAL_BOT_HP times to reach 0 HP
+      // Hit INITIAL_BARBARIAN_HP times to reach 0 HP
       await act(async () => {
-        for (let i = 0; i < GAME_DEFAULTS.INITIAL_BOT_HP; i++) {
+        for (let i = 0; i < GAME_DEFAULTS.INITIAL_BARBARIAN_HP; i++) {
           hitHandler();
         }
       });
 
-      expect(mockOnDeath).toHaveBeenCalledWith('test-bot');
+      expect(mockOnDeath).toHaveBeenCalledWith('test-barbarian');
     });
 
     it('should not call onDeath when HP is above zero', async () => {
       const hitHandler = capturedHitHandlers[0];
 
-      // Hit one less than INITIAL_BOT_HP times (HP goes to 1)
+      // Hit one less than INITIAL_BARBARIAN_HP times (HP goes to 1)
       await act(async () => {
-        for (let i = 0; i < GAME_DEFAULTS.INITIAL_BOT_HP - 1; i++) {
+        for (let i = 0; i < GAME_DEFAULTS.INITIAL_BARBARIAN_HP - 1; i++) {
           hitHandler();
         }
       });
@@ -292,21 +296,21 @@ describe('Bot Component', () => {
       return hpGroup.children.filter((child) => child.type === 'Mesh').length;
     };
 
-    it('should render INITIAL_BOT_HP blocks initially', async () => {
+    it('should render INITIAL_BARBARIAN_HP blocks initially', async () => {
       let renderer: ReactThreeTestRenderer;
       await act(async () => {
         renderer = await create(
-          <Bot id="test-bot" settings={defaultSettings} />,
+          <Barbarian id="test-barbarian" settings={defaultSettings} />,
         );
       });
-      expect(countHpBlocks(renderer!)).toBe(GAME_DEFAULTS.INITIAL_BOT_HP);
+      expect(countHpBlocks(renderer!)).toBe(GAME_DEFAULTS.INITIAL_BARBARIAN_HP);
     });
 
     it('should render HP blocks as meshes with box geometry', async () => {
       let renderer: ReactThreeTestRenderer;
       await act(async () => {
         renderer = await create(
-          <Bot id="test-bot" settings={defaultSettings} />,
+          <Barbarian id="test-barbarian" settings={defaultSettings} />,
         );
       });
       const hpGroup = findHpBlocksGroup(renderer!);
@@ -323,7 +327,7 @@ describe('Bot Component', () => {
       let renderer: ReactThreeTestRenderer;
       await act(async () => {
         renderer = await create(
-          <Bot id="test-bot" settings={defaultSettings} />,
+          <Barbarian id="test-barbarian" settings={defaultSettings} />,
         );
       });
       const hpGroup = findHpBlocksGroup(renderer!);
@@ -342,36 +346,40 @@ describe('Bot Component', () => {
       let renderer: ReactThreeTestRenderer;
       await act(async () => {
         renderer = await create(
-          <Bot id="test-bot" settings={defaultSettings} />,
+          <Barbarian id="test-barbarian" settings={defaultSettings} />,
         );
       });
       const hitHandler = capturedHitHandlers[0];
 
-      expect(countHpBlocks(renderer!)).toBe(GAME_DEFAULTS.INITIAL_BOT_HP);
+      expect(countHpBlocks(renderer!)).toBe(GAME_DEFAULTS.INITIAL_BARBARIAN_HP);
 
       await act(async () => {
         hitHandler();
       });
-      expect(countHpBlocks(renderer!)).toBe(GAME_DEFAULTS.INITIAL_BOT_HP - 1);
+      expect(countHpBlocks(renderer!)).toBe(
+        GAME_DEFAULTS.INITIAL_BARBARIAN_HP - 1,
+      );
 
       await act(async () => {
         hitHandler();
       });
-      expect(countHpBlocks(renderer!)).toBe(GAME_DEFAULTS.INITIAL_BOT_HP - 2);
+      expect(countHpBlocks(renderer!)).toBe(
+        GAME_DEFAULTS.INITIAL_BARBARIAN_HP - 2,
+      );
     });
 
     it('should show 0 HP blocks when HP reaches zero', async () => {
       let renderer: ReactThreeTestRenderer;
       await act(async () => {
         renderer = await create(
-          <Bot id="test-bot" settings={defaultSettings} />,
+          <Barbarian id="test-barbarian" settings={defaultSettings} />,
         );
       });
       const hitHandler = capturedHitHandlers[0];
 
-      // Hit INITIAL_BOT_HP times to reach 0 HP
+      // Hit INITIAL_BARBARIAN_HP times to reach 0 HP
       await act(async () => {
-        for (let i = 0; i < GAME_DEFAULTS.INITIAL_BOT_HP; i++) {
+        for (let i = 0; i < GAME_DEFAULTS.INITIAL_BARBARIAN_HP; i++) {
           hitHandler();
         }
       });
@@ -384,7 +392,7 @@ describe('Bot Component', () => {
       let renderer: ReactThreeTestRenderer;
       await act(async () => {
         renderer = await create(
-          <Bot id="test-bot" settings={defaultSettings} />,
+          <Barbarian id="test-barbarian" settings={defaultSettings} />,
         );
       });
       const hpGroup = findHpBlocksGroup(renderer!);
@@ -407,7 +415,7 @@ describe('Bot Component', () => {
       let renderer: ReactThreeTestRenderer;
       await act(async () => {
         renderer = await create(
-          <Bot id="test-bot" settings={defaultSettings} />,
+          <Barbarian id="test-barbarian" settings={defaultSettings} />,
         );
       });
       await act(async () => {
@@ -421,7 +429,7 @@ describe('Bot Component', () => {
       let renderer: ReactThreeTestRenderer;
       await act(async () => {
         renderer = await create(
-          <Bot id="test-bot" settings={defaultSettings} />,
+          <Barbarian id="test-barbarian" settings={defaultSettings} />,
         );
       });
 
@@ -445,16 +453,16 @@ describe('Bot Component', () => {
     it('should rotate when walking', async () => {
       const fastWalkSettings: DebugSettings = {
         debugMode: false,
-        enableBotWalk: true,
-        botWalkDurationMS: 10,
-        enableBotAttack: false,
+        enableBarbarianWalk: true,
+        barbarianWalkDurationMS: 10,
+        enableBarbarianAttack: false,
         attackSpeed: 1500,
       };
 
       let renderer: ReactThreeTestRenderer;
       await act(async () => {
         renderer = await create(
-          <Bot id="test-bot" settings={fastWalkSettings} />,
+          <Barbarian id="test-barbarian" settings={fastWalkSettings} />,
         );
       });
 
@@ -475,16 +483,16 @@ describe('Bot Component', () => {
     it('should change direction between walk cycles', async () => {
       const fastWalkSettings: DebugSettings = {
         debugMode: false,
-        enableBotWalk: true,
-        botWalkDurationMS: 10,
-        enableBotAttack: false,
+        enableBarbarianWalk: true,
+        barbarianWalkDurationMS: 10,
+        enableBarbarianAttack: false,
         attackSpeed: 1500,
       };
 
       let renderer: ReactThreeTestRenderer;
       await act(async () => {
         renderer = await create(
-          <Bot id="test-bot" settings={fastWalkSettings} />,
+          <Barbarian id="test-barbarian" settings={fastWalkSettings} />,
         );
       });
 
@@ -523,19 +531,19 @@ describe('Bot Component', () => {
       }
     });
 
-    it('should not walk when enableBotWalk is false', async () => {
+    it('should not walk when enableBarbarianWalk is false', async () => {
       const disabledWalkSettings: DebugSettings = {
         debugMode: false,
-        enableBotWalk: false,
-        botWalkDurationMS: 10,
-        enableBotAttack: false,
+        enableBarbarianWalk: false,
+        barbarianWalkDurationMS: 10,
+        enableBarbarianAttack: false,
         attackSpeed: 1500,
       };
 
       let renderer: ReactThreeTestRenderer;
       await act(async () => {
         renderer = await create(
-          <Bot id="test-bot" settings={disabledWalkSettings} />,
+          <Barbarian id="test-barbarian" settings={disabledWalkSettings} />,
         );
       });
 
@@ -560,16 +568,16 @@ describe('Bot Component', () => {
       // Settings where both walk and attack are enabled with fast intervals
       const attackWhileWalkingSettings: DebugSettings = {
         debugMode: false,
-        enableBotWalk: true,
-        botWalkDurationMS: 10,
-        enableBotAttack: true,
+        enableBarbarianWalk: true,
+        barbarianWalkDurationMS: 10,
+        enableBarbarianAttack: true,
         attackSpeed: 10,
       };
 
       let renderer: ReactThreeTestRenderer;
       await act(async () => {
         renderer = await create(
-          <Bot id="test-bot" settings={attackWhileWalkingSettings} />,
+          <Barbarian id="test-barbarian" settings={attackWhileWalkingSettings} />,
         );
       });
 
@@ -594,16 +602,16 @@ describe('Bot Component', () => {
     it('should not move when only attacking (walk disabled)', async () => {
       const attackOnlySettings: DebugSettings = {
         debugMode: false,
-        enableBotWalk: false,
-        botWalkDurationMS: 1500,
-        enableBotAttack: true,
+        enableBarbarianWalk: false,
+        barbarianWalkDurationMS: 1500,
+        enableBarbarianAttack: true,
         attackSpeed: 10,
       };
 
       let renderer: ReactThreeTestRenderer;
       await act(async () => {
         renderer = await create(
-          <Bot id="test-bot" settings={attackOnlySettings} />,
+          <Barbarian id="test-barbarian" settings={attackOnlySettings} />,
         );
       });
 

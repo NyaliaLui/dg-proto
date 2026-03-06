@@ -6,7 +6,7 @@ import { Character } from '@/app/components/Character';
 import {
   CONTROLS_DEFAULTS,
   CHARACTER_DEFAULTS,
-  BOT_DEFAULTS,
+  BARBARIAN_DEFAULTS,
 } from '@/app/constants';
 import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
 
@@ -130,10 +130,10 @@ describe('Character Component', () => {
   const mockKeys = CONTROLS_DEFAULTS.KEYBOARD;
   const defaultSettings: DebugSettings = {
     debugMode: false,
-    enableBotWalk: BOT_DEFAULTS.enableBotWalk,
-    botWalkDurationMS: BOT_DEFAULTS.botWalkDurationMS,
-    enableBotAttack: BOT_DEFAULTS.enableBotAttack,
-    attackSpeed: BOT_DEFAULTS.attackSpeed,
+    enableBarbarianWalk: BARBARIAN_DEFAULTS.enableBarbarianWalk,
+    barbarianWalkDurationMS: BARBARIAN_DEFAULTS.barbarianWalkDurationMS,
+    enableBarbarianAttack: BARBARIAN_DEFAULTS.enableBarbarianAttack,
+    attackSpeed: BARBARIAN_DEFAULTS.attackSpeed,
   };
 
   describe('Rendering', () => {

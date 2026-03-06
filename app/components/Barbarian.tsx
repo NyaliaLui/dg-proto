@@ -26,13 +26,13 @@ import {
   BoneVertexMap,
 } from '@/app/utils';
 
-interface BotProps {
+interface BarbarianProps {
   id: string;
   onDeath?: (id: string) => void;
   settings: DebugSettings;
 }
 
-export function Bot({ id, onDeath, settings }: BotProps) {
+export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
   const rigidBodyRef = useRef<RapierRigidBody>(null);
   const modelRef = useRef<THREE.Group>(null);
   const lastRotationRef = useRef<number>(-Math.PI / 2);
@@ -48,7 +48,7 @@ export function Bot({ id, onDeath, settings }: BotProps) {
   const [handPosition, setHandPosition] = useState<[number, number, number]>([
     ...CHARACTER_DEFAULTS.COLLIDERS.HAND.position,
   ]);
-  const [hp, setHp] = useState(GAME_DEFAULTS.INITIAL_BOT_HP);
+  const [hp, setHp] = useState(GAME_DEFAULTS.INITIAL_BARBARIAN_HP);
   const [isWalking, setIsWalking] = useState(false);
   const [isAttacking, setIsAttacking] = useState(false);
   const [direction, setDirection] = useState<number>(-1); // 1 = right, -1 = left
@@ -61,7 +61,7 @@ export function Bot({ id, onDeath, settings }: BotProps) {
     });
   }, []);
 
-  // Notify parent when bot dies
+  // Notify parent when barbarian dies
   useEffect(() => {
     if (hp <= 0 && onDeath) {
       onDeath(id);
@@ -108,11 +108,11 @@ export function Bot({ id, onDeath, settings }: BotProps) {
     return idleAnim;
   }, [isAttacking, isWalking, punchAnim, walkAnim, idleAnim]);
 
-  // Simple patrol behavior: toggle walking every botWalkDurationMS and change direction
+  // Simple patrol behavior: toggle walking every barbarianWalkDurationMS and change direction
   useEffect(() => {
     const interval = setInterval(() => {
       setIsWalking((prev) => {
-        if (!settings.enableBotWalk) return false;
+        if (!settings.enableBarbarianWalk) return false;
         if (!prev && !wasWalkingRef.current) {
           // Starting to walk, change direction
           setDirection((d) => d * -1);
@@ -120,22 +120,22 @@ export function Bot({ id, onDeath, settings }: BotProps) {
         wasWalkingRef.current = !prev;
         return !prev;
       });
-    }, settings.botWalkDurationMS);
+    }, settings.barbarianWalkDurationMS);
 
     return () => clearInterval(interval);
-  }, [settings.enableBotWalk, settings.botWalkDurationMS]);
+  }, [settings.enableBarbarianWalk, settings.barbarianWalkDurationMS]);
 
-  // Attack behavior: toggle attacking every botAttackDurationMS
+  // Attack behavior: toggle attacking every attackSpeed
   useEffect(() => {
     const interval = setInterval(() => {
       setIsAttacking((prev) => {
-        if (!settings.enableBotAttack) return false;
+        if (!settings.enableBarbarianAttack) return false;
         return !prev;
       });
     }, settings.attackSpeed);
 
     return () => clearInterval(interval);
-  }, [settings.enableBotAttack, settings.attackSpeed]);
+  }, [settings.enableBarbarianAttack, settings.attackSpeed]);
 
   useEffect(() => {
     // Clean up previous mixer
