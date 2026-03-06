@@ -5,7 +5,7 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { Physics } from '@react-three/rapier';
 import { Character } from '@/app/components/Character';
-import { Bot } from '@/app/components/Bot';
+import { Barbarian } from '@/app/components/Barbarian';
 import { World } from '@/app/components/World';
 import { useKeyboardControls } from '@/app/components/hooks/useKeyboardControls';
 import { Controls } from '@/app/components/Controls';
@@ -16,26 +16,26 @@ import { useDebugSettings } from '@/app/components/hooks/useDebugSettings';
 import { ENVIRONMENT_DEFAULTS, GAME_DEFAULTS } from '@/app/constants';
 import { Button } from 'flowbite-react';
 
-function createInitialBots(): Record<string, boolean> {
-  const bots: Record<string, boolean> = {};
-  for (let i = 0; i < GAME_DEFAULTS.INITIAL_BOT_COUNT; i++) {
-    bots[`bot-${i}`] = true;
+function createInitialBarbarians(): Record<string, boolean> {
+  const barbarians: Record<string, boolean> = {};
+  for (let i = 0; i < GAME_DEFAULTS.INITIAL_BARBARIAN_COUNT; i++) {
+    barbarians[`barbarian-${i}`] = true;
   }
-  return bots;
+  return barbarians;
 }
 
 export default function Home() {
   const { settings, updateSettings } = useDebugSettings();
   const { keys, updateKey } = useKeyboardControls(settings);
-  const [bots, setBots] = useState<Record<string, boolean>>(createInitialBots);
+  const [barbarians, setBarbarians] = useState<Record<string, boolean>>(createInitialBarbarians);
   const [playerHP, setPlayerHP] = useState(GAME_DEFAULTS.PLAYER_MAX_HP);
   const [debugGuiHidden, setDebugGuiHidden] = useState(true);
 
-  const handleBotDeath = useCallback((id: string) => {
-    setBots((prevBots) => {
-      const newBots = { ...prevBots };
-      delete newBots[id];
-      return newBots;
+  const handleBarbarianDeath = useCallback((id: string) => {
+    setBarbarians((prevBarbarians) => {
+      const newBarbarians = { ...prevBarbarians };
+      delete newBarbarians[id];
+      return newBarbarians;
     });
   }, []);
 
@@ -43,11 +43,16 @@ export default function Home() {
     setPlayerHP((prevHP) => Math.max(0, prevHP - 10));
   }, []);
 
-  const botComponents = useMemo(() => {
-    return Object.keys(bots).map((id) => (
-      <Bot key={id} id={id} onDeath={handleBotDeath} settings={settings} />
+  const barbarianComponents = useMemo(() => {
+    return Object.keys(barbarians).map((id) => (
+      <Barbarian
+        key={id}
+        id={id}
+        onDeath={handleBarbarianDeath}
+        settings={settings}
+      />
     ));
-  }, [bots, handleBotDeath, settings]);
+  }, [barbarians, handleBarbarianDeath, settings]);
 
   return (
     <div className="flex h-screen w-full bg-zinc-900">
@@ -64,7 +69,7 @@ export default function Home() {
           intensity={ENVIRONMENT_DEFAULTS.directionalLight.intensity}
         />
         <Physics gravity={[0, 0, 0]} debug={settings.debugMode}>
-          {botComponents}
+          {barbarianComponents}
           <Character keys={keys} onHit={handlePlayerHit} settings={settings} />
         </Physics>
         <World />

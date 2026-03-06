@@ -50,17 +50,17 @@ export function DebugGui({
       value: settings.debugMode,
       label: 'Show Hit & Hurt Boxes',
     },
-    enableBotWalk: {
-      value: settings.enableBotWalk,
-      label: 'Enable Bot Walk',
+    enableBarbarianWalk: {
+      value: settings.enableBarbarianWalk,
+      label: 'Enable Barbarian Walk',
     },
-    botWalkDurationMS: {
-      value: settings.botWalkDurationMS,
-      label: 'Bot Walk Duration (ms)',
+    barbarianWalkDurationMS: {
+      value: settings.barbarianWalkDurationMS,
+      label: 'Barbarian Walk Duration (ms)',
     },
-    enableBotAttack: {
-      value: settings.enableBotAttack,
-      label: 'Enable Bot Attack',
+    enableBarbarianAttack: {
+      value: settings.enableBarbarianAttack,
+      label: 'Enable Barbarian Attack',
     },
     attackSpeed: {
       value: settings.attackSpeed,
@@ -71,16 +71,16 @@ export function DebugGui({
   useEffect(() => {
     onSettingsChange({
       debugMode: controls.debugMode,
-      enableBotWalk: controls.enableBotWalk,
-      botWalkDurationMS: controls.botWalkDurationMS,
-      enableBotAttack: controls.enableBotAttack,
+      enableBarbarianWalk: controls.enableBarbarianWalk,
+      barbarianWalkDurationMS: controls.barbarianWalkDurationMS,
+      enableBarbarianAttack: controls.enableBarbarianAttack,
       attackSpeed: controls.attackSpeed,
     });
   }, [
     controls.debugMode,
-    controls.enableBotWalk,
-    controls.botWalkDurationMS,
-    controls.enableBotAttack,
+    controls.enableBarbarianWalk,
+    controls.barbarianWalkDurationMS,
+    controls.enableBarbarianAttack,
     controls.attackSpeed,
     onSettingsChange,
   ]);

@@ -87,9 +87,9 @@ describe('DebugGui Component', () => {
 
       expect(mockOnSettingsChange).toHaveBeenCalledWith({
         debugMode: DEFAULT_DEBUG_SETTINGS.debugMode,
-        enableBotWalk: DEFAULT_DEBUG_SETTINGS.enableBotWalk,
-        botWalkDurationMS: DEFAULT_DEBUG_SETTINGS.botWalkDurationMS,
-        enableBotAttack: DEFAULT_DEBUG_SETTINGS.enableBotAttack,
+        enableBarbarianWalk: DEFAULT_DEBUG_SETTINGS.enableBarbarianWalk,
+        barbarianWalkDurationMS: DEFAULT_DEBUG_SETTINGS.barbarianWalkDurationMS,
+        enableBarbarianAttack: DEFAULT_DEBUG_SETTINGS.enableBarbarianAttack,
         attackSpeed: DEFAULT_DEBUG_SETTINGS.attackSpeed,
       });
     });

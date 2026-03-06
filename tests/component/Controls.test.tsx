@@ -3,17 +3,17 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { expect, describe, it } from '@jest/globals';
 import { Controls, AnalogStick, OnscreenKeys } from '@/app/components/Controls';
 import { CONTROLS_TEST_IDS } from '@/app/test-ids';
-import { BOT_DEFAULTS } from '@/app/constants';
+import { BARBARIAN_DEFAULTS } from '@/app/constants';
 import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
 
 describe('Controls Component', () => {
   const mockUpdateKey = jest.fn();
   const defaultSettings: DebugSettings = {
     debugMode: false,
-    enableBotWalk: BOT_DEFAULTS.enableBotWalk,
-    botWalkDurationMS: BOT_DEFAULTS.botWalkDurationMS,
-    enableBotAttack: BOT_DEFAULTS.enableBotAttack,
-    attackSpeed: BOT_DEFAULTS.attackSpeed,
+    enableBarbarianWalk: BARBARIAN_DEFAULTS.enableBarbarianWalk,
+    barbarianWalkDurationMS: BARBARIAN_DEFAULTS.barbarianWalkDurationMS,
+    enableBarbarianAttack: BARBARIAN_DEFAULTS.enableBarbarianAttack,
+    attackSpeed: BARBARIAN_DEFAULTS.attackSpeed,
   };
 
   beforeEach(() => {
@@ -89,7 +89,7 @@ describe('Controls Component', () => {
         () => {
           expect(mockUpdateKey).toHaveBeenCalledWith('space', false);
         },
-        { timeout: BOT_DEFAULTS.attackSpeed },
+        { timeout: BARBARIAN_DEFAULTS.attackSpeed },
       );
     });
 

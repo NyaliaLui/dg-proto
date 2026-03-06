@@ -55,16 +55,16 @@ export const CONTROLS_DEFAULTS = {
   },
 };
 
-export const BOT_DEFAULTS = {
-  enableBotWalk: false,
-  botWalkDurationMS: 500,
-  enableBotAttack: false,
+export const BARBARIAN_DEFAULTS = {
+  enableBarbarianWalk: false,
+  barbarianWalkDurationMS: 500,
+  enableBarbarianAttack: false,
   attackSpeed: CONTROLS_DEFAULTS.MECHANICS_TIMEOUT,
 };
 
 export const GAME_DEFAULTS = {
-  INITIAL_BOT_COUNT: 1,
-  INITIAL_BOT_HP: 3,
+  INITIAL_BARBARIAN_COUNT: 1,
+  INITIAL_BARBARIAN_HP: 3,
   PLAYER_MAX_HP: 100,
 };
 
