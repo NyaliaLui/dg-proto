@@ -14,10 +14,7 @@ import { SkeletonUtils } from 'three-stdlib';
 import { SkeletonHelper } from 'three';
 
 import { CHARACTER_DEFAULTS } from '@/app/constants';
-import {
-  KeyState,
-  isAttacking,
-} from '@/app/components/hooks/useKeyboardControls';
+import { KeyState } from '@/app/components/hooks/useKeyboardControls';
 import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
 import {
   getAnimation,
@@ -62,10 +59,12 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
   const skeletonHelperRef = useRef<SkeletonHelper | null>(null);
   const boneVertexMapRef = useRef<BoneVertexMap | null>(null);
 
+  const [attacking, setAttacking] = useState(false);
+
   // Determine if character is moving (not moving if attacking)
   const moving = useMemo(() => {
-    return !isAttacking(keys) && (keys.w || keys.s || keys.a || keys.d);
-  }, [keys]);
+    return !attacking && (keys.w || keys.s || keys.a || keys.d);
+  }, [keys, attacking]);
 
   // Load the skinned model
   const modelFbx = useFBX(CHARACTER_DEFAULTS.MODELS.PALADIN);
@@ -99,42 +98,81 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
   }, [model, scene, settings.debugMode]);
 
   const mixer = useRef<THREE.AnimationMixer | null>(null);
+  const attackingRef = useRef(false);
+  const currentActionRef = useRef<THREE.AnimationAction | null>(null);
 
-  // Determine which animation to play based on state
-  const currentAnimation = useMemo(() => {
-    if (isAttacking(keys)) {
-      return normalAnim;
-    }
-    if (moving) {
-      return walkAnim;
-    }
-    return idleAnim;
-  }, [keys, moving, idleAnim, walkAnim, normalAnim]);
+  const prevQRef = useRef(false);
+  const prevERef = useRef(false);
 
+  // Initialize mixer once
   useEffect(() => {
-    // Clean up previous mixer
-    if (mixer.current) {
-      mixer.current.stopAllAction();
-      mixer.current = null;
-    }
+    if (!model) return;
 
-    // Set up new mixer with current animation on the model
-    if (model && currentAnimation) {
-      mixer.current = new THREE.AnimationMixer(model);
-      const action = mixer.current.clipAction(currentAnimation);
-      action.play();
-    }
+    const m = new THREE.AnimationMixer(model);
+    mixer.current = m;
+
+    // When attack animation finishes, go back to idle/walk
+    const onFinished = () => {
+      attackingRef.current = false;
+      setAttacking(false);
+    };
+    m.addEventListener('finished', onFinished);
+
+    // Start with idle
+    const action = m.clipAction(idleAnim);
+    action.play();
+    currentActionRef.current = action;
 
     return () => {
-      if (mixer.current) {
-        mixer.current.stopAllAction();
-      }
+      m.removeEventListener('finished', onFinished);
+      m.stopAllAction();
+      mixer.current = null;
+      currentActionRef.current = null;
     };
-  }, [model, currentAnimation]);
+  }, [model, idleAnim]);
 
   useFrame((_state, delta) => {
     if (mixer.current) {
-      mixer.current.update(delta);
+      const m = mixer.current;
+
+      // Detect Q/E key press edge (rising edge)
+      const qPressed = keys.q && !prevQRef.current;
+      const ePressed = keys.e && !prevERef.current;
+      if ((qPressed || ePressed) && !attackingRef.current) {
+        attackingRef.current = true;
+        setAttacking(true);
+
+        const attackAction = m.clipAction(normalAnim);
+        attackAction.reset();
+        attackAction.setLoop(THREE.LoopOnce, 1);
+        attackAction.clampWhenFinished = false;
+
+        if (currentActionRef.current) {
+          currentActionRef.current.fadeOut(0.1);
+        }
+        attackAction.fadeIn(0.1).play();
+        currentActionRef.current = attackAction;
+      }
+      prevQRef.current = keys.q;
+      prevERef.current = keys.e;
+
+      // Transition to idle/walk when not attacking
+      if (!attackingRef.current) {
+        const clip = moving ? walkAnim : idleAnim;
+        const nextAction = m.clipAction(clip);
+
+        if (currentActionRef.current !== nextAction) {
+          nextAction.reset();
+          nextAction.setLoop(THREE.LoopRepeat, Infinity);
+          if (currentActionRef.current) {
+            currentActionRef.current.fadeOut(0.1);
+          }
+          nextAction.fadeIn(0.1).play();
+          currentActionRef.current = nextAction;
+        }
+      }
+
+      m.update(delta);
     }
 
     // Update collider positions based on bone world positions from SkeletonHelper
@@ -178,7 +216,7 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
         }
 
         // Update sword position (only during attack)
-        if (isAttacking(keys)) {
+        if (attacking) {
           const swordPos = getBoneWorldPosition(
             'mixamorigSpine1',
             boneVertexMapRef.current,
@@ -201,7 +239,7 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
       const velocity = { x: 0, y: 0, z: 0 };
 
       // Block movement during attacks - attacks take priority
-      if (!isAttacking(keys)) {
+      if (!attackingRef.current) {
         // WASD movement with rotation to face direction
         if (keys.w) {
           velocity.z = -moveSpeed;
@@ -279,7 +317,7 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
         onIntersectionEnter={onHit}
       />
       {/* Sword fan collider - only active during attack */}
-      {isAttacking(keys) && (
+      {attacking && (
         <ConvexHullCollider
           args={[fanVertices]}
           position={swordPosition}
