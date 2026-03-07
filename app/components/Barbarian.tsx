@@ -55,6 +55,7 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
   const [isBlocking, setIsBlocking] = useState(false);
   const [isRightBlocking, setIsRightBlocking] = useState(false);
   const [isKicking, setIsKicking] = useState(false);
+  const [isDucking, setIsDucking] = useState(false);
   const [direction, setDirection] = useState<number>(-1); // 1 = right, -1 = left
   const wasWalkingRef = useRef(false);
   const yVelocityRef = useRef<number>(0);
@@ -91,6 +92,7 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
     useFBX(CHARACTER_DEFAULTS.ANIMATIONS.RIGHT_BLOCK),
   );
   const kickAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.KICK));
+  const duckAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.DUCK));
 
   const mixer = useRef<THREE.AnimationMixer | null>(null);
 
@@ -117,13 +119,14 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
     }
   }, [model, scene, settings.debugMode]);
 
-  // Get the current animation clip based on state (attack/jump > kick > right block > left block > walk > idle)
+  // Get the current animation clip based on state (attack/jump > kick > right block > left block > duck > walk > idle)
   const currentAnimation = useMemo(() => {
     if (isJumping) return jumpAnim;
     if (isAttacking) return normalAnim;
     if (isKicking) return kickAnim;
     if (isRightBlocking) return rightBlockAnim;
     if (isBlocking) return leftBlockAnim;
+    if (isDucking) return duckAnim;
     if (isWalking) return walkAnim;
     return idleAnim;
   }, [
@@ -132,12 +135,14 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
     isKicking,
     isRightBlocking,
     isBlocking,
+    isDucking,
     isWalking,
     normalAnim,
     jumpAnim,
     kickAnim,
     rightBlockAnim,
     leftBlockAnim,
+    duckAnim,
     walkAnim,
     idleAnim,
   ]);
@@ -217,6 +222,18 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
 
     return () => clearInterval(interval);
   }, [settings.enableBarbarianKick, settings.kickSpeed]);
+
+  // Duck behavior: toggle ducking every duckDurationMS
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsDucking((prev) => {
+        if (!settings.enableBarbarianDuck) return false;
+        return !prev;
+      });
+    }, settings.duckDurationMS);
+
+    return () => clearInterval(interval);
+  }, [settings.enableBarbarianDuck, settings.duckDurationMS]);
 
   useEffect(() => {
     // Clean up previous mixer
@@ -346,7 +363,8 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
         !isAttacking &&
         !isKicking &&
         !isRightBlocking &&
-        !isBlocking
+        !isBlocking &&
+        !isDucking
       ) {
         velocity.x = direction * moveSpeed;
 
@@ -371,7 +389,8 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
         isAttacking ||
         isKicking ||
         isRightBlocking ||
-        isBlocking
+        isBlocking ||
+        isDucking
       ) {
         // When idle, maintain last rotation
         const halfAngle = lastRotationRef.current / 2;

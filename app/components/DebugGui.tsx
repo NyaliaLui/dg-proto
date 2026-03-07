@@ -98,6 +98,14 @@ export function DebugGui({
       value: settings.kickSpeed,
       label: 'Kick Speed (ms)',
     },
+    enableBarbarianDuck: {
+      value: settings.enableBarbarianDuck,
+      label: 'Enable Barbarian Duck',
+    },
+    duckDurationMS: {
+      value: settings.duckDurationMS,
+      label: 'Duck Duration (ms)',
+    },
   });
 
   useEffect(() => {
@@ -115,6 +123,8 @@ export function DebugGui({
       rightBlockDurationMS: controls.rightBlockDurationMS,
       enableBarbarianKick: controls.enableBarbarianKick,
       kickSpeed: controls.kickSpeed,
+      enableBarbarianDuck: controls.enableBarbarianDuck,
+      duckDurationMS: controls.duckDurationMS,
     });
   }, [
     controls.debugMode,
@@ -130,6 +140,8 @@ export function DebugGui({
     controls.rightBlockDurationMS,
     controls.enableBarbarianKick,
     controls.kickSpeed,
+    controls.enableBarbarianDuck,
+    controls.duckDurationMS,
     onSettingsChange,
   ]);
 
