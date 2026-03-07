@@ -93,6 +93,7 @@ export const BARBARIAN_DEFAULTS = {
     LEFT_BLOCK: '/models/Barbarian/LeftBlockWithoutSkin.fbx',
     RIGHT_BLOCK: '/models/Barbarian/RightBlockWithoutSkin.fbx',
     KICK: '/models/Barbarian/KickingWithoutSkin.fbx',
+    DUCK: '/models/Barbarian/DuckingWithoutSkin.fbx',
   },
   JUMP: {
     VELOCITY: 5,
@@ -118,6 +119,8 @@ export const BARBARIAN_DEFAULTS = {
   rightBlockDurationMS: CONTROLS_DEFAULTS.MECHANICS_TIMEOUT,
   enableBarbarianKick: false,
   kickSpeed: CONTROLS_DEFAULTS.MECHANICS_TIMEOUT,
+  enableBarbarianDuck: false,
+  duckDurationMS: CONTROLS_DEFAULTS.MECHANICS_TIMEOUT,
 };
 
 export const GAME_DEFAULTS = {

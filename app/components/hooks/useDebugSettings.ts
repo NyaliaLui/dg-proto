@@ -15,6 +15,8 @@ export interface DebugSettings {
   rightBlockDurationMS: number;
   enableBarbarianKick: boolean;
   kickSpeed: number;
+  enableBarbarianDuck: boolean;
+  duckDurationMS: number;
 }
 
 export const DEFAULT_DEBUG_SETTINGS: DebugSettings = {
@@ -31,6 +33,8 @@ export const DEFAULT_DEBUG_SETTINGS: DebugSettings = {
   rightBlockDurationMS: BARBARIAN_DEFAULTS.rightBlockDurationMS,
   enableBarbarianKick: BARBARIAN_DEFAULTS.enableBarbarianKick,
   kickSpeed: BARBARIAN_DEFAULTS.kickSpeed,
+  enableBarbarianDuck: BARBARIAN_DEFAULTS.enableBarbarianDuck,
+  duckDurationMS: BARBARIAN_DEFAULTS.duckDurationMS,
 };
 
 export function useDebugSettings() {

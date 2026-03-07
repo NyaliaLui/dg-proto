@@ -25,6 +25,8 @@ const defaultSettings: DebugSettings = {
   rightBlockDurationMS: BARBARIAN_DEFAULTS.rightBlockDurationMS,
   enableBarbarianKick: BARBARIAN_DEFAULTS.enableBarbarianKick,
   kickSpeed: BARBARIAN_DEFAULTS.kickSpeed,
+  enableBarbarianDuck: BARBARIAN_DEFAULTS.enableBarbarianDuck,
+  duckDurationMS: BARBARIAN_DEFAULTS.duckDurationMS,
 };
 
 const testScene = new Group();
@@ -475,6 +477,8 @@ describe('Barbarian Component', () => {
         rightBlockDurationMS: 320,
         enableBarbarianKick: false,
         kickSpeed: 320,
+        enableBarbarianDuck: false,
+        duckDurationMS: 320,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -513,6 +517,8 @@ describe('Barbarian Component', () => {
         rightBlockDurationMS: 320,
         enableBarbarianKick: false,
         kickSpeed: 320,
+        enableBarbarianDuck: false,
+        duckDurationMS: 320,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -572,6 +578,8 @@ describe('Barbarian Component', () => {
         rightBlockDurationMS: 320,
         enableBarbarianKick: false,
         kickSpeed: 320,
+        enableBarbarianDuck: false,
+        duckDurationMS: 320,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -614,6 +622,8 @@ describe('Barbarian Component', () => {
         rightBlockDurationMS: 320,
         enableBarbarianKick: false,
         kickSpeed: 320,
+        enableBarbarianDuck: false,
+        duckDurationMS: 320,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -658,6 +668,8 @@ describe('Barbarian Component', () => {
         rightBlockDurationMS: 320,
         enableBarbarianKick: false,
         kickSpeed: 320,
+        enableBarbarianDuck: false,
+        duckDurationMS: 320,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -700,6 +712,8 @@ describe('Barbarian Component', () => {
       rightBlockDurationMS: 320,
       enableBarbarianKick: false,
       kickSpeed: 320,
+      enableBarbarianDuck: false,
+      duckDurationMS: 320,
     };
 
     const jumpSettings: DebugSettings = {
@@ -837,6 +851,8 @@ describe('Barbarian Component', () => {
         rightBlockDurationMS: 320,
         enableBarbarianKick: false,
         kickSpeed: 320,
+        enableBarbarianDuck: false,
+        duckDurationMS: 320,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -876,6 +892,8 @@ describe('Barbarian Component', () => {
         rightBlockDurationMS: 320,
         enableBarbarianKick: false,
         kickSpeed: 320,
+        enableBarbarianDuck: false,
+        duckDurationMS: 320,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -924,6 +942,8 @@ describe('Barbarian Component', () => {
         rightBlockDurationMS: 320,
         enableBarbarianKick: false,
         kickSpeed: 320,
+        enableBarbarianDuck: false,
+        duckDurationMS: 320,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -968,6 +988,8 @@ describe('Barbarian Component', () => {
         rightBlockDurationMS: 320,
         enableBarbarianKick: false,
         kickSpeed: 320,
+        enableBarbarianDuck: false,
+        duckDurationMS: 320,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -1018,6 +1040,8 @@ describe('Barbarian Component', () => {
         rightBlockDurationMS: 320,
         enableBarbarianKick: true,
         kickSpeed: 10,
+        enableBarbarianDuck: false,
+        duckDurationMS: 320,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -1059,6 +1083,8 @@ describe('Barbarian Component', () => {
         rightBlockDurationMS: 320,
         enableBarbarianKick: false,
         kickSpeed: 10,
+        enableBarbarianDuck: false,
+        duckDurationMS: 320,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -1108,6 +1134,8 @@ describe('Barbarian Component', () => {
         rightBlockDurationMS: 10,
         enableBarbarianKick: false,
         kickSpeed: 320,
+        enableBarbarianDuck: false,
+        duckDurationMS: 320,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -1152,6 +1180,8 @@ describe('Barbarian Component', () => {
         rightBlockDurationMS: 10,
         enableBarbarianKick: false,
         kickSpeed: 320,
+        enableBarbarianDuck: false,
+        duckDurationMS: 320,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -1173,6 +1203,100 @@ describe('Barbarian Component', () => {
       });
 
       // Walking should still apply horizontal velocity since right block is disabled
+      const hasHorizontalMovement = mockSetLinvel.mock.calls.some(
+        (call) => call[0].x !== 0,
+      );
+      expect(hasHorizontalMovement).toBe(true);
+    });
+  });
+
+  describe('Duck', () => {
+    beforeEach(() => {
+      mockSetLinvel.mockClear();
+      mockSetRotation.mockClear();
+    });
+
+    it('should stop horizontal movement when enableBarbarianDuck is enabled', async () => {
+      const duckWhileWalkingSettings: DebugSettings = {
+        debugMode: false,
+        enableBarbarianWalk: true,
+        barbarianWalkDurationMS: 10,
+        enableBarbarianAttack: false,
+        attackSpeed: 1500,
+        enableBarbarianJump: false,
+        jumpDurationMS: 1000,
+        enableBarbarianLeftBlock: false,
+        blockDurationMS: 320,
+        enableBarbarianRightBlock: false,
+        rightBlockDurationMS: 320,
+        enableBarbarianKick: false,
+        kickSpeed: 320,
+        enableBarbarianDuck: true,
+        duckDurationMS: 10,
+      };
+
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Barbarian id="test-barbarian" settings={duckWhileWalkingSettings} />,
+        );
+      });
+
+      // Advance timers to trigger both walk and duck intervals
+      await act(async () => {
+        jest.advanceTimersByTime(25);
+      });
+
+      mockSetLinvel.mockClear();
+      await act(async () => {
+        await renderer!.advanceFrames(1, 1 / 60);
+      });
+
+      // When ducking, horizontal velocity should be zero
+      const allZeroHorizontal = mockSetLinvel.mock.calls.every(
+        (call) => call[0].x === 0 && call[0].z === 0,
+      );
+      expect(allZeroHorizontal).toBe(true);
+    });
+
+    it('should not duck when enableBarbarianDuck is false', async () => {
+      const noDuckSettings: DebugSettings = {
+        debugMode: false,
+        enableBarbarianWalk: true,
+        barbarianWalkDurationMS: 10,
+        enableBarbarianAttack: false,
+        attackSpeed: 1500,
+        enableBarbarianJump: false,
+        jumpDurationMS: 1000,
+        enableBarbarianLeftBlock: false,
+        blockDurationMS: 320,
+        enableBarbarianRightBlock: false,
+        rightBlockDurationMS: 320,
+        enableBarbarianKick: false,
+        kickSpeed: 320,
+        enableBarbarianDuck: false,
+        duckDurationMS: 10,
+      };
+
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Barbarian id="test-barbarian" settings={noDuckSettings} />,
+        );
+      });
+
+      // Advance 15ms so walk interval fires once at 10ms (isWalking=true) without
+      // firing a second time at 20ms (which would toggle it back off)
+      await act(async () => {
+        jest.advanceTimersByTime(15);
+      });
+
+      mockSetLinvel.mockClear();
+      await act(async () => {
+        await renderer!.advanceFrames(1, 1 / 60);
+      });
+
+      // Walking should still apply horizontal velocity since duck is disabled
       const hasHorizontalMovement = mockSetLinvel.mock.calls.some(
         (call) => call[0].x !== 0,
       );

@@ -22,6 +22,8 @@ const defaultSettings: DebugSettings = {
   rightBlockDurationMS: BARBARIAN_DEFAULTS.rightBlockDurationMS,
   enableBarbarianKick: BARBARIAN_DEFAULTS.enableBarbarianKick,
   kickSpeed: BARBARIAN_DEFAULTS.kickSpeed,
+  enableBarbarianDuck: BARBARIAN_DEFAULTS.enableBarbarianDuck,
+  duckDurationMS: BARBARIAN_DEFAULTS.duckDurationMS,
 };
 
 describe('useKeyboardControls Hook', () => {
