@@ -96,6 +96,9 @@ describe('DebugGui Component', () => {
         enableBarbarianLeftBlock:
           DEFAULT_DEBUG_SETTINGS.enableBarbarianLeftBlock,
         blockDurationMS: DEFAULT_DEBUG_SETTINGS.blockDurationMS,
+        enableBarbarianRightBlock:
+          DEFAULT_DEBUG_SETTINGS.enableBarbarianRightBlock,
+        rightBlockDurationMS: DEFAULT_DEBUG_SETTINGS.rightBlockDurationMS,
         enableBarbarianKick: DEFAULT_DEBUG_SETTINGS.enableBarbarianKick,
         kickSpeed: DEFAULT_DEBUG_SETTINGS.kickSpeed,
       });

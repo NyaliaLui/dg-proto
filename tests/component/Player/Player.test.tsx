@@ -140,6 +140,8 @@ describe('Player Component', () => {
     jumpDurationMS: BARBARIAN_DEFAULTS.jumpDurationMS,
     enableBarbarianLeftBlock: BARBARIAN_DEFAULTS.enableBarbarianLeftBlock,
     blockDurationMS: BARBARIAN_DEFAULTS.blockDurationMS,
+    enableBarbarianRightBlock: BARBARIAN_DEFAULTS.enableBarbarianRightBlock,
+    rightBlockDurationMS: BARBARIAN_DEFAULTS.rightBlockDurationMS,
     enableBarbarianKick: BARBARIAN_DEFAULTS.enableBarbarianKick,
     kickSpeed: BARBARIAN_DEFAULTS.kickSpeed,
   };
