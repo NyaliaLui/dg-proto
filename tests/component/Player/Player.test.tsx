@@ -136,13 +136,12 @@ describe('Player Component', () => {
     barbarianWalkDurationMS: BARBARIAN_DEFAULTS.barbarianWalkDurationMS,
     enableBarbarianAttack: BARBARIAN_DEFAULTS.enableBarbarianAttack,
     attackSpeed: BARBARIAN_DEFAULTS.attackSpeed,
-<<<<<<< HEAD
-=======
     enableBarbarianJump: BARBARIAN_DEFAULTS.enableBarbarianJump,
     jumpDurationMS: BARBARIAN_DEFAULTS.jumpDurationMS,
     enableBarbarianLeftBlock: BARBARIAN_DEFAULTS.enableBarbarianLeftBlock,
     blockDurationMS: BARBARIAN_DEFAULTS.blockDurationMS,
->>>>>>> 29103d9 (components/barbarian: add left block action)
+    enableBarbarianKick: BARBARIAN_DEFAULTS.enableBarbarianKick,
+    kickSpeed: BARBARIAN_DEFAULTS.kickSpeed,
   };
 
   describe('Rendering', () => {

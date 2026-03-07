@@ -18,6 +18,8 @@ const defaultSettings: DebugSettings = {
   jumpDurationMS: BARBARIAN_DEFAULTS.jumpDurationMS,
   enableBarbarianLeftBlock: BARBARIAN_DEFAULTS.enableBarbarianLeftBlock,
   blockDurationMS: BARBARIAN_DEFAULTS.blockDurationMS,
+  enableBarbarianKick: BARBARIAN_DEFAULTS.enableBarbarianKick,
+  kickSpeed: BARBARIAN_DEFAULTS.kickSpeed,
 };
 
 describe('useKeyboardControls Hook', () => {

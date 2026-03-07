@@ -21,6 +21,8 @@ const defaultSettings: DebugSettings = {
   jumpDurationMS: BARBARIAN_DEFAULTS.jumpDurationMS,
   enableBarbarianLeftBlock: BARBARIAN_DEFAULTS.enableBarbarianLeftBlock,
   blockDurationMS: BARBARIAN_DEFAULTS.blockDurationMS,
+  enableBarbarianKick: BARBARIAN_DEFAULTS.enableBarbarianKick,
+  kickSpeed: BARBARIAN_DEFAULTS.kickSpeed,
 };
 
 const testScene = new Group();
@@ -467,6 +469,8 @@ describe('Barbarian Component', () => {
         jumpDurationMS: 1000,
         enableBarbarianLeftBlock: false,
         blockDurationMS: 320,
+        enableBarbarianKick: false,
+        kickSpeed: 320,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -501,6 +505,8 @@ describe('Barbarian Component', () => {
         jumpDurationMS: 1000,
         enableBarbarianLeftBlock: false,
         blockDurationMS: 320,
+        enableBarbarianKick: false,
+        kickSpeed: 320,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -556,6 +562,8 @@ describe('Barbarian Component', () => {
         jumpDurationMS: 1000,
         enableBarbarianLeftBlock: false,
         blockDurationMS: 320,
+        enableBarbarianKick: false,
+        kickSpeed: 320,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -594,6 +602,8 @@ describe('Barbarian Component', () => {
         jumpDurationMS: 1000,
         enableBarbarianLeftBlock: false,
         blockDurationMS: 320,
+        enableBarbarianKick: false,
+        kickSpeed: 320,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -634,6 +644,8 @@ describe('Barbarian Component', () => {
         jumpDurationMS: 1000,
         enableBarbarianLeftBlock: false,
         blockDurationMS: 320,
+        enableBarbarianKick: false,
+        kickSpeed: 320,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -672,6 +684,8 @@ describe('Barbarian Component', () => {
       jumpDurationMS: 1000,
       enableBarbarianLeftBlock: false,
       blockDurationMS: 320,
+      enableBarbarianKick: false,
+      kickSpeed: 320,
     };
 
     const jumpSettings: DebugSettings = {
@@ -805,6 +819,8 @@ describe('Barbarian Component', () => {
         jumpDurationMS: 10,
         enableBarbarianLeftBlock: false,
         blockDurationMS: 320,
+        enableBarbarianKick: false,
+        kickSpeed: 320,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -840,6 +856,8 @@ describe('Barbarian Component', () => {
         jumpDurationMS: 10,
         enableBarbarianLeftBlock: false,
         blockDurationMS: 320,
+        enableBarbarianKick: false,
+        kickSpeed: 320,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -884,6 +902,8 @@ describe('Barbarian Component', () => {
         jumpDurationMS: 1000,
         enableBarbarianLeftBlock: true,
         blockDurationMS: 10,
+        enableBarbarianKick: false,
+        kickSpeed: 320,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -924,6 +944,8 @@ describe('Barbarian Component', () => {
         jumpDurationMS: 1000,
         enableBarbarianLeftBlock: false,
         blockDurationMS: 10,
+        enableBarbarianKick: false,
+        kickSpeed: 320,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -946,6 +968,92 @@ describe('Barbarian Component', () => {
       });
 
       // Walking should still apply horizontal velocity since block is disabled
+      const hasHorizontalMovement = mockSetLinvel.mock.calls.some(
+        (call) => call[0].x !== 0,
+      );
+      expect(hasHorizontalMovement).toBe(true);
+    });
+  });
+
+  describe('Kick', () => {
+    beforeEach(() => {
+      mockSetLinvel.mockClear();
+      mockSetRotation.mockClear();
+    });
+
+    it('should stop horizontal movement when enableBarbarianKick is enabled', async () => {
+      const kickWhileWalkingSettings: DebugSettings = {
+        debugMode: false,
+        enableBarbarianWalk: true,
+        barbarianWalkDurationMS: 10,
+        enableBarbarianAttack: false,
+        attackSpeed: 1500,
+        enableBarbarianJump: false,
+        jumpDurationMS: 1000,
+        enableBarbarianLeftBlock: false,
+        blockDurationMS: 320,
+        enableBarbarianKick: true,
+        kickSpeed: 10,
+      };
+
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Barbarian id="test-barbarian" settings={kickWhileWalkingSettings} />,
+        );
+      });
+
+      // Advance timers to trigger both walk and kick intervals
+      await act(async () => {
+        jest.advanceTimersByTime(25);
+      });
+
+      mockSetLinvel.mockClear();
+      await act(async () => {
+        await renderer!.advanceFrames(1, 1 / 60);
+      });
+
+      // When kicking, horizontal velocity should be zero
+      const allZeroHorizontal = mockSetLinvel.mock.calls.every(
+        (call) => call[0].x === 0 && call[0].z === 0,
+      );
+      expect(allZeroHorizontal).toBe(true);
+    });
+
+    it('should not kick when enableBarbarianKick is false', async () => {
+      const noKickSettings: DebugSettings = {
+        debugMode: false,
+        enableBarbarianWalk: true,
+        barbarianWalkDurationMS: 10,
+        enableBarbarianAttack: false,
+        attackSpeed: 1500,
+        enableBarbarianJump: false,
+        jumpDurationMS: 1000,
+        enableBarbarianLeftBlock: false,
+        blockDurationMS: 320,
+        enableBarbarianKick: false,
+        kickSpeed: 10,
+      };
+
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Barbarian id="test-barbarian" settings={noKickSettings} />,
+        );
+      });
+
+      // Advance 15ms so walk interval fires once at 10ms (isWalking=true) without
+      // firing a second time at 20ms (which would toggle it back off)
+      await act(async () => {
+        jest.advanceTimersByTime(15);
+      });
+
+      mockSetLinvel.mockClear();
+      await act(async () => {
+        await renderer!.advanceFrames(1, 1 / 60);
+      });
+
+      // Walking should still apply horizontal velocity since kick is disabled
       const hasHorizontalMovement = mockSetLinvel.mock.calls.some(
         (call) => call[0].x !== 0,
       );
