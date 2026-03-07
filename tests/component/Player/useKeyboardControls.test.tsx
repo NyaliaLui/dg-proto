@@ -14,6 +14,10 @@ const defaultSettings: DebugSettings = {
   barbarianWalkDurationMS: BARBARIAN_DEFAULTS.barbarianWalkDurationMS,
   enableBarbarianAttack: BARBARIAN_DEFAULTS.enableBarbarianAttack,
   attackSpeed: BARBARIAN_DEFAULTS.attackSpeed,
+  enableBarbarianJump: BARBARIAN_DEFAULTS.enableBarbarianJump,
+  jumpDurationMS: BARBARIAN_DEFAULTS.jumpDurationMS,
+  enableBarbarianLeftBlock: BARBARIAN_DEFAULTS.enableBarbarianLeftBlock,
+  blockDurationMS: BARBARIAN_DEFAULTS.blockDurationMS,
 };
 
 describe('useKeyboardControls Hook', () => {

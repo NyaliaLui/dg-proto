@@ -89,7 +89,8 @@ export const BARBARIAN_DEFAULTS = {
   MODEL: '/models/Barbarian/XBot.fbx',
   ANIMATIONS: {
     NORMAL: '/models/Barbarian/PunchingWithoutSkin2.fbx',
-    JUMP: '/models/JumpingWithoutSkin.fbx',
+    JUMP: '/models/Barbarian/JumpingWithoutSkin.fbx',
+    LEFT_BLOCK: '/models/LeftBlockWithoutSkin.fbx',
   },
   JUMP: {
     VELOCITY: 5,
@@ -109,6 +110,8 @@ export const BARBARIAN_DEFAULTS = {
   attackSpeed: CONTROLS_DEFAULTS.MECHANICS_TIMEOUT,
   enableBarbarianJump: false,
   jumpDurationMS: 1000,
+  enableBarbarianLeftBlock: false,
+  blockDurationMS: CONTROLS_DEFAULTS.MECHANICS_TIMEOUT,
 };
 
 export const GAME_DEFAULTS = {

@@ -74,6 +74,14 @@ export function DebugGui({
       value: settings.jumpDurationMS,
       label: 'Jump Duration (ms)',
     },
+    enableBarbarianLeftBlock: {
+      value: settings.enableBarbarianLeftBlock,
+      label: 'Enable Barbarian Left Block',
+    },
+    blockDurationMS: {
+      value: settings.blockDurationMS,
+      label: 'Block Duration (ms)',
+    },
   });
 
   useEffect(() => {
@@ -85,6 +93,8 @@ export function DebugGui({
       attackSpeed: controls.attackSpeed,
       enableBarbarianJump: controls.enableBarbarianJump,
       jumpDurationMS: controls.jumpDurationMS,
+      enableBarbarianLeftBlock: controls.enableBarbarianLeftBlock,
+      blockDurationMS: controls.blockDurationMS,
     });
   }, [
     controls.debugMode,
@@ -94,6 +104,8 @@ export function DebugGui({
     controls.attackSpeed,
     controls.enableBarbarianJump,
     controls.jumpDurationMS,
+    controls.enableBarbarianLeftBlock,
+    controls.blockDurationMS,
     onSettingsChange,
   ]);
 
