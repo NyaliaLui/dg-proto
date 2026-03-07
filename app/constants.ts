@@ -89,6 +89,11 @@ export const BARBARIAN_DEFAULTS = {
   MODEL: '/models/Barbarian/XBot.fbx',
   ANIMATIONS: {
     NORMAL: '/models/Barbarian/PunchingWithoutSkin2.fbx',
+    JUMP: '/models/JumpingWithoutSkin.fbx',
+  },
+  JUMP: {
+    VELOCITY: 5,
+    GRAVITY: 12,
   },
   COLLIDERS: {
     HAND: {
@@ -102,6 +107,8 @@ export const BARBARIAN_DEFAULTS = {
   barbarianWalkDurationMS: 500,
   enableBarbarianAttack: false,
   attackSpeed: CONTROLS_DEFAULTS.MECHANICS_TIMEOUT,
+  enableBarbarianJump: false,
+  jumpDurationMS: 1000,
 };
 
 export const GAME_DEFAULTS = {
