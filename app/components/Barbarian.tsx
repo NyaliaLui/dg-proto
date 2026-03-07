@@ -53,6 +53,7 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
   const [isAttacking, setIsAttacking] = useState(false);
   const [isJumping, setIsJumping] = useState(false);
   const [isBlocking, setIsBlocking] = useState(false);
+  const [isRightBlocking, setIsRightBlocking] = useState(false);
   const [isKicking, setIsKicking] = useState(false);
   const [direction, setDirection] = useState<number>(-1); // 1 = right, -1 = left
   const wasWalkingRef = useRef(false);
@@ -86,6 +87,9 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
   const leftBlockAnim = getAnimation(
     useFBX(CHARACTER_DEFAULTS.ANIMATIONS.LEFT_BLOCK),
   );
+  const rightBlockAnim = getAnimation(
+    useFBX(CHARACTER_DEFAULTS.ANIMATIONS.RIGHT_BLOCK),
+  );
   const kickAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.KICK));
 
   const mixer = useRef<THREE.AnimationMixer | null>(null);
@@ -113,15 +117,30 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
     }
   }, [model, scene, settings.debugMode]);
 
-  // Get the current animation clip based on state (attack/jump > kick > block > walk > idle)
+  // Get the current animation clip based on state (attack/jump > kick > right block > left block > walk > idle)
   const currentAnimation = useMemo(() => {
     if (isJumping) return jumpAnim;
     if (isAttacking) return normalAnim;
     if (isKicking) return kickAnim;
+    if (isRightBlocking) return rightBlockAnim;
     if (isBlocking) return leftBlockAnim;
     if (isWalking) return walkAnim;
     return idleAnim;
-  }, [isAttacking, isJumping, isKicking, isBlocking, isWalking, normalAnim, jumpAnim, kickAnim, leftBlockAnim, walkAnim, idleAnim]);
+  }, [
+    isAttacking,
+    isJumping,
+    isKicking,
+    isRightBlocking,
+    isBlocking,
+    isWalking,
+    normalAnim,
+    jumpAnim,
+    kickAnim,
+    rightBlockAnim,
+    leftBlockAnim,
+    walkAnim,
+    idleAnim,
+  ]);
 
   // Simple patrol behavior: toggle walking every barbarianWalkDurationMS and change direction
   useEffect(() => {
@@ -174,6 +193,18 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
 
     return () => clearInterval(interval);
   }, [settings.enableBarbarianLeftBlock, settings.blockDurationMS]);
+
+  // Right block behavior: toggle right blocking every rightBlockDurationMS
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsRightBlocking((prev) => {
+        if (!settings.enableBarbarianRightBlock) return false;
+        return !prev;
+      });
+    }, settings.rightBlockDurationMS);
+
+    return () => clearInterval(interval);
+  }, [settings.enableBarbarianRightBlock, settings.rightBlockDurationMS]);
 
   // Kick behavior: toggle kicking every kickSpeed
   useEffect(() => {
@@ -310,7 +341,13 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
       velocity.y = yVelocityRef.current;
 
       // Block movement during attacks, kicks, or blocks - these take priority
-      if (isWalking && !isAttacking && !isKicking && !isBlocking) {
+      if (
+        isWalking &&
+        !isAttacking &&
+        !isKicking &&
+        !isRightBlocking &&
+        !isBlocking
+      ) {
         velocity.x = direction * moveSpeed;
 
         // Set rotation based on direction
@@ -329,7 +366,13 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
           );
           lastRotationRef.current = Math.PI / 2;
         }
-      } else if (!isWalking || isAttacking || isKicking || isBlocking) {
+      } else if (
+        !isWalking ||
+        isAttacking ||
+        isKicking ||
+        isRightBlocking ||
+        isBlocking
+      ) {
         // When idle, maintain last rotation
         const halfAngle = lastRotationRef.current / 2;
         rigidBodyRef.current.setRotation(

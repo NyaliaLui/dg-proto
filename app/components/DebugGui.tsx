@@ -82,6 +82,14 @@ export function DebugGui({
       value: settings.blockDurationMS,
       label: 'Block Duration (ms)',
     },
+    enableBarbarianRightBlock: {
+      value: settings.enableBarbarianRightBlock,
+      label: 'Enable Barbarian Right Block',
+    },
+    rightBlockDurationMS: {
+      value: settings.rightBlockDurationMS,
+      label: 'Right Block Duration (ms)',
+    },
     enableBarbarianKick: {
       value: settings.enableBarbarianKick,
       label: 'Enable Barbarian Kick',
@@ -103,6 +111,8 @@ export function DebugGui({
       jumpDurationMS: controls.jumpDurationMS,
       enableBarbarianLeftBlock: controls.enableBarbarianLeftBlock,
       blockDurationMS: controls.blockDurationMS,
+      enableBarbarianRightBlock: controls.enableBarbarianRightBlock,
+      rightBlockDurationMS: controls.rightBlockDurationMS,
       enableBarbarianKick: controls.enableBarbarianKick,
       kickSpeed: controls.kickSpeed,
     });
@@ -116,6 +126,8 @@ export function DebugGui({
     controls.jumpDurationMS,
     controls.enableBarbarianLeftBlock,
     controls.blockDurationMS,
+    controls.enableBarbarianRightBlock,
+    controls.rightBlockDurationMS,
     controls.enableBarbarianKick,
     controls.kickSpeed,
     onSettingsChange,

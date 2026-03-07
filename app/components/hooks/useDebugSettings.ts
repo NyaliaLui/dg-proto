@@ -11,6 +11,8 @@ export interface DebugSettings {
   jumpDurationMS: number;
   enableBarbarianLeftBlock: boolean;
   blockDurationMS: number;
+  enableBarbarianRightBlock: boolean;
+  rightBlockDurationMS: number;
   enableBarbarianKick: boolean;
   kickSpeed: number;
 }
@@ -25,6 +27,8 @@ export const DEFAULT_DEBUG_SETTINGS: DebugSettings = {
   jumpDurationMS: BARBARIAN_DEFAULTS.jumpDurationMS,
   enableBarbarianLeftBlock: BARBARIAN_DEFAULTS.enableBarbarianLeftBlock,
   blockDurationMS: BARBARIAN_DEFAULTS.blockDurationMS,
+  enableBarbarianRightBlock: BARBARIAN_DEFAULTS.enableBarbarianRightBlock,
+  rightBlockDurationMS: BARBARIAN_DEFAULTS.rightBlockDurationMS,
   enableBarbarianKick: BARBARIAN_DEFAULTS.enableBarbarianKick,
   kickSpeed: BARBARIAN_DEFAULTS.kickSpeed,
 };
