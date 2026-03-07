@@ -19,6 +19,8 @@ const defaultSettings: DebugSettings = {
   attackSpeed: BARBARIAN_DEFAULTS.attackSpeed,
   enableBarbarianJump: BARBARIAN_DEFAULTS.enableBarbarianJump,
   jumpDurationMS: BARBARIAN_DEFAULTS.jumpDurationMS,
+  enableBarbarianLeftBlock: BARBARIAN_DEFAULTS.enableBarbarianLeftBlock,
+  blockDurationMS: BARBARIAN_DEFAULTS.blockDurationMS,
 };
 
 const testScene = new Group();
@@ -461,6 +463,10 @@ describe('Barbarian Component', () => {
         barbarianWalkDurationMS: 10,
         enableBarbarianAttack: false,
         attackSpeed: 1500,
+        enableBarbarianJump: false,
+        jumpDurationMS: 1000,
+        enableBarbarianLeftBlock: false,
+        blockDurationMS: 320,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -491,6 +497,10 @@ describe('Barbarian Component', () => {
         barbarianWalkDurationMS: 10,
         enableBarbarianAttack: false,
         attackSpeed: 1500,
+        enableBarbarianJump: false,
+        jumpDurationMS: 1000,
+        enableBarbarianLeftBlock: false,
+        blockDurationMS: 320,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -542,6 +552,10 @@ describe('Barbarian Component', () => {
         barbarianWalkDurationMS: 10,
         enableBarbarianAttack: false,
         attackSpeed: 1500,
+        enableBarbarianJump: false,
+        jumpDurationMS: 1000,
+        enableBarbarianLeftBlock: false,
+        blockDurationMS: 320,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -576,6 +590,10 @@ describe('Barbarian Component', () => {
         barbarianWalkDurationMS: 10,
         enableBarbarianAttack: true,
         attackSpeed: 10,
+        enableBarbarianJump: false,
+        jumpDurationMS: 1000,
+        enableBarbarianLeftBlock: false,
+        blockDurationMS: 320,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -612,6 +630,10 @@ describe('Barbarian Component', () => {
         barbarianWalkDurationMS: 1500,
         enableBarbarianAttack: true,
         attackSpeed: 10,
+        enableBarbarianJump: false,
+        jumpDurationMS: 1000,
+        enableBarbarianLeftBlock: false,
+        blockDurationMS: 320,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -648,6 +670,8 @@ describe('Barbarian Component', () => {
       attackSpeed: 10,
       enableBarbarianJump: false,
       jumpDurationMS: 1000,
+      enableBarbarianLeftBlock: false,
+      blockDurationMS: 320,
     };
 
     const jumpSettings: DebugSettings = {
@@ -779,6 +803,8 @@ describe('Barbarian Component', () => {
         attackSpeed: 1500,
         enableBarbarianJump: true,
         jumpDurationMS: 10,
+        enableBarbarianLeftBlock: false,
+        blockDurationMS: 320,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -812,6 +838,8 @@ describe('Barbarian Component', () => {
         attackSpeed: 1500,
         enableBarbarianJump: false,
         jumpDurationMS: 10,
+        enableBarbarianLeftBlock: false,
+        blockDurationMS: 320,
       };
 
       let renderer: ReactThreeTestRenderer;
@@ -836,6 +864,92 @@ describe('Barbarian Component', () => {
         (call) => call[0].y === 0,
       );
       expect(allZeroY).toBe(true);
+    });
+  });
+
+  describe('Left Block', () => {
+    beforeEach(() => {
+      mockSetLinvel.mockClear();
+      mockSetRotation.mockClear();
+    });
+
+    it('should stop horizontal movement when enableBarbarianLeftBlock is enabled', async () => {
+      const blockWhileWalkingSettings: DebugSettings = {
+        debugMode: false,
+        enableBarbarianWalk: true,
+        barbarianWalkDurationMS: 10,
+        enableBarbarianAttack: false,
+        attackSpeed: 1500,
+        enableBarbarianJump: false,
+        jumpDurationMS: 1000,
+        enableBarbarianLeftBlock: true,
+        blockDurationMS: 10,
+      };
+
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Barbarian
+            id="test-barbarian"
+            settings={blockWhileWalkingSettings}
+          />,
+        );
+      });
+
+      // Advance timers to trigger both walk and block intervals
+      await act(async () => {
+        jest.advanceTimersByTime(25);
+      });
+
+      mockSetLinvel.mockClear();
+      await act(async () => {
+        await renderer!.advanceFrames(1, 1 / 60);
+      });
+
+      // When blocking, horizontal velocity should be zero
+      const allZeroHorizontal = mockSetLinvel.mock.calls.every(
+        (call) => call[0].x === 0 && call[0].z === 0,
+      );
+      expect(allZeroHorizontal).toBe(true);
+    });
+
+    it('should not block when enableBarbarianLeftBlock is false', async () => {
+      const noBlockSettings: DebugSettings = {
+        debugMode: false,
+        enableBarbarianWalk: true,
+        barbarianWalkDurationMS: 10,
+        enableBarbarianAttack: false,
+        attackSpeed: 1500,
+        enableBarbarianJump: false,
+        jumpDurationMS: 1000,
+        enableBarbarianLeftBlock: false,
+        blockDurationMS: 10,
+      };
+
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Barbarian id="test-barbarian" settings={noBlockSettings} />,
+        );
+      });
+
+      // Advance timers — block interval fires but enableBarbarianLeftBlock is false
+      // Advance 15ms so walk interval fires once at 10ms (isWalking=true) without
+      // firing a second time at 20ms (which would toggle it back off)
+      await act(async () => {
+        jest.advanceTimersByTime(15);
+      });
+
+      mockSetLinvel.mockClear();
+      await act(async () => {
+        await renderer!.advanceFrames(1, 1 / 60);
+      });
+
+      // Walking should still apply horizontal velocity since block is disabled
+      const hasHorizontalMovement = mockSetLinvel.mock.calls.some(
+        (call) => call[0].x !== 0,
+      );
+      expect(hasHorizontalMovement).toBe(true);
     });
   });
 });

@@ -9,6 +9,8 @@ export interface DebugSettings {
   attackSpeed: number;
   enableBarbarianJump: boolean;
   jumpDurationMS: number;
+  enableBarbarianLeftBlock: boolean;
+  blockDurationMS: number;
 }
 
 export const DEFAULT_DEBUG_SETTINGS: DebugSettings = {
@@ -19,6 +21,8 @@ export const DEFAULT_DEBUG_SETTINGS: DebugSettings = {
   attackSpeed: BARBARIAN_DEFAULTS.attackSpeed,
   enableBarbarianJump: BARBARIAN_DEFAULTS.enableBarbarianJump,
   jumpDurationMS: BARBARIAN_DEFAULTS.jumpDurationMS,
+  enableBarbarianLeftBlock: BARBARIAN_DEFAULTS.enableBarbarianLeftBlock,
+  blockDurationMS: BARBARIAN_DEFAULTS.blockDurationMS,
 };
 
 export function useDebugSettings() {

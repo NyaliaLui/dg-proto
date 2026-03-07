@@ -140,6 +140,8 @@ describe('Character Component', () => {
     attackSpeed: BARBARIAN_DEFAULTS.attackSpeed,
     enableBarbarianJump: BARBARIAN_DEFAULTS.enableBarbarianJump,
     jumpDurationMS: BARBARIAN_DEFAULTS.jumpDurationMS,
+    enableBarbarianLeftBlock: BARBARIAN_DEFAULTS.enableBarbarianLeftBlock,
+    blockDurationMS: BARBARIAN_DEFAULTS.blockDurationMS,
   };
 
   describe('Rendering', () => {

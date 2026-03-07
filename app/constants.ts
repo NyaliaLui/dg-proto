@@ -10,6 +10,7 @@ export const CHARACTER_DEFAULTS = {
     WALK: '/models/WalkingWithoutSkin.fbx',
     NORMAL: '/models/PunchingWithoutSkin2.fbx',
     JUMP: '/models/JumpingWithoutSkin.fbx',
+    LEFT_BLOCK: '/models/LeftBlockWithoutSkin.fbx',
   },
   JUMP: {
     VELOCITY: 5,
@@ -66,6 +67,8 @@ export const BARBARIAN_DEFAULTS = {
   attackSpeed: CONTROLS_DEFAULTS.MECHANICS_TIMEOUT,
   enableBarbarianJump: false,
   jumpDurationMS: 1000,
+  enableBarbarianLeftBlock: false,
+  blockDurationMS: CONTROLS_DEFAULTS.MECHANICS_TIMEOUT,
 };
 
 export const GAME_DEFAULTS = {

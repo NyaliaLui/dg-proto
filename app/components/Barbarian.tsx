@@ -52,6 +52,7 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
   const [isWalking, setIsWalking] = useState(false);
   const [isAttacking, setIsAttacking] = useState(false);
   const [isJumping, setIsJumping] = useState(false);
+  const [isBlocking, setIsBlocking] = useState(false);
   const [direction, setDirection] = useState<number>(-1); // 1 = right, -1 = left
   const wasWalkingRef = useRef(false);
   const yVelocityRef = useRef<number>(0);
@@ -81,6 +82,9 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
   const walkAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.WALK));
   const normalAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.NORMAL));
   const jumpAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.JUMP));
+  const leftBlockAnim = getAnimation(
+    useFBX(CHARACTER_DEFAULTS.ANIMATIONS.LEFT_BLOCK),
+  );
 
   const mixer = useRef<THREE.AnimationMixer | null>(null);
 
@@ -107,13 +111,14 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
     }
   }, [model, scene, settings.debugMode]);
 
-  // Get the current animation clip based on state (attack/jump > walk > idle)
+  // Get the current animation clip based on state (attack/jump > block > walk > idle)
   const currentAnimation = useMemo(() => {
     if (isJumping) return jumpAnim;
     if (isAttacking) return normalAnim;
+    if (isBlocking) return leftBlockAnim;
     if (isWalking) return walkAnim;
     return idleAnim;
-  }, [isAttacking, isJumping, isWalking, normalAnim, jumpAnim, walkAnim, idleAnim]);
+  }, [isAttacking, isJumping, isBlocking, isWalking, normalAnim, jumpAnim, leftBlockAnim, walkAnim, idleAnim]);
 
   // Simple patrol behavior: toggle walking every barbarianWalkDurationMS and change direction
   useEffect(() => {
@@ -154,6 +159,18 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
 
     return () => clearInterval(interval);
   }, [settings.enableBarbarianJump, settings.jumpDurationMS]);
+
+  // Left block behavior: toggle blocking every blockDurationMS
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsBlocking((prev) => {
+        if (!settings.enableBarbarianLeftBlock) return false;
+        return !prev;
+      });
+    }, settings.blockDurationMS);
+
+    return () => clearInterval(interval);
+  }, [settings.enableBarbarianLeftBlock, settings.blockDurationMS]);
 
   useEffect(() => {
     // Clean up previous mixer
@@ -277,8 +294,8 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
 
       velocity.y = yVelocityRef.current;
 
-      // Block movement during attacks - attacks take priority
-      if (isWalking && !isAttacking) {
+      // Block movement during attacks or blocks - attacks and blocks take priority
+      if (isWalking && !isAttacking && !isBlocking) {
         velocity.x = direction * moveSpeed;
 
         // Set rotation based on direction
@@ -297,7 +314,7 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
           );
           lastRotationRef.current = Math.PI / 2;
         }
-      } else if (!isWalking || isAttacking) {
+      } else if (!isWalking || isAttacking || isBlocking) {
         // When idle, maintain last rotation
         const halfAngle = lastRotationRef.current / 2;
         rigidBodyRef.current.setRotation(

@@ -93,6 +93,9 @@ describe('DebugGui Component', () => {
         attackSpeed: DEFAULT_DEBUG_SETTINGS.attackSpeed,
         enableBarbarianJump: DEFAULT_DEBUG_SETTINGS.enableBarbarianJump,
         jumpDurationMS: DEFAULT_DEBUG_SETTINGS.jumpDurationMS,
+        enableBarbarianLeftBlock:
+          DEFAULT_DEBUG_SETTINGS.enableBarbarianLeftBlock,
+        blockDurationMS: DEFAULT_DEBUG_SETTINGS.blockDurationMS,
       });
     });
   });
