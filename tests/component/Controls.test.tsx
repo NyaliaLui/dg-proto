@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { expect, describe, it } from '@jest/globals';
 import { Controls, AnalogStick, OnscreenKeys } from '@/app/components/Controls';
 import { CONTROLS_TEST_IDS } from '@/app/test-ids';
@@ -14,6 +14,8 @@ describe('Controls Component', () => {
     barbarianWalkDurationMS: BARBARIAN_DEFAULTS.barbarianWalkDurationMS,
     enableBarbarianAttack: BARBARIAN_DEFAULTS.enableBarbarianAttack,
     attackSpeed: BARBARIAN_DEFAULTS.attackSpeed,
+    enableBarbarianJump: BARBARIAN_DEFAULTS.enableBarbarianJump,
+    jumpDurationMS: BARBARIAN_DEFAULTS.jumpDurationMS,
   };
 
   beforeEach(() => {
@@ -54,43 +56,15 @@ describe('Controls Component', () => {
         <OnscreenKeys updateKey={mockUpdateKey} settings={defaultSettings} />,
       );
 
-      const jumpButton = screen.getByTestId(CONTROLS_TEST_IDS.JUMP_BUTTON);
       const specialButton = screen.getByTestId(
         CONTROLS_TEST_IDS.SPECIAL_BUTTON,
       );
       const normalButton = screen.getByTestId(CONTROLS_TEST_IDS.NORMAL_BUTTON);
       const itemButton = screen.getByTestId(CONTROLS_TEST_IDS.ITEM_BUTTON);
 
-      expect(jumpButton).toBeInTheDocument();
       expect(specialButton).toBeInTheDocument();
       expect(normalButton).toBeInTheDocument();
       expect(itemButton).toBeInTheDocument();
-    });
-
-    it('should call updateKey with space true on jump button mouse down', () => {
-      render(
-        <OnscreenKeys updateKey={mockUpdateKey} settings={defaultSettings} />,
-      );
-      const jumpButton = screen.getByTestId(CONTROLS_TEST_IDS.JUMP_BUTTON);
-
-      fireEvent.mouseDown(jumpButton);
-      expect(mockUpdateKey).toHaveBeenCalledWith('space', true);
-    });
-
-    it('should call updateKey with space false on jump button mouse up', () => {
-      render(
-        <OnscreenKeys updateKey={mockUpdateKey} settings={defaultSettings} />,
-      );
-      const jumpButton = screen.getByTestId(CONTROLS_TEST_IDS.JUMP_BUTTON);
-
-      fireEvent.mouseUp(jumpButton);
-
-      waitFor(
-        () => {
-          expect(mockUpdateKey).toHaveBeenCalledWith('space', false);
-        },
-        { timeout: BARBARIAN_DEFAULTS.attackSpeed },
-      );
     });
 
     it('should call updateKey with q true on normal button mouse down', () => {
@@ -130,7 +104,6 @@ describe('Controls Component', () => {
         <OnscreenKeys updateKey={mockUpdateKey} settings={defaultSettings} />,
       );
 
-      expect(screen.getByLabelText('Jump')).toBeInTheDocument();
       expect(screen.getByLabelText('Special')).toBeInTheDocument();
       expect(screen.getByLabelText('Normal')).toBeInTheDocument();
       expect(screen.getByLabelText('Item')).toBeInTheDocument();

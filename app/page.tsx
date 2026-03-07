@@ -27,7 +27,9 @@ function createInitialBarbarians(): Record<string, boolean> {
 export default function Home() {
   const { settings, updateSettings } = useDebugSettings();
   const { keys, updateKey } = useKeyboardControls(settings);
-  const [barbarians, setBarbarians] = useState<Record<string, boolean>>(createInitialBarbarians);
+  const [barbarians, setBarbarians] = useState<Record<string, boolean>>(
+    createInitialBarbarians,
+  );
   const [playerHP, setPlayerHP] = useState(GAME_DEFAULTS.PLAYER_MAX_HP);
   const [debugGuiHidden, setDebugGuiHidden] = useState(true);
 

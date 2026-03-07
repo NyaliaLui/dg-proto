@@ -21,7 +21,11 @@ const capturedColliderCallbacks: { [key: string]: (() => void) | undefined } =
   {};
 
 // Store mocks in a module-level object that can be accessed inside jest.mock
-const mocks = { mockSetLinvel, mockSetRotation, capturedColliderCallbacks };
+const mocks = {
+  mockSetLinvel,
+  mockSetRotation,
+  capturedColliderCallbacks,
+};
 
 // Create a mock animation clip
 const mockAnimationClip = {
@@ -134,6 +138,8 @@ describe('Character Component', () => {
     barbarianWalkDurationMS: BARBARIAN_DEFAULTS.barbarianWalkDurationMS,
     enableBarbarianAttack: BARBARIAN_DEFAULTS.enableBarbarianAttack,
     attackSpeed: BARBARIAN_DEFAULTS.attackSpeed,
+    enableBarbarianJump: BARBARIAN_DEFAULTS.enableBarbarianJump,
+    jumpDurationMS: BARBARIAN_DEFAULTS.jumpDurationMS,
   };
 
   describe('Rendering', () => {

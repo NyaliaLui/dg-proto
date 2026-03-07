@@ -9,6 +9,11 @@ export const CHARACTER_DEFAULTS = {
     IDLE: '/models/IdleWithoutSkin.fbx',
     WALK: '/models/WalkingWithoutSkin.fbx',
     NORMAL: '/models/PunchingWithoutSkin2.fbx',
+    JUMP: '/models/JumpingWithoutSkin.fbx',
+  },
+  JUMP: {
+    VELOCITY: 5,
+    GRAVITY: 12,
   },
   SCALE: 0.01,
   COLLIDERS: {
@@ -45,7 +50,6 @@ export const CONTROLS_DEFAULTS = {
     q: false,
     e: false,
     p: false,
-    space: false,
   },
   ANALOG_STICK: {
     INIT_POS: { x: 0, y: 0 },
@@ -60,6 +64,8 @@ export const BARBARIAN_DEFAULTS = {
   barbarianWalkDurationMS: 500,
   enableBarbarianAttack: false,
   attackSpeed: CONTROLS_DEFAULTS.MECHANICS_TIMEOUT,
+  enableBarbarianJump: false,
+  jumpDurationMS: 1000,
 };
 
 export const GAME_DEFAULTS = {

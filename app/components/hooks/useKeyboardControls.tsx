@@ -15,7 +15,6 @@ interface KeyState {
   q: boolean;
   e: boolean;
   p: boolean;
-  space: boolean;
 }
 
 type KeyHandlerFn = (keys: KeyState) => void;
@@ -63,9 +62,6 @@ function useKeyboardControls(settings: DebugSettings) {
         case 'p':
           updateKey('p', true);
           break;
-        case ' ':
-          updateKey('space', true);
-          break;
       }
     },
     [updateKey],
@@ -102,9 +98,6 @@ function useKeyboardControls(settings: DebugSettings) {
               break;
             case 'p':
               updateKey('p', false);
-              break;
-            case ' ':
-              updateKey('space', false);
               break;
           }
         },

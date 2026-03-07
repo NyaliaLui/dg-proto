@@ -51,8 +51,13 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
   const [hp, setHp] = useState(GAME_DEFAULTS.INITIAL_BARBARIAN_HP);
   const [isWalking, setIsWalking] = useState(false);
   const [isAttacking, setIsAttacking] = useState(false);
+  const [isJumping, setIsJumping] = useState(false);
   const [direction, setDirection] = useState<number>(-1); // 1 = right, -1 = left
   const wasWalkingRef = useRef(false);
+  const yVelocityRef = useRef<number>(0);
+  const isGroundedRef = useRef<boolean>(true);
+  const jumpStartYRef = useRef<number>(0);
+  const jumpPendingRef = useRef<boolean>(false);
 
   const handleHit = useCallback(() => {
     setHp((prevHp) => {
@@ -74,7 +79,8 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
   // Load animations from separate files
   const idleAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.IDLE));
   const walkAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.WALK));
-  const punchAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.NORMAL));
+  const normalAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.NORMAL));
+  const jumpAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.JUMP));
 
   const mixer = useRef<THREE.AnimationMixer | null>(null);
 
@@ -101,12 +107,13 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
     }
   }, [model, scene, settings.debugMode]);
 
-  // Get the current animation clip based on state (attack > walk > idle)
+  // Get the current animation clip based on state (attack/jump > walk > idle)
   const currentAnimation = useMemo(() => {
-    if (isAttacking) return punchAnim;
+    if (isJumping) return jumpAnim;
+    if (isAttacking) return normalAnim;
     if (isWalking) return walkAnim;
     return idleAnim;
-  }, [isAttacking, isWalking, punchAnim, walkAnim, idleAnim]);
+  }, [isAttacking, isJumping, isWalking, normalAnim, jumpAnim, walkAnim, idleAnim]);
 
   // Simple patrol behavior: toggle walking every barbarianWalkDurationMS and change direction
   useEffect(() => {
@@ -137,6 +144,17 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
     return () => clearInterval(interval);
   }, [settings.enableBarbarianAttack, settings.attackSpeed]);
 
+  // Jump behavior: trigger jump every jumpDurationMS
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (settings.enableBarbarianJump) {
+        jumpPendingRef.current = true;
+      }
+    }, settings.jumpDurationMS);
+
+    return () => clearInterval(interval);
+  }, [settings.enableBarbarianJump, settings.jumpDurationMS]);
+
   useEffect(() => {
     // Clean up previous mixer
     if (mixer.current) {
@@ -148,6 +166,10 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
     if (model && currentAnimation) {
       mixer.current = new THREE.AnimationMixer(model);
       const action = mixer.current.clipAction(currentAnimation);
+      if (currentAnimation === jumpAnim) {
+        action.setLoop(THREE.LoopOnce, 1);
+        action.clampWhenFinished = true;
+      }
       action.play();
     }
 
@@ -156,7 +178,7 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
         mixer.current.stopAllAction();
       }
     };
-  }, [model, currentAnimation]);
+  }, [model, currentAnimation, jumpAnim]);
 
   useFrame((_state, delta) => {
     if (mixer.current) {
@@ -226,6 +248,34 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
     if (rigidBodyRef.current) {
       const moveSpeed = CHARACTER_DEFAULTS.MOVE_SPEED;
       const velocity = { x: 0, y: 0, z: 0 };
+
+      // Trigger jump while grounded
+      if (jumpPendingRef.current && isGroundedRef.current) {
+        jumpPendingRef.current = false;
+        const t = rigidBodyRef.current.translation();
+        jumpStartYRef.current = t.y;
+        yVelocityRef.current = CHARACTER_DEFAULTS.JUMP.VELOCITY;
+        isGroundedRef.current = false;
+        setIsJumping(true);
+      }
+
+      // Simulate vertical physics while airborne
+      if (!isGroundedRef.current) {
+        const clampedDelta = Math.min(delta, 1 / 30);
+        yVelocityRef.current -= CHARACTER_DEFAULTS.JUMP.GRAVITY * clampedDelta;
+        const t = rigidBodyRef.current.translation();
+        if (yVelocityRef.current < 0 && t.y <= jumpStartYRef.current) {
+          yVelocityRef.current = 0;
+          isGroundedRef.current = true;
+          setIsJumping(false);
+          rigidBodyRef.current.setTranslation(
+            { x: t.x, y: jumpStartYRef.current, z: t.z },
+            true,
+          );
+        }
+      }
+
+      velocity.y = yVelocityRef.current;
 
       // Block movement during attacks - attacks take priority
       if (isWalking && !isAttacking) {

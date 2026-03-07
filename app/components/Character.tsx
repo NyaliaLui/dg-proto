@@ -108,8 +108,7 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
     // Set up new mixer with current animation on the model
     if (model && currentAnimation) {
       mixer.current = new THREE.AnimationMixer(model);
-      const action = mixer.current.clipAction(currentAnimation);
-      action.play();
+      mixer.current.clipAction(currentAnimation).play();
     }
 
     return () => {

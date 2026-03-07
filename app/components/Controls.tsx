@@ -65,7 +65,7 @@ function OnscreenKeys({ updateKey, settings }: OnscreenKeysProps) {
     'w-16 h-16 bg-gray-700 bg-opacity-80 border-1 border-gray-500 rounded-full flex items-center justify-center cursor-pointer select-none active:bg-gray-600 transition-colors text-white font-semibold text-sm';
 
   // Helper function to handle mechanics key release with timeout
-  const handleMechanics = (key: 'q' | 'e' | 'p' | 'space') => {
+  const handleMechanics = (key: 'q' | 'e' | 'p') => {
     setTimeout(() => {
       updateKey(key, false);
     }, settings.attackSpeed);
@@ -77,22 +77,6 @@ function OnscreenKeys({ updateKey, settings }: OnscreenKeysProps) {
       aria-label="Action buttons"
       data-testid={CONTROLS_TEST_IDS.ONSCREEN_KEYS}
     >
-      {/* Top row - Jump button */}
-      <div className="flex justify-center">
-        <button
-          className={smallButtonClass}
-          data-testid={CONTROLS_TEST_IDS.JUMP_BUTTON}
-          aria-label="Jump"
-          onMouseDown={() => updateKey('space', true)}
-          onMouseUp={() => handleMechanics('space')}
-          onMouseLeave={() => handleMechanics('space')}
-          onTouchStart={() => updateKey('space', true)}
-          onTouchEnd={() => handleMechanics('space')}
-        >
-          Jump
-        </button>
-      </div>
-
       {/* Bottom row - Special, Normal, Item buttons */}
       <div className="flex gap-2 items-center">
         <button

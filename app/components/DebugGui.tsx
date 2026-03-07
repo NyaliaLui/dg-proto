@@ -66,6 +66,14 @@ export function DebugGui({
       value: settings.attackSpeed,
       label: 'Attack Speed (ms)',
     },
+    enableBarbarianJump: {
+      value: settings.enableBarbarianJump,
+      label: 'Enable Barbarian Jump',
+    },
+    jumpDurationMS: {
+      value: settings.jumpDurationMS,
+      label: 'Jump Duration (ms)',
+    },
   });
 
   useEffect(() => {
@@ -75,6 +83,8 @@ export function DebugGui({
       barbarianWalkDurationMS: controls.barbarianWalkDurationMS,
       enableBarbarianAttack: controls.enableBarbarianAttack,
       attackSpeed: controls.attackSpeed,
+      enableBarbarianJump: controls.enableBarbarianJump,
+      jumpDurationMS: controls.jumpDurationMS,
     });
   }, [
     controls.debugMode,
@@ -82,6 +92,8 @@ export function DebugGui({
     controls.barbarianWalkDurationMS,
     controls.enableBarbarianAttack,
     controls.attackSpeed,
+    controls.enableBarbarianJump,
+    controls.jumpDurationMS,
     onSettingsChange,
   ]);
 

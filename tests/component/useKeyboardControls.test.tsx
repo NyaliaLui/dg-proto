@@ -14,6 +14,8 @@ const defaultSettings: DebugSettings = {
   barbarianWalkDurationMS: BARBARIAN_DEFAULTS.barbarianWalkDurationMS,
   enableBarbarianAttack: BARBARIAN_DEFAULTS.enableBarbarianAttack,
   attackSpeed: BARBARIAN_DEFAULTS.attackSpeed,
+  enableBarbarianJump: BARBARIAN_DEFAULTS.enableBarbarianJump,
+  jumpDurationMS: BARBARIAN_DEFAULTS.jumpDurationMS,
 };
 
 describe('useKeyboardControls Hook', () => {
@@ -34,7 +36,6 @@ describe('useKeyboardControls Hook', () => {
       expect(keys.q).toBe(false);
       expect(keys.e).toBe(false);
       expect(keys.p).toBe(false);
-      expect(keys.space).toBe(false);
     });
   });
 
@@ -172,16 +173,6 @@ describe('useKeyboardControls Hook', () => {
       });
 
       expect(result.current.keys.p).toBe(true);
-    });
-
-    it('should handle Space key', () => {
-      const { result } = renderHook(() => useKeyboardControls(defaultSettings));
-
-      act(() => {
-        window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }));
-      });
-
-      expect(result.current.keys.space).toBe(true);
     });
 
     it('should handle multiple simultaneous keys', () => {
