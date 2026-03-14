@@ -4,11 +4,12 @@ export const CHARACTER_DEFAULTS = {
   MOVE_SPEED: 3,
   MODELS: {
     XBOT: '/models/XBot.fbx',
+    PALADIN: '/models/Paladin.fbx',
   },
   ANIMATIONS: {
     IDLE: '/models/IdleWithoutSkin.fbx',
     WALK: '/models/WalkingWithoutSkin.fbx',
-    NORMAL: '/models/PunchingWithoutSkin2.fbx',
+    NORMAL: '/models/SlashWithoutSkin.fbx',
   },
   SCALE: 0.01,
   COLLIDERS: {
@@ -29,6 +30,15 @@ export const CHARACTER_DEFAULTS = {
       halfHeight: 0.01,
       radius: 0.08,
       position: [0, 0.4, 0.75] as const,
+      offset: { y: -0.89, z: 0 },
+    },
+    SWORD: {
+      innerRadius: 0.05,
+      outerRadius: 1.4,
+      halfAngle: Math.PI / 4,
+      halfThickness: 0.05,
+      segments: 10,
+      position: [0, 1.6, 0] as const,
       offset: { y: -0.89, z: 0 },
     },
   },

@@ -5,6 +5,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useFBX } from '@react-three/drei';
 import {
   CapsuleCollider,
+  ConvexHullCollider,
   RigidBody,
   RapierRigidBody,
 } from '@react-three/rapier';
@@ -13,16 +14,14 @@ import { SkeletonUtils } from 'three-stdlib';
 import { SkeletonHelper } from 'three';
 
 import { CHARACTER_DEFAULTS } from '@/app/constants';
-import {
-  KeyState,
-  isAttacking,
-} from '@/app/components/hooks/useKeyboardControls';
+import { KeyState } from '@/app/components/hooks/useKeyboardControls';
 import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
 import {
   getAnimation,
   getBoneList,
   makeBoneVertexMap,
   getBoneWorldPosition,
+  makeFanVertices,
   BoneVertexMap,
 } from '@/app/utils';
 
@@ -42,25 +41,38 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
   const [headPosition, setHeadPosition] = useState<[number, number, number]>([
     ...CHARACTER_DEFAULTS.COLLIDERS.HEAD.position,
   ]);
-  const [handPosition, setHandPosition] = useState<[number, number, number]>([
-    ...CHARACTER_DEFAULTS.COLLIDERS.HAND.position,
+  const [swordPosition, setSwordPosition] = useState<[number, number, number]>([
+    ...CHARACTER_DEFAULTS.COLLIDERS.SWORD.position,
   ]);
+  const fanVertices = useMemo(
+    () =>
+      makeFanVertices(
+        CHARACTER_DEFAULTS.COLLIDERS.SWORD.innerRadius,
+        CHARACTER_DEFAULTS.COLLIDERS.SWORD.outerRadius,
+        CHARACTER_DEFAULTS.COLLIDERS.SWORD.halfAngle,
+        CHARACTER_DEFAULTS.COLLIDERS.SWORD.halfThickness,
+        CHARACTER_DEFAULTS.COLLIDERS.SWORD.segments,
+      ),
+    [],
+  );
   const { scene } = useThree();
   const skeletonHelperRef = useRef<SkeletonHelper | null>(null);
   const boneVertexMapRef = useRef<BoneVertexMap | null>(null);
 
+  const [attacking, setAttacking] = useState(false);
+
   // Determine if character is moving (not moving if attacking)
   const moving = useMemo(() => {
-    return !isAttacking(keys) && (keys.w || keys.s || keys.a || keys.d);
-  }, [keys]);
+    return !attacking && (keys.w || keys.s || keys.a || keys.d);
+  }, [keys, attacking]);
 
   // Load the skinned model
-  const modelFbx = useFBX(CHARACTER_DEFAULTS.MODELS.XBOT);
+  const modelFbx = useFBX(CHARACTER_DEFAULTS.MODELS.PALADIN);
 
   // Load animations from separate files
   const idleAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.IDLE));
   const walkAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.WALK));
-  const punchAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.NORMAL));
+  const normalAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.NORMAL));
 
   // Clone the model so it can be used independently
   const model = useMemo(() => SkeletonUtils.clone(modelFbx), [modelFbx]);
@@ -86,42 +98,81 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
   }, [model, scene, settings.debugMode]);
 
   const mixer = useRef<THREE.AnimationMixer | null>(null);
+  const attackingRef = useRef(false);
+  const currentActionRef = useRef<THREE.AnimationAction | null>(null);
 
-  // Determine which animation to play based on state
-  const currentAnimation = useMemo(() => {
-    if (isAttacking(keys)) {
-      return punchAnim;
-    }
-    if (moving) {
-      return walkAnim;
-    }
-    return idleAnim;
-  }, [keys, moving, idleAnim, walkAnim, punchAnim]);
+  const prevQRef = useRef(false);
+  const prevERef = useRef(false);
 
+  // Initialize mixer once
   useEffect(() => {
-    // Clean up previous mixer
-    if (mixer.current) {
-      mixer.current.stopAllAction();
-      mixer.current = null;
-    }
+    if (!model) return;
 
-    // Set up new mixer with current animation on the model
-    if (model && currentAnimation) {
-      mixer.current = new THREE.AnimationMixer(model);
-      const action = mixer.current.clipAction(currentAnimation);
-      action.play();
-    }
+    const m = new THREE.AnimationMixer(model);
+    mixer.current = m;
+
+    // When attack animation finishes, go back to idle/walk
+    const onFinished = () => {
+      attackingRef.current = false;
+      setAttacking(false);
+    };
+    m.addEventListener('finished', onFinished);
+
+    // Start with idle
+    const action = m.clipAction(idleAnim);
+    action.play();
+    currentActionRef.current = action;
 
     return () => {
-      if (mixer.current) {
-        mixer.current.stopAllAction();
-      }
+      m.removeEventListener('finished', onFinished);
+      m.stopAllAction();
+      mixer.current = null;
+      currentActionRef.current = null;
     };
-  }, [model, currentAnimation]);
+  }, [model, idleAnim]);
 
   useFrame((_state, delta) => {
     if (mixer.current) {
-      mixer.current.update(delta);
+      const m = mixer.current;
+
+      // Detect Q/E key press edge (rising edge)
+      const qPressed = keys.q && !prevQRef.current;
+      const ePressed = keys.e && !prevERef.current;
+      if ((qPressed || ePressed) && !attackingRef.current) {
+        attackingRef.current = true;
+        setAttacking(true);
+
+        const attackAction = m.clipAction(normalAnim);
+        attackAction.reset();
+        attackAction.setLoop(THREE.LoopOnce, 1);
+        attackAction.clampWhenFinished = false;
+
+        if (currentActionRef.current) {
+          currentActionRef.current.fadeOut(0.1);
+        }
+        attackAction.fadeIn(0.1).play();
+        currentActionRef.current = attackAction;
+      }
+      prevQRef.current = keys.q;
+      prevERef.current = keys.e;
+
+      // Transition to idle/walk when not attacking
+      if (!attackingRef.current) {
+        const clip = moving ? walkAnim : idleAnim;
+        const nextAction = m.clipAction(clip);
+
+        if (currentActionRef.current !== nextAction) {
+          nextAction.reset();
+          nextAction.setLoop(THREE.LoopRepeat, Infinity);
+          if (currentActionRef.current) {
+            currentActionRef.current.fadeOut(0.1);
+          }
+          nextAction.fadeIn(0.1).play();
+          currentActionRef.current = nextAction;
+        }
+      }
+
+      m.update(delta);
     }
 
     // Update collider positions based on bone world positions from SkeletonHelper
@@ -164,19 +215,19 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
           ]);
         }
 
-        // Update hand position (only during attack)
-        if (isAttacking(keys)) {
-          const leftHandPos = getBoneWorldPosition(
-            'mixamorigLeftHand',
+        // Update sword position (only during attack)
+        if (attacking) {
+          const swordPos = getBoneWorldPosition(
+            'mixamorigSpine1',
             boneVertexMapRef.current,
             positions,
           );
-          if (leftHandPos) {
-            leftHandPos.multiplyScalar(CHARACTER_DEFAULTS.SCALE);
-            setHandPosition([
-              leftHandPos.x,
-              leftHandPos.y + CHARACTER_DEFAULTS.COLLIDERS.HAND.offset.y,
-              leftHandPos.z + CHARACTER_DEFAULTS.COLLIDERS.HAND.offset.z,
+          if (swordPos) {
+            swordPos.multiplyScalar(CHARACTER_DEFAULTS.SCALE);
+            setSwordPosition([
+              swordPos.x,
+              swordPos.y + CHARACTER_DEFAULTS.COLLIDERS.SWORD.offset.y,
+              swordPos.z + CHARACTER_DEFAULTS.COLLIDERS.SWORD.offset.z,
             ]);
           }
         }
@@ -188,7 +239,7 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
       const velocity = { x: 0, y: 0, z: 0 };
 
       // Block movement during attacks - attacks take priority
-      if (!isAttacking(keys)) {
+      if (!attackingRef.current) {
         // WASD movement with rotation to face direction
         if (keys.w) {
           velocity.z = -moveSpeed;
@@ -265,14 +316,12 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
         sensor
         onIntersectionEnter={onHit}
       />
-      {/* Hand capsule - only active during attack */}
-      {isAttacking(keys) && (
-        <CapsuleCollider
-          args={[
-            CHARACTER_DEFAULTS.COLLIDERS.HAND.halfHeight,
-            CHARACTER_DEFAULTS.COLLIDERS.HAND.radius,
-          ]}
-          position={handPosition}
+      {/* Sword fan collider - only active during attack */}
+      {attacking && (
+        <ConvexHullCollider
+          args={[fanVertices]}
+          position={swordPosition}
+          rotation={[0, 0, -Math.PI / 5]}
         />
       )}
       <group ref={modelRef}>
