@@ -60,13 +60,19 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
   const boneVertexMapRef = useRef<BoneVertexMap | null>(null);
 
   const [attacking, setAttacking] = useState(false);
+  const [jumping, setJumping] = useState(false);
 
   const crouching = keys.ctrl;
 
-  // Determine if character is moving (not moving if attacking or crouching)
+  // Determine if character is moving (not moving if attacking, crouching, or jumping)
   const moving = useMemo(() => {
-    return !attacking && !crouching && (keys.w || keys.s || keys.a || keys.d);
-  }, [keys, attacking, crouching]);
+    return (
+      !attacking &&
+      !crouching &&
+      !jumping &&
+      (keys.w || keys.s || keys.a || keys.d)
+    );
+  }, [keys, attacking, crouching, jumping]);
 
   // Load the skinned model
   const modelFbx = useFBX(PLAYER_DEFAULTS.MODEL);
@@ -76,6 +82,8 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
   const walkAnim = getAnimation(useFBX(SHARED_DEFAULTS.ANIMATIONS.WALK));
   const normalAnim = getAnimation(useFBX(PLAYER_DEFAULTS.ANIMATIONS.NORMAL));
   const crouchAnim = getAnimation(useFBX(PLAYER_DEFAULTS.ANIMATIONS.CROUCH));
+  const jumpAnim = getAnimation(useFBX(PLAYER_DEFAULTS.ANIMATIONS.JUMP));
+
 
   // Clone the model so it can be used independently
   const model = useMemo(() => SkeletonUtils.clone(modelFbx), [modelFbx]);
@@ -102,10 +110,12 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
 
   const mixer = useRef<THREE.AnimationMixer | null>(null);
   const attackingRef = useRef(false);
+  const jumpingRef = useRef(false);
   const currentActionRef = useRef<THREE.AnimationAction | null>(null);
 
   const prevQRef = useRef(false);
   const prevERef = useRef(false);
+  const prevSpaceRef = useRef(false);
 
   // Initialize mixer once
   useEffect(() => {
@@ -114,10 +124,12 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
     const m = new THREE.AnimationMixer(model);
     mixer.current = m;
 
-    // When attack animation finishes, go back to idle/walk
+    // When one-shot animation finishes, go back to idle/walk
     const onFinished = () => {
       attackingRef.current = false;
       setAttacking(false);
+      jumpingRef.current = false;
+      setJumping(false);
     };
     m.addEventListener('finished', onFinished);
 
@@ -159,8 +171,32 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
       prevQRef.current = keys.q;
       prevERef.current = keys.e;
 
-      // Transition to idle/walk/crouch when not attacking
-      if (!attackingRef.current) {
+      // Detect Space key press edge (rising edge) - block jump while crouching or attacking
+      const spacePressed = keys.space && !prevSpaceRef.current;
+      if (
+        spacePressed &&
+        !jumpingRef.current &&
+        !attackingRef.current &&
+        !crouching
+      ) {
+        jumpingRef.current = true;
+        setJumping(true);
+
+        const jumpAction = m.clipAction(jumpAnim);
+        jumpAction.reset();
+        jumpAction.setLoop(THREE.LoopOnce, 1);
+        jumpAction.clampWhenFinished = false;
+
+        if (currentActionRef.current) {
+          currentActionRef.current.fadeOut(0.1);
+        }
+        jumpAction.fadeIn(0.1).play();
+        currentActionRef.current = jumpAction;
+      }
+      prevSpaceRef.current = keys.space;
+
+      // Transition to idle/walk/crouch when not attacking or jumping
+      if (!attackingRef.current && !jumpingRef.current) {
         const clip = crouching ? crouchAnim : moving ? walkAnim : idleAnim;
         const nextAction = m.clipAction(clip);
 
@@ -241,8 +277,8 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
       const moveSpeed = SHARED_DEFAULTS.MOVE_SPEED;
       const velocity = { x: 0, y: 0, z: 0 };
 
-      // Block movement during attacks or crouching
-      if (!attackingRef.current && !crouching) {
+      // Block movement during attacks, crouching, or jumping
+      if (!attackingRef.current && !crouching && !jumpingRef.current) {
         // WASD movement with rotation to face direction
         if (keys.w) {
           velocity.z = -moveSpeed;

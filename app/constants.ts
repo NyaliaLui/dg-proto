@@ -29,6 +29,8 @@ export const PLAYER_DEFAULTS = {
   ANIMATIONS: {
     NORMAL: '/models/Player/SlashWithoutSkin.fbx',
     CROUCH: '/models/Player/CrouchWithoutSkin.fbx',
+    JUMP: '/models/Player/SwordJumpWithoutSkin.fbx',
+
   },
   COLLIDERS: {
     SWORD: {

@@ -399,6 +399,35 @@ describe('Player Component', () => {
       expect(mockSetLinvel).toHaveBeenCalledWith({ x: 0, y: 0, z: 0 }, true);
     });
 
+    it('should set zero velocity when jumping with space key even with W key pressed', async () => {
+      const jumpingWithMovementKeys = { ...mockKeys, space: true, w: true };
+      const renderer = await create(
+        <Character keys={jumpingWithMovementKeys} settings={defaultSettings} />,
+      );
+      await renderer.advanceFrames(1, 1 / 60);
+
+      // Jump takes priority - velocity should be zero
+      expect(mockSetLinvel).toHaveBeenCalledWith({ x: 0, y: 0, z: 0 }, true);
+    });
+
+    it('should set zero velocity when jumping even with all movement keys pressed', async () => {
+      const jumpingWithAllMovement = {
+        ...mockKeys,
+        space: true,
+        w: true,
+        a: true,
+        s: true,
+        d: true,
+      };
+      const renderer = await create(
+        <Character keys={jumpingWithAllMovement} settings={defaultSettings} />,
+      );
+      await renderer.advanceFrames(1, 1 / 60);
+
+      // Jump takes priority - velocity should be zero
+      expect(mockSetLinvel).toHaveBeenCalledWith({ x: 0, y: 0, z: 0 }, true);
+    });
+
     it('should set zero velocity when crouching even with all movement keys pressed', async () => {
       const crouchingWithAllMovement = {
         ...mockKeys,
