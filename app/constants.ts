@@ -1,16 +1,11 @@
 import { Vector3 } from 'three';
 
-export const CHARACTER_DEFAULTS = {
-  MOVE_SPEED: 3,
-  MODELS: {
-    XBOT: '/models/XBot.fbx',
-    PALADIN: '/models/Paladin.fbx',
-  },
+export const SHARED_DEFAULTS = {
   ANIMATIONS: {
     IDLE: '/models/IdleWithoutSkin.fbx',
     WALK: '/models/WalkingWithoutSkin.fbx',
-    NORMAL: '/models/SlashWithoutSkin.fbx',
   },
+  MOVE_SPEED: 3,
   SCALE: 0.01,
   COLLIDERS: {
     BODY: { halfHeight: 0.4, radius: 0.5, position: [0, 0, 0] as const },
@@ -26,12 +21,15 @@ export const CHARACTER_DEFAULTS = {
       position: [0, 0.7, 0] as const,
       offset: { y: -0.84, z: 0.02 },
     },
-    HAND: {
-      halfHeight: 0.01,
-      radius: 0.08,
-      position: [0, 0.4, 0.75] as const,
-      offset: { y: -0.89, z: 0 },
-    },
+  },
+};
+
+export const PLAYER_DEFAULTS = {
+  MODEL: '/models/Player/Paladin.fbx',
+  ANIMATIONS: {
+    NORMAL: '/models/Player/SlashWithoutSkin.fbx',
+  },
+  COLLIDERS: {
     SWORD: {
       innerRadius: 0.05,
       outerRadius: 1.4,
@@ -66,6 +64,18 @@ export const CONTROLS_DEFAULTS = {
 };
 
 export const BARBARIAN_DEFAULTS = {
+  MODEL: '/models/Barbarian/XBot.fbx',
+  ANIMATIONS: {
+    NORMAL: '/models/Barbarian/PunchingWithoutSkin2.fbx',
+  },
+  COLLIDERS: {
+    HAND: {
+      halfHeight: 0.01,
+      radius: 0.08,
+      position: [0, 0.4, 0.75] as const,
+      offset: { y: -0.89, z: 0 },
+    },
+  },
   enableBarbarianWalk: false,
   barbarianWalkDurationMS: 500,
   enableBarbarianAttack: false,

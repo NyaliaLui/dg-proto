@@ -13,8 +13,8 @@ import * as THREE from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 import { SkeletonHelper } from 'three';
 
-import { CHARACTER_DEFAULTS } from '@/app/constants';
-import { KeyState } from '@/app/components/hooks/useKeyboardControls';
+import { SHARED_DEFAULTS, PLAYER_DEFAULTS } from '@/app/constants';
+import { KeyState } from '@/app/components/Player/hooks/useKeyboardControls';
 import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
 import {
   getAnimation,
@@ -25,33 +25,33 @@ import {
   BoneVertexMap,
 } from '@/app/utils';
 
-interface CharacterProps {
+interface PlayerProps {
   keys: KeyState;
   onHit?: () => void;
   settings: DebugSettings;
 }
 
-export function Character({ keys, onHit, settings }: CharacterProps) {
+export function Player({ keys, onHit, settings }: PlayerProps) {
   const rigidBodyRef = useRef<RapierRigidBody>(null);
   const modelRef = useRef<THREE.Group>(null);
   const lastRotationRef = useRef<number>(Math.PI / 2);
   const [torsoPosition, setTorsoPosition] = useState<[number, number, number]>([
-    ...CHARACTER_DEFAULTS.COLLIDERS.TORSO.position,
+    ...SHARED_DEFAULTS.COLLIDERS.TORSO.position,
   ]);
   const [headPosition, setHeadPosition] = useState<[number, number, number]>([
-    ...CHARACTER_DEFAULTS.COLLIDERS.HEAD.position,
+    ...SHARED_DEFAULTS.COLLIDERS.HEAD.position,
   ]);
   const [swordPosition, setSwordPosition] = useState<[number, number, number]>([
-    ...CHARACTER_DEFAULTS.COLLIDERS.SWORD.position,
+    ...PLAYER_DEFAULTS.COLLIDERS.SWORD.position,
   ]);
   const fanVertices = useMemo(
     () =>
       makeFanVertices(
-        CHARACTER_DEFAULTS.COLLIDERS.SWORD.innerRadius,
-        CHARACTER_DEFAULTS.COLLIDERS.SWORD.outerRadius,
-        CHARACTER_DEFAULTS.COLLIDERS.SWORD.halfAngle,
-        CHARACTER_DEFAULTS.COLLIDERS.SWORD.halfThickness,
-        CHARACTER_DEFAULTS.COLLIDERS.SWORD.segments,
+        PLAYER_DEFAULTS.COLLIDERS.SWORD.innerRadius,
+        PLAYER_DEFAULTS.COLLIDERS.SWORD.outerRadius,
+        PLAYER_DEFAULTS.COLLIDERS.SWORD.halfAngle,
+        PLAYER_DEFAULTS.COLLIDERS.SWORD.halfThickness,
+        PLAYER_DEFAULTS.COLLIDERS.SWORD.segments,
       ),
     [],
   );
@@ -61,18 +61,18 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
 
   const [attacking, setAttacking] = useState(false);
 
-  // Determine if character is moving (not moving if attacking)
+  // Determine if player is moving (not moving if attacking)
   const moving = useMemo(() => {
     return !attacking && (keys.w || keys.s || keys.a || keys.d);
   }, [keys, attacking]);
 
   // Load the skinned model
-  const modelFbx = useFBX(CHARACTER_DEFAULTS.MODELS.PALADIN);
+  const modelFbx = useFBX(PLAYER_DEFAULTS.MODEL);
 
   // Load animations from separate files
-  const idleAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.IDLE));
-  const walkAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.WALK));
-  const normalAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.NORMAL));
+  const idleAnim = getAnimation(useFBX(SHARED_DEFAULTS.ANIMATIONS.IDLE));
+  const walkAnim = getAnimation(useFBX(SHARED_DEFAULTS.ANIMATIONS.WALK));
+  const normalAnim = getAnimation(useFBX(PLAYER_DEFAULTS.ANIMATIONS.NORMAL));
 
   // Clone the model so it can be used independently
   const model = useMemo(() => SkeletonUtils.clone(modelFbx), [modelFbx]);
@@ -192,11 +192,11 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
           positions,
         );
         if (spinePos) {
-          spinePos.multiplyScalar(CHARACTER_DEFAULTS.SCALE);
+          spinePos.multiplyScalar(SHARED_DEFAULTS.SCALE);
           setTorsoPosition([
             spinePos.x,
-            spinePos.y + CHARACTER_DEFAULTS.COLLIDERS.TORSO.offset.y,
-            spinePos.z + CHARACTER_DEFAULTS.COLLIDERS.TORSO.offset.z,
+            spinePos.y + SHARED_DEFAULTS.COLLIDERS.TORSO.offset.y,
+            spinePos.z + SHARED_DEFAULTS.COLLIDERS.TORSO.offset.z,
           ]);
         }
 
@@ -207,11 +207,11 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
           positions,
         );
         if (headBonePos) {
-          headBonePos.multiplyScalar(CHARACTER_DEFAULTS.SCALE);
+          headBonePos.multiplyScalar(SHARED_DEFAULTS.SCALE);
           setHeadPosition([
             headBonePos.x,
-            headBonePos.y + CHARACTER_DEFAULTS.COLLIDERS.HEAD.offset.y,
-            headBonePos.z + CHARACTER_DEFAULTS.COLLIDERS.HEAD.offset.z,
+            headBonePos.y + SHARED_DEFAULTS.COLLIDERS.HEAD.offset.y,
+            headBonePos.z + SHARED_DEFAULTS.COLLIDERS.HEAD.offset.z,
           ]);
         }
 
@@ -223,11 +223,11 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
             positions,
           );
           if (swordPos) {
-            swordPos.multiplyScalar(CHARACTER_DEFAULTS.SCALE);
+            swordPos.multiplyScalar(SHARED_DEFAULTS.SCALE);
             setSwordPosition([
               swordPos.x,
-              swordPos.y + CHARACTER_DEFAULTS.COLLIDERS.SWORD.offset.y,
-              swordPos.z + CHARACTER_DEFAULTS.COLLIDERS.SWORD.offset.z,
+              swordPos.y + PLAYER_DEFAULTS.COLLIDERS.SWORD.offset.y,
+              swordPos.z + PLAYER_DEFAULTS.COLLIDERS.SWORD.offset.z,
             ]);
           }
         }
@@ -235,7 +235,7 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
     }
 
     if (rigidBodyRef.current) {
-      const moveSpeed = CHARACTER_DEFAULTS.MOVE_SPEED;
+      const moveSpeed = SHARED_DEFAULTS.MOVE_SPEED;
       const velocity = { x: 0, y: 0, z: 0 };
 
       // Block movement during attacks - attacks take priority
@@ -299,8 +299,8 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
       {/* Torso capsule */}
       <CapsuleCollider
         args={[
-          CHARACTER_DEFAULTS.COLLIDERS.TORSO.halfHeight,
-          CHARACTER_DEFAULTS.COLLIDERS.TORSO.radius,
+          SHARED_DEFAULTS.COLLIDERS.TORSO.halfHeight,
+          SHARED_DEFAULTS.COLLIDERS.TORSO.radius,
         ]}
         position={torsoPosition}
         sensor
@@ -309,8 +309,8 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
       {/* Head capsule */}
       <CapsuleCollider
         args={[
-          CHARACTER_DEFAULTS.COLLIDERS.HEAD.halfHeight,
-          CHARACTER_DEFAULTS.COLLIDERS.HEAD.radius,
+          SHARED_DEFAULTS.COLLIDERS.HEAD.halfHeight,
+          SHARED_DEFAULTS.COLLIDERS.HEAD.radius,
         ]}
         position={headPosition}
         sensor
@@ -327,7 +327,7 @@ export function Character({ keys, onHit, settings }: CharacterProps) {
       <group ref={modelRef}>
         <primitive
           object={model}
-          scale={CHARACTER_DEFAULTS.SCALE}
+          scale={SHARED_DEFAULTS.SCALE}
           position={[0, -0.9, 0]}
         />
       </group>

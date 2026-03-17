@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useState, RefObject } from 'react';
-import { SetKeyStateFn } from '@/app/components/hooks/useKeyboardControls';
+import { SetKeyStateFn } from '@/app/components/Player/hooks/useKeyboardControls';
 import { CONTROLS_DEFAULTS } from '@/app/constants';
 
 export { useAnalogControls };
