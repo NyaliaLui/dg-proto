@@ -20,10 +20,10 @@ function useScreenSize(): ScreenSize {
     const updateScreenSize = () => {
       const width = window.innerWidth;
       // Breakpoints based on lg and xl tailwindcss breakpoints
-      if (width >= 1024) {
-        setScreenSize('tablet');
-      } else if (width >= 1280) {
+      if (width >= 1280) {
         setScreenSize('desktop');
+      } else if (width >= 1024) {
+        setScreenSize('tablet');
       } else {
         setScreenSize('mobile');
       }

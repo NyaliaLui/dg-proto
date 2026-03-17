@@ -51,6 +51,7 @@ jest.mock('../../app/utils', () => ({
   getBoneList: jest.fn(() => []),
   makeBoneVertexMap: jest.fn(() => ({})),
   getBoneWorldPosition: jest.fn(() => null),
+  makeFanVertices: jest.fn(() => new Float32Array([0, 0, 0, 1, 0, 0, 0, 0, 1])),
 }));
 
 jest.mock('three-stdlib', () => {
@@ -127,6 +128,7 @@ jest.mock('@react-three/rapier', () => {
       colliderIndex++;
       return null;
     },
+    ConvexHullCollider: () => null,
   };
 });
 
