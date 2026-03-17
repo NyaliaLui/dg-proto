@@ -16,7 +16,11 @@ const config: Config = {
     IS_REACT_ACT_ENVIRONMENT: true,
   },
   testPathIgnorePatterns: ['<rootDir>/tests/component/utils/'],
-  testMatch: ['**/tests/component/*.tsx'],
+  testMatch: [
+    '**/tests/component/*.tsx',
+    '**/tests/component/Player/*.tsx',
+    '**/tests/component/Barbarian/*.tsx',
+  ],
 };
 
 // Override transformIgnorePatterns after next/jest resolves to ensure ESM deps are transpiled

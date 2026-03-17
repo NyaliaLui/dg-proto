@@ -3,7 +3,7 @@ import { expect } from '@jest/globals';
 import { create, ReactThreeTestRenderer } from '@react-three/test-renderer';
 import { Group } from 'three';
 import { act } from 'react';
-import { Barbarian } from '@/app/components/Barbarian';
+import { Barbarian } from '@/app/components/Barbarian/Barbarian';
 import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
 import {
   BARBARIAN_DEFAULTS,
@@ -47,7 +47,7 @@ jest.mock('@react-three/drei', () => {
   };
 });
 
-jest.mock('../../app/utils', () => ({
+jest.mock('../../../app/utils', () => ({
   getAnimation: jest.fn((model) => model.animations[0]),
   getBoneList: jest.fn(() => []),
   makeBoneVertexMap: jest.fn(() => ({})),
@@ -577,7 +577,10 @@ describe('Barbarian Component', () => {
       let renderer: ReactThreeTestRenderer;
       await act(async () => {
         renderer = await create(
-          <Barbarian id="test-barbarian" settings={attackWhileWalkingSettings} />,
+          <Barbarian
+            id="test-barbarian"
+            settings={attackWhileWalkingSettings}
+          />,
         );
       });
 

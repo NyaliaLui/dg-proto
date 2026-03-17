@@ -4,7 +4,7 @@ import { expect, describe, it } from '@jest/globals';
 import {
   useKeyboardControls,
   isAttacking,
-} from '@/app/components/hooks/useKeyboardControls';
+} from '@/app/components/Player/hooks/useKeyboardControls';
 import { CONTROLS_DEFAULTS, BARBARIAN_DEFAULTS } from '@/app/constants';
 import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
 

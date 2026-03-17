@@ -1,7 +1,11 @@
 import '@testing-library/jest-dom';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { expect, describe, it } from '@jest/globals';
-import { Controls, AnalogStick, OnscreenKeys } from '@/app/components/Controls';
+import {
+  Controls,
+  AnalogStick,
+  OnscreenKeys,
+} from '@/app/components/Player/Controls';
 import { CONTROLS_TEST_IDS } from '@/app/test-ids';
 import { BARBARIAN_DEFAULTS } from '@/app/constants';
 import { DebugSettings } from '@/app/components/hooks/useDebugSettings';

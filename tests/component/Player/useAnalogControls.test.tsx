@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
 import { renderHook, act } from '@testing-library/react';
 import { expect, jest, describe, it } from '@jest/globals';
-import { useAnalogControls } from '@/app/components/hooks/useAnalogControls';
+import { useAnalogControls } from '@/app/components/Player/hooks/useAnalogControls';
 import { createRef } from 'react';
 
 describe('useAnalogControls Hook', () => {
