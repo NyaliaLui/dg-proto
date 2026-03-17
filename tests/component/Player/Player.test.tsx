@@ -481,6 +481,45 @@ describe('Player Component', () => {
       // Crouch attack takes priority - velocity should be zero
       expect(mockSetLinvel).toHaveBeenCalledWith({ x: 0, y: 0, z: 0 }, true);
     });
+
+    it('should set zero velocity when special attacking with E key even with W key pressed', async () => {
+      const specialAttackingWithMovementKeys = {
+        ...mockKeys,
+        e: true,
+        w: true,
+      };
+      const renderer = await create(
+        <Character
+          keys={specialAttackingWithMovementKeys}
+          settings={defaultSettings}
+        />,
+      );
+      await renderer.advanceFrames(1, 1 / 60);
+
+      // Special attack takes priority - velocity should be zero
+      expect(mockSetLinvel).toHaveBeenCalledWith({ x: 0, y: 0, z: 0 }, true);
+    });
+
+    it('should set zero velocity when special attacking even with all movement keys pressed', async () => {
+      const specialAttackWithAllMovement = {
+        ...mockKeys,
+        e: true,
+        w: true,
+        a: true,
+        s: true,
+        d: true,
+      };
+      const renderer = await create(
+        <Character
+          keys={specialAttackWithAllMovement}
+          settings={defaultSettings}
+        />,
+      );
+      await renderer.advanceFrames(1, 1 / 60);
+
+      // Special attack takes priority - velocity should be zero
+      expect(mockSetLinvel).toHaveBeenCalledWith({ x: 0, y: 0, z: 0 }, true);
+    });
   });
 
   describe('Hit Detection', () => {
