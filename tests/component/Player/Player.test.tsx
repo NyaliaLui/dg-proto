@@ -448,6 +448,39 @@ describe('Player Component', () => {
       // Crouch takes priority - velocity should be zero
       expect(mockSetLinvel).toHaveBeenCalledWith({ x: 0, y: 0, z: 0 }, true);
     });
+
+    it('should set zero velocity when crouch attacking with Ctrl + Q keys', async () => {
+      const crouchAttackKeys = { ...mockKeys, ctrl: true, q: true };
+      const renderer = await create(
+        <Character keys={crouchAttackKeys} settings={defaultSettings} />,
+      );
+      await renderer.advanceFrames(1, 1 / 60);
+
+      // Crouch attack takes priority - velocity should be zero
+      expect(mockSetLinvel).toHaveBeenCalledWith({ x: 0, y: 0, z: 0 }, true);
+    });
+
+    it('should set zero velocity when crouch attacking even with all movement keys pressed', async () => {
+      const crouchAttackWithAllMovement = {
+        ...mockKeys,
+        ctrl: true,
+        q: true,
+        w: true,
+        a: true,
+        s: true,
+        d: true,
+      };
+      const renderer = await create(
+        <Character
+          keys={crouchAttackWithAllMovement}
+          settings={defaultSettings}
+        />,
+      );
+      await renderer.advanceFrames(1, 1 / 60);
+
+      // Crouch attack takes priority - velocity should be zero
+      expect(mockSetLinvel).toHaveBeenCalledWith({ x: 0, y: 0, z: 0 }, true);
+    });
   });
 
   describe('Hit Detection', () => {

@@ -30,7 +30,7 @@ export const PLAYER_DEFAULTS = {
     NORMAL: '/models/Player/SlashWithoutSkin.fbx',
     CROUCH: '/models/Player/CrouchWithoutSkin.fbx',
     JUMP: '/models/Player/SwordJumpWithoutSkin.fbx',
-
+    CROUCH_ATTACK: '/models/Player/SwordCrouchSlashWithoutSkin.fbx',
   },
   COLLIDERS: {
     SWORD: {
@@ -41,6 +41,17 @@ export const PLAYER_DEFAULTS = {
       segments: 10,
       position: [0, 1.6, 0] as const,
       offset: { y: -0.89, z: 0 },
+      rotation: [0, 0, -Math.PI / 5] as const,
+    },
+    CROUCH_SWORD: {
+      innerRadius: 0.05,
+      outerRadius: 1.4,
+      halfAngle: Math.PI / 4,
+      halfThickness: 0.05,
+      segments: 10,
+      position: [0, 1.6, 0] as const,
+      offset: { y: -0.89, z: 0 },
+      rotation: [0, 0, 0] as const,
     },
   },
 };
