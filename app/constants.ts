@@ -28,6 +28,7 @@ export const PLAYER_DEFAULTS = {
   MODEL: '/models/Player/Paladin.fbx',
   ANIMATIONS: {
     NORMAL: '/models/Player/SlashWithoutSkin.fbx',
+    CROUCH: '/models/Player/CrouchWithoutSkin.fbx',
   },
   COLLIDERS: {
     SWORD: {
@@ -54,6 +55,7 @@ export const CONTROLS_DEFAULTS = {
     e: false,
     p: false,
     space: false,
+    ctrl: false,
   },
   ANALOG_STICK: {
     INIT_POS: { x: 0, y: 0 },

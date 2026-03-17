@@ -35,6 +35,7 @@ describe('useKeyboardControls Hook', () => {
       expect(keys.e).toBe(false);
       expect(keys.p).toBe(false);
       expect(keys.space).toBe(false);
+      expect(keys.ctrl).toBe(false);
     });
   });
 
@@ -182,6 +183,30 @@ describe('useKeyboardControls Hook', () => {
       });
 
       expect(result.current.keys.space).toBe(true);
+    });
+
+    it('should handle Control key', () => {
+      const { result } = renderHook(() => useKeyboardControls(defaultSettings));
+
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Control' }));
+      });
+
+      expect(result.current.keys.ctrl).toBe(true);
+    });
+
+    it('should set ctrl key to false on Control keyup immediately', () => {
+      const { result } = renderHook(() => useKeyboardControls(defaultSettings));
+
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Control' }));
+      });
+      expect(result.current.keys.ctrl).toBe(true);
+
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent('keyup', { key: 'Control' }));
+      });
+      expect(result.current.keys.ctrl).toBe(false);
     });
 
     it('should handle multiple simultaneous keys', () => {

@@ -61,10 +61,12 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
 
   const [attacking, setAttacking] = useState(false);
 
-  // Determine if player is moving (not moving if attacking)
+  const crouching = keys.ctrl;
+
+  // Determine if character is moving (not moving if attacking or crouching)
   const moving = useMemo(() => {
-    return !attacking && (keys.w || keys.s || keys.a || keys.d);
-  }, [keys, attacking]);
+    return !attacking && !crouching && (keys.w || keys.s || keys.a || keys.d);
+  }, [keys, attacking, crouching]);
 
   // Load the skinned model
   const modelFbx = useFBX(PLAYER_DEFAULTS.MODEL);
@@ -73,6 +75,7 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
   const idleAnim = getAnimation(useFBX(SHARED_DEFAULTS.ANIMATIONS.IDLE));
   const walkAnim = getAnimation(useFBX(SHARED_DEFAULTS.ANIMATIONS.WALK));
   const normalAnim = getAnimation(useFBX(PLAYER_DEFAULTS.ANIMATIONS.NORMAL));
+  const crouchAnim = getAnimation(useFBX(PLAYER_DEFAULTS.ANIMATIONS.CROUCH));
 
   // Clone the model so it can be used independently
   const model = useMemo(() => SkeletonUtils.clone(modelFbx), [modelFbx]);
@@ -135,10 +138,10 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
     if (mixer.current) {
       const m = mixer.current;
 
-      // Detect Q/E key press edge (rising edge)
+      // Detect Q/E key press edge (rising edge) - block attacks while crouching
       const qPressed = keys.q && !prevQRef.current;
       const ePressed = keys.e && !prevERef.current;
-      if ((qPressed || ePressed) && !attackingRef.current) {
+      if ((qPressed || ePressed) && !attackingRef.current && !crouching) {
         attackingRef.current = true;
         setAttacking(true);
 
@@ -156,9 +159,9 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
       prevQRef.current = keys.q;
       prevERef.current = keys.e;
 
-      // Transition to idle/walk when not attacking
+      // Transition to idle/walk/crouch when not attacking
       if (!attackingRef.current) {
-        const clip = moving ? walkAnim : idleAnim;
+        const clip = crouching ? crouchAnim : moving ? walkAnim : idleAnim;
         const nextAction = m.clipAction(clip);
 
         if (currentActionRef.current !== nextAction) {
@@ -238,8 +241,8 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
       const moveSpeed = SHARED_DEFAULTS.MOVE_SPEED;
       const velocity = { x: 0, y: 0, z: 0 };
 
-      // Block movement during attacks - attacks take priority
-      if (!attackingRef.current) {
+      // Block movement during attacks or crouching
+      if (!attackingRef.current && !crouching) {
         // WASD movement with rotation to face direction
         if (keys.w) {
           velocity.z = -moveSpeed;
