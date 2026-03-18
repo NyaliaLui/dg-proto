@@ -91,6 +91,18 @@ describe('DebugGui Component', () => {
         barbarianWalkDurationMS: DEFAULT_DEBUG_SETTINGS.barbarianWalkDurationMS,
         enableBarbarianAttack: DEFAULT_DEBUG_SETTINGS.enableBarbarianAttack,
         attackSpeed: DEFAULT_DEBUG_SETTINGS.attackSpeed,
+        enableBarbarianJump: DEFAULT_DEBUG_SETTINGS.enableBarbarianJump,
+        jumpDurationMS: DEFAULT_DEBUG_SETTINGS.jumpDurationMS,
+        enableBarbarianLeftBlock:
+          DEFAULT_DEBUG_SETTINGS.enableBarbarianLeftBlock,
+        blockDurationMS: DEFAULT_DEBUG_SETTINGS.blockDurationMS,
+        enableBarbarianRightBlock:
+          DEFAULT_DEBUG_SETTINGS.enableBarbarianRightBlock,
+        rightBlockDurationMS: DEFAULT_DEBUG_SETTINGS.rightBlockDurationMS,
+        enableBarbarianKick: DEFAULT_DEBUG_SETTINGS.enableBarbarianKick,
+        kickSpeed: DEFAULT_DEBUG_SETTINGS.kickSpeed,
+        enableBarbarianDuck: DEFAULT_DEBUG_SETTINGS.enableBarbarianDuck,
+        duckDurationMS: DEFAULT_DEBUG_SETTINGS.duckDurationMS,
       });
     });
   });

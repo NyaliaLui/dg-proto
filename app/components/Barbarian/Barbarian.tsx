@@ -52,8 +52,17 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
   const [hp, setHp] = useState(GAME_DEFAULTS.INITIAL_BARBARIAN_HP);
   const [isWalking, setIsWalking] = useState(false);
   const [isAttacking, setIsAttacking] = useState(false);
+  const [isJumping, setIsJumping] = useState(false);
+  const [isBlocking, setIsBlocking] = useState(false);
+  const [isRightBlocking, setIsRightBlocking] = useState(false);
+  const [isKicking, setIsKicking] = useState(false);
+  const [isDucking, setIsDucking] = useState(false);
   const [direction, setDirection] = useState<number>(-1); // 1 = right, -1 = left
   const wasWalkingRef = useRef(false);
+  const yVelocityRef = useRef<number>(0);
+  const isGroundedRef = useRef<boolean>(true);
+  const jumpStartYRef = useRef<number>(0);
+  const jumpPendingRef = useRef<boolean>(false);
 
   const handleHit = useCallback(() => {
     setHp((prevHp) => {
@@ -75,7 +84,16 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
   // Load animations from separate files
   const idleAnim = getAnimation(useFBX(SHARED_DEFAULTS.ANIMATIONS.IDLE));
   const walkAnim = getAnimation(useFBX(SHARED_DEFAULTS.ANIMATIONS.WALK));
-  const punchAnim = getAnimation(useFBX(BARBARIAN_DEFAULTS.ANIMATIONS.NORMAL));
+  const normalAnim = getAnimation(useFBX(BARBARIAN_DEFAULTS.ANIMATIONS.NORMAL));
+  const jumpAnim = getAnimation(useFBX(BARBARIAN_DEFAULTS.ANIMATIONS.JUMP));
+  const leftBlockAnim = getAnimation(
+    useFBX(BARBARIAN_DEFAULTS.ANIMATIONS.LEFT_BLOCK),
+  );
+  const rightBlockAnim = getAnimation(
+    useFBX(BARBARIAN_DEFAULTS.ANIMATIONS.RIGHT_BLOCK),
+  );
+  const kickAnim = getAnimation(useFBX(BARBARIAN_DEFAULTS.ANIMATIONS.KICK));
+  const duckAnim = getAnimation(useFBX(BARBARIAN_DEFAULTS.ANIMATIONS.DUCK));
 
   const mixer = useRef<THREE.AnimationMixer | null>(null);
 
@@ -102,12 +120,33 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
     }
   }, [model, scene, settings.debugMode]);
 
-  // Get the current animation clip based on state (attack > walk > idle)
+  // Get the current animation clip based on state (attack/jump > kick > right block > left block > duck > walk > idle)
   const currentAnimation = useMemo(() => {
-    if (isAttacking) return punchAnim;
+    if (isJumping) return jumpAnim;
+    if (isAttacking) return normalAnim;
+    if (isKicking) return kickAnim;
+    if (isRightBlocking) return rightBlockAnim;
+    if (isBlocking) return leftBlockAnim;
+    if (isDucking) return duckAnim;
     if (isWalking) return walkAnim;
     return idleAnim;
-  }, [isAttacking, isWalking, punchAnim, walkAnim, idleAnim]);
+  }, [
+    isAttacking,
+    isJumping,
+    isKicking,
+    isRightBlocking,
+    isBlocking,
+    isDucking,
+    isWalking,
+    normalAnim,
+    jumpAnim,
+    kickAnim,
+    rightBlockAnim,
+    leftBlockAnim,
+    duckAnim,
+    walkAnim,
+    idleAnim,
+  ]);
 
   // Simple patrol behavior: toggle walking every barbarianWalkDurationMS and change direction
   useEffect(() => {
@@ -138,6 +177,65 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
     return () => clearInterval(interval);
   }, [settings.enableBarbarianAttack, settings.attackSpeed]);
 
+  // Jump behavior: trigger jump every jumpDurationMS
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (settings.enableBarbarianJump) {
+        jumpPendingRef.current = true;
+      }
+    }, settings.jumpDurationMS);
+
+    return () => clearInterval(interval);
+  }, [settings.enableBarbarianJump, settings.jumpDurationMS]);
+
+  // Left block behavior: toggle blocking every blockDurationMS
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsBlocking((prev) => {
+        if (!settings.enableBarbarianLeftBlock) return false;
+        return !prev;
+      });
+    }, settings.blockDurationMS);
+
+    return () => clearInterval(interval);
+  }, [settings.enableBarbarianLeftBlock, settings.blockDurationMS]);
+
+  // Right block behavior: toggle right blocking every rightBlockDurationMS
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsRightBlocking((prev) => {
+        if (!settings.enableBarbarianRightBlock) return false;
+        return !prev;
+      });
+    }, settings.rightBlockDurationMS);
+
+    return () => clearInterval(interval);
+  }, [settings.enableBarbarianRightBlock, settings.rightBlockDurationMS]);
+
+  // Kick behavior: toggle kicking every kickSpeed
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsKicking((prev) => {
+        if (!settings.enableBarbarianKick) return false;
+        return !prev;
+      });
+    }, settings.kickSpeed);
+
+    return () => clearInterval(interval);
+  }, [settings.enableBarbarianKick, settings.kickSpeed]);
+
+  // Duck behavior: toggle ducking every duckDurationMS
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsDucking((prev) => {
+        if (!settings.enableBarbarianDuck) return false;
+        return !prev;
+      });
+    }, settings.duckDurationMS);
+
+    return () => clearInterval(interval);
+  }, [settings.enableBarbarianDuck, settings.duckDurationMS]);
+
   useEffect(() => {
     // Clean up previous mixer
     if (mixer.current) {
@@ -149,6 +247,10 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
     if (model && currentAnimation) {
       mixer.current = new THREE.AnimationMixer(model);
       const action = mixer.current.clipAction(currentAnimation);
+      if (currentAnimation === jumpAnim) {
+        action.setLoop(THREE.LoopOnce, 1);
+        action.clampWhenFinished = true;
+      }
       action.play();
     }
 
@@ -157,7 +259,7 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
         mixer.current.stopAllAction();
       }
     };
-  }, [model, currentAnimation]);
+  }, [model, currentAnimation, jumpAnim]);
 
   useFrame((_state, delta) => {
     if (mixer.current) {
@@ -228,8 +330,43 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
       const moveSpeed = SHARED_DEFAULTS.MOVE_SPEED;
       const velocity = { x: 0, y: 0, z: 0 };
 
-      // Block movement during attacks - attacks take priority
-      if (isWalking && !isAttacking) {
+      // Trigger jump while grounded
+      if (jumpPendingRef.current && isGroundedRef.current) {
+        jumpPendingRef.current = false;
+        const t = rigidBodyRef.current.translation();
+        jumpStartYRef.current = t.y;
+        yVelocityRef.current = BARBARIAN_DEFAULTS.JUMP.VELOCITY;
+        isGroundedRef.current = false;
+        setIsJumping(true);
+      }
+
+      // Simulate vertical physics while airborne
+      if (!isGroundedRef.current) {
+        const clampedDelta = Math.min(delta, 1 / 30);
+        yVelocityRef.current -= BARBARIAN_DEFAULTS.JUMP.GRAVITY * clampedDelta;
+        const t = rigidBodyRef.current.translation();
+        if (yVelocityRef.current < 0 && t.y <= jumpStartYRef.current) {
+          yVelocityRef.current = 0;
+          isGroundedRef.current = true;
+          setIsJumping(false);
+          rigidBodyRef.current.setTranslation(
+            { x: t.x, y: jumpStartYRef.current, z: t.z },
+            true,
+          );
+        }
+      }
+
+      velocity.y = yVelocityRef.current;
+
+      // Block movement during attacks, kicks, or blocks - these take priority
+      if (
+        isWalking &&
+        !isAttacking &&
+        !isKicking &&
+        !isRightBlocking &&
+        !isBlocking &&
+        !isDucking
+      ) {
         velocity.x = direction * moveSpeed;
 
         // Set rotation based on direction
@@ -248,7 +385,14 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
           );
           lastRotationRef.current = Math.PI / 2;
         }
-      } else if (!isWalking || isAttacking) {
+      } else if (
+        !isWalking ||
+        isAttacking ||
+        isKicking ||
+        isRightBlocking ||
+        isBlocking ||
+        isDucking
+      ) {
         // When idle, maintain last rotation
         const halfAngle = lastRotationRef.current / 2;
         rigidBodyRef.current.setRotation(

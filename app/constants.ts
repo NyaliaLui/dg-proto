@@ -89,6 +89,15 @@ export const BARBARIAN_DEFAULTS = {
   MODEL: '/models/Barbarian/XBot.fbx',
   ANIMATIONS: {
     NORMAL: '/models/Barbarian/PunchingWithoutSkin2.fbx',
+    JUMP: '/models/Barbarian/JumpingWithoutSkin.fbx',
+    LEFT_BLOCK: '/models/Barbarian/LeftBlockWithoutSkin.fbx',
+    RIGHT_BLOCK: '/models/Barbarian/RightBlockWithoutSkin.fbx',
+    KICK: '/models/Barbarian/KickingWithoutSkin.fbx',
+    DUCK: '/models/Barbarian/DuckingWithoutSkin.fbx',
+  },
+  JUMP: {
+    VELOCITY: 5,
+    GRAVITY: 12,
   },
   COLLIDERS: {
     HAND: {
@@ -102,6 +111,16 @@ export const BARBARIAN_DEFAULTS = {
   barbarianWalkDurationMS: 500,
   enableBarbarianAttack: false,
   attackSpeed: CONTROLS_DEFAULTS.MECHANICS_TIMEOUT,
+  enableBarbarianJump: false,
+  jumpDurationMS: 1000,
+  enableBarbarianLeftBlock: false,
+  blockDurationMS: CONTROLS_DEFAULTS.MECHANICS_TIMEOUT,
+  enableBarbarianRightBlock: false,
+  rightBlockDurationMS: CONTROLS_DEFAULTS.MECHANICS_TIMEOUT,
+  enableBarbarianKick: false,
+  kickSpeed: CONTROLS_DEFAULTS.MECHANICS_TIMEOUT,
+  enableBarbarianDuck: false,
+  duckDurationMS: CONTROLS_DEFAULTS.MECHANICS_TIMEOUT,
 };
 
 export const GAME_DEFAULTS = {

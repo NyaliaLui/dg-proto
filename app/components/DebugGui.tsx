@@ -66,6 +66,46 @@ export function DebugGui({
       value: settings.attackSpeed,
       label: 'Attack Speed (ms)',
     },
+    enableBarbarianJump: {
+      value: settings.enableBarbarianJump,
+      label: 'Enable Barbarian Jump',
+    },
+    jumpDurationMS: {
+      value: settings.jumpDurationMS,
+      label: 'Jump Duration (ms)',
+    },
+    enableBarbarianLeftBlock: {
+      value: settings.enableBarbarianLeftBlock,
+      label: 'Enable Barbarian Left Block',
+    },
+    blockDurationMS: {
+      value: settings.blockDurationMS,
+      label: 'Block Duration (ms)',
+    },
+    enableBarbarianRightBlock: {
+      value: settings.enableBarbarianRightBlock,
+      label: 'Enable Barbarian Right Block',
+    },
+    rightBlockDurationMS: {
+      value: settings.rightBlockDurationMS,
+      label: 'Right Block Duration (ms)',
+    },
+    enableBarbarianKick: {
+      value: settings.enableBarbarianKick,
+      label: 'Enable Barbarian Kick',
+    },
+    kickSpeed: {
+      value: settings.kickSpeed,
+      label: 'Kick Speed (ms)',
+    },
+    enableBarbarianDuck: {
+      value: settings.enableBarbarianDuck,
+      label: 'Enable Barbarian Duck',
+    },
+    duckDurationMS: {
+      value: settings.duckDurationMS,
+      label: 'Duck Duration (ms)',
+    },
   });
 
   useEffect(() => {
@@ -75,6 +115,16 @@ export function DebugGui({
       barbarianWalkDurationMS: controls.barbarianWalkDurationMS,
       enableBarbarianAttack: controls.enableBarbarianAttack,
       attackSpeed: controls.attackSpeed,
+      enableBarbarianJump: controls.enableBarbarianJump,
+      jumpDurationMS: controls.jumpDurationMS,
+      enableBarbarianLeftBlock: controls.enableBarbarianLeftBlock,
+      blockDurationMS: controls.blockDurationMS,
+      enableBarbarianRightBlock: controls.enableBarbarianRightBlock,
+      rightBlockDurationMS: controls.rightBlockDurationMS,
+      enableBarbarianKick: controls.enableBarbarianKick,
+      kickSpeed: controls.kickSpeed,
+      enableBarbarianDuck: controls.enableBarbarianDuck,
+      duckDurationMS: controls.duckDurationMS,
     });
   }, [
     controls.debugMode,
@@ -82,6 +132,16 @@ export function DebugGui({
     controls.barbarianWalkDurationMS,
     controls.enableBarbarianAttack,
     controls.attackSpeed,
+    controls.enableBarbarianJump,
+    controls.jumpDurationMS,
+    controls.enableBarbarianLeftBlock,
+    controls.blockDurationMS,
+    controls.enableBarbarianRightBlock,
+    controls.rightBlockDurationMS,
+    controls.enableBarbarianKick,
+    controls.kickSpeed,
+    controls.enableBarbarianDuck,
+    controls.duckDurationMS,
     onSettingsChange,
   ]);
 
