@@ -44,6 +44,9 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
   const [swordPosition, setSwordPosition] = useState<[number, number, number]>([
     ...PLAYER_DEFAULTS.COLLIDERS.SWORD.position,
   ]);
+  const [crouchSwordPosition, setCrouchSwordPosition] = useState<
+    [number, number, number]
+  >([...PLAYER_DEFAULTS.COLLIDERS.CROUCH_SWORD.position]);
   const fanVertices = useMemo(
     () =>
       makeFanVertices(
@@ -55,16 +58,47 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
       ),
     [],
   );
+  const crouchFanVertices = useMemo(
+    () =>
+      makeFanVertices(
+        PLAYER_DEFAULTS.COLLIDERS.CROUCH_SWORD.innerRadius,
+        PLAYER_DEFAULTS.COLLIDERS.CROUCH_SWORD.outerRadius,
+        PLAYER_DEFAULTS.COLLIDERS.CROUCH_SWORD.halfAngle,
+        PLAYER_DEFAULTS.COLLIDERS.CROUCH_SWORD.halfThickness,
+        PLAYER_DEFAULTS.COLLIDERS.CROUCH_SWORD.segments,
+      ),
+    [],
+  );
   const { scene } = useThree();
   const skeletonHelperRef = useRef<SkeletonHelper | null>(null);
   const boneVertexMapRef = useRef<BoneVertexMap | null>(null);
 
-  const [attacking, setAttacking] = useState(false);
+  const [normalAttacking, setNormalAttacking] = useState(false);
+  const [jumping, setJumping] = useState(false);
+  const [crouchAttacking, setCrouchAttacking] = useState(false);
+  const [specialAttacking, setSpecialAttacking] = useState(false);
+  const [specialColliderActive, setSpecialColliderActive] = useState(false);
 
-  // Determine if player is moving (not moving if attacking)
+  const crouching = keys.ctrl;
+
+  // Determine if character is moving (not moving if normal attacking, crouching, jumping, crouch attacking, or special attacking)
   const moving = useMemo(() => {
-    return !attacking && (keys.w || keys.s || keys.a || keys.d);
-  }, [keys, attacking]);
+    return (
+      !normalAttacking &&
+      !crouching &&
+      !jumping &&
+      !crouchAttacking &&
+      !specialAttacking &&
+      (keys.w || keys.s || keys.a || keys.d)
+    );
+  }, [
+    keys,
+    normalAttacking,
+    crouching,
+    jumping,
+    crouchAttacking,
+    specialAttacking,
+  ]);
 
   // Load the skinned model
   const modelFbx = useFBX(PLAYER_DEFAULTS.MODEL);
@@ -73,6 +107,14 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
   const idleAnim = getAnimation(useFBX(SHARED_DEFAULTS.ANIMATIONS.IDLE));
   const walkAnim = getAnimation(useFBX(SHARED_DEFAULTS.ANIMATIONS.WALK));
   const normalAnim = getAnimation(useFBX(PLAYER_DEFAULTS.ANIMATIONS.NORMAL));
+  const crouchAnim = getAnimation(useFBX(PLAYER_DEFAULTS.ANIMATIONS.CROUCH));
+  const jumpAnim = getAnimation(useFBX(PLAYER_DEFAULTS.ANIMATIONS.JUMP));
+  const crouchAttackAnim = getAnimation(
+    useFBX(PLAYER_DEFAULTS.ANIMATIONS.CROUCH_ATTACK),
+  );
+  const specialAnim = getAnimation(
+    useFBX(PLAYER_DEFAULTS.ANIMATIONS.SPECIAL),
+  );
 
   // Clone the model so it can be used independently
   const model = useMemo(() => SkeletonUtils.clone(modelFbx), [modelFbx]);
@@ -98,11 +140,16 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
   }, [model, scene, settings.debugMode]);
 
   const mixer = useRef<THREE.AnimationMixer | null>(null);
-  const attackingRef = useRef(false);
+  const normalAttackingRef = useRef(false);
+  const jumpingRef = useRef(false);
+  const crouchAttackingRef = useRef(false);
+  const specialAttackingRef = useRef(false);
+  const specialTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const currentActionRef = useRef<THREE.AnimationAction | null>(null);
 
   const prevQRef = useRef(false);
   const prevERef = useRef(false);
+  const prevSpaceRef = useRef(false);
 
   // Initialize mixer once
   useEffect(() => {
@@ -111,10 +158,31 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
     const m = new THREE.AnimationMixer(model);
     mixer.current = m;
 
-    // When attack animation finishes, go back to idle/walk
+    // When one-shot animation finishes, go back to idle/walk
     const onFinished = () => {
-      attackingRef.current = false;
-      setAttacking(false);
+      // After special attack, move the character forward by 1 on Z
+      if (specialAttackingRef.current && rigidBodyRef.current) {
+        const pos = rigidBodyRef.current.translation();
+        rigidBodyRef.current.setTranslation(
+          { x: pos.x + 1, y: pos.y, z: pos.z },
+          true,
+        );
+      }
+
+      normalAttackingRef.current = false;
+      setNormalAttacking(false);
+      jumpingRef.current = false;
+      setJumping(false);
+      crouchAttackingRef.current = false;
+      setCrouchAttacking(false);
+      specialAttackingRef.current = false;
+      setSpecialAttacking(false);
+      // Clear special collider and timer
+      if (specialTimerRef.current) {
+        clearTimeout(specialTimerRef.current);
+        specialTimerRef.current = null;
+      }
+      setSpecialColliderActive(false);
     };
     m.addEventListener('finished', onFinished);
 
@@ -128,6 +196,10 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
       m.stopAllAction();
       mixer.current = null;
       currentActionRef.current = null;
+      if (specialTimerRef.current) {
+        clearTimeout(specialTimerRef.current);
+        specialTimerRef.current = null;
+      }
     };
   }, [model, idleAnim]);
 
@@ -138,9 +210,37 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
       // Detect Q/E key press edge (rising edge)
       const qPressed = keys.q && !prevQRef.current;
       const ePressed = keys.e && !prevERef.current;
-      if ((qPressed || ePressed) && !attackingRef.current) {
-        attackingRef.current = true;
-        setAttacking(true);
+
+      // Crouch attack: Ctrl + Q pressed together
+      if (
+        qPressed &&
+        crouching &&
+        !crouchAttackingRef.current &&
+        !normalAttackingRef.current
+      ) {
+        crouchAttackingRef.current = true;
+        setCrouchAttacking(true);
+
+        const crouchAttackAction = m.clipAction(crouchAttackAnim);
+        crouchAttackAction.reset();
+        crouchAttackAction.setLoop(THREE.LoopOnce, 1);
+        crouchAttackAction.clampWhenFinished = false;
+
+        if (currentActionRef.current) {
+          currentActionRef.current.fadeOut(0.1);
+        }
+        crouchAttackAction.fadeIn(0.1).play();
+        currentActionRef.current = crouchAttackAction;
+      }
+      // Normal attack: Q while not crouching
+      else if (
+        qPressed &&
+        !normalAttackingRef.current &&
+        !specialAttackingRef.current &&
+        !crouching
+      ) {
+        normalAttackingRef.current = true;
+        setNormalAttacking(true);
 
         const attackAction = m.clipAction(normalAnim);
         attackAction.reset();
@@ -153,12 +253,69 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
         attackAction.fadeIn(0.1).play();
         currentActionRef.current = attackAction;
       }
+      // Special attack: E while not crouching
+      else if (
+        ePressed &&
+        !specialAttackingRef.current &&
+        !normalAttackingRef.current &&
+        !crouching
+      ) {
+        specialAttackingRef.current = true;
+        setSpecialAttacking(true);
+
+        // Activate the special collider after a delay
+        specialTimerRef.current = setTimeout(() => {
+          setSpecialColliderActive(true);
+          specialTimerRef.current = null;
+        }, PLAYER_DEFAULTS.COLLIDERS.SPECIAL_SWORD.delay * 1000);
+
+        const specialAction = m.clipAction(specialAnim);
+        specialAction.reset();
+        specialAction.setLoop(THREE.LoopOnce, 1);
+        specialAction.clampWhenFinished = false;
+
+        if (currentActionRef.current) {
+          currentActionRef.current.fadeOut(0.1);
+        }
+        specialAction.fadeIn(0.1).play();
+        currentActionRef.current = specialAction;
+      }
       prevQRef.current = keys.q;
       prevERef.current = keys.e;
 
-      // Transition to idle/walk when not attacking
-      if (!attackingRef.current) {
-        const clip = moving ? walkAnim : idleAnim;
+      // Detect Space key press edge (rising edge) - block jump while crouching or attacking
+      const spacePressed = keys.space && !prevSpaceRef.current;
+      if (
+        spacePressed &&
+        !jumpingRef.current &&
+        !normalAttackingRef.current &&
+        !specialAttackingRef.current &&
+        !crouching
+      ) {
+        jumpingRef.current = true;
+        setJumping(true);
+
+        const jumpAction = m.clipAction(jumpAnim);
+        jumpAction.reset();
+        jumpAction.setLoop(THREE.LoopOnce, 1);
+        jumpAction.clampWhenFinished = false;
+
+        if (currentActionRef.current) {
+          currentActionRef.current.fadeOut(0.1);
+        }
+        jumpAction.fadeIn(0.1).play();
+        currentActionRef.current = jumpAction;
+      }
+      prevSpaceRef.current = keys.space;
+
+      // Transition to idle/walk/crouch when not normal attacking, jumping, crouch attacking, or special attacking
+      if (
+        !normalAttackingRef.current &&
+        !jumpingRef.current &&
+        !crouchAttackingRef.current &&
+        !specialAttackingRef.current
+      ) {
+        const clip = crouching ? crouchAnim : moving ? walkAnim : idleAnim;
         const nextAction = m.clipAction(clip);
 
         if (currentActionRef.current !== nextAction) {
@@ -215,8 +372,8 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
           ]);
         }
 
-        // Update sword position (only during attack)
-        if (attacking) {
+        // Update sword position (only during normal attack)
+        if (normalAttacking) {
           const swordPos = getBoneWorldPosition(
             'mixamorigSpine1',
             boneVertexMapRef.current,
@@ -231,6 +388,25 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
             ]);
           }
         }
+
+        // Update crouch sword position (only during crouch attack)
+        if (crouchAttacking) {
+          const crouchSwordPos = getBoneWorldPosition(
+            'mixamorigSpine1',
+            boneVertexMapRef.current,
+            positions,
+          );
+          if (crouchSwordPos) {
+            crouchSwordPos.multiplyScalar(SHARED_DEFAULTS.SCALE);
+            setCrouchSwordPosition([
+              crouchSwordPos.x,
+              crouchSwordPos.y +
+                PLAYER_DEFAULTS.COLLIDERS.CROUCH_SWORD.offset.y,
+              crouchSwordPos.z +
+                PLAYER_DEFAULTS.COLLIDERS.CROUCH_SWORD.offset.z,
+            ]);
+          }
+        }
       }
     }
 
@@ -238,8 +414,14 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
       const moveSpeed = SHARED_DEFAULTS.MOVE_SPEED;
       const velocity = { x: 0, y: 0, z: 0 };
 
-      // Block movement during attacks - attacks take priority
-      if (!attackingRef.current) {
+      // Block movement during attacks, crouching, jumping, crouch attacking, or special attacking
+      if (
+        !normalAttackingRef.current &&
+        !crouching &&
+        !jumpingRef.current &&
+        !crouchAttackingRef.current &&
+        !specialAttackingRef.current
+      ) {
         // WASD movement with rotation to face direction
         if (keys.w) {
           velocity.z = -moveSpeed;
@@ -316,12 +498,30 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
         sensor
         onIntersectionEnter={onHit}
       />
-      {/* Sword fan collider - only active during attack */}
-      {attacking && (
+      {/* Sword fan collider - only active during normal attack */}
+      {normalAttacking && (
         <ConvexHullCollider
           args={[fanVertices]}
           position={swordPosition}
-          rotation={[0, 0, -Math.PI / 5]}
+          rotation={[...PLAYER_DEFAULTS.COLLIDERS.SWORD.rotation]}
+        />
+      )}
+      {/* Special attack capsule collider - thin vertical, appears after delay */}
+      {specialColliderActive && (
+        <CapsuleCollider
+          args={[
+            PLAYER_DEFAULTS.COLLIDERS.SPECIAL_SWORD.halfHeight,
+            PLAYER_DEFAULTS.COLLIDERS.SPECIAL_SWORD.radius,
+          ]}
+          position={[...PLAYER_DEFAULTS.COLLIDERS.SPECIAL_SWORD.position]}
+        />
+      )}
+      {/* Crouch sword fan collider - horizontal, only active during crouch attack */}
+      {crouchAttacking && (
+        <ConvexHullCollider
+          args={[crouchFanVertices]}
+          position={crouchSwordPosition}
+          rotation={[...PLAYER_DEFAULTS.COLLIDERS.CROUCH_SWORD.rotation]}
         />
       )}
       <group ref={modelRef}>

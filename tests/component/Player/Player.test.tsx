@@ -387,6 +387,139 @@ describe('Player Component', () => {
       // E key attack takes priority - velocity should be zero
       expect(mockSetLinvel).toHaveBeenCalledWith({ x: 0, y: 0, z: 0 }, true);
     });
+
+    it('should set zero velocity when crouching with Ctrl key', async () => {
+      const crouchingKeys = { ...mockKeys, ctrl: true, w: true };
+      const renderer = await create(
+        <Character keys={crouchingKeys} settings={defaultSettings} />,
+      );
+      await renderer.advanceFrames(1, 1 / 60);
+
+      // Crouch takes priority - velocity should be zero
+      expect(mockSetLinvel).toHaveBeenCalledWith({ x: 0, y: 0, z: 0 }, true);
+    });
+
+    it('should set zero velocity when jumping with space key even with W key pressed', async () => {
+      const jumpingWithMovementKeys = { ...mockKeys, space: true, w: true };
+      const renderer = await create(
+        <Character keys={jumpingWithMovementKeys} settings={defaultSettings} />,
+      );
+      await renderer.advanceFrames(1, 1 / 60);
+
+      // Jump takes priority - velocity should be zero
+      expect(mockSetLinvel).toHaveBeenCalledWith({ x: 0, y: 0, z: 0 }, true);
+    });
+
+    it('should set zero velocity when jumping even with all movement keys pressed', async () => {
+      const jumpingWithAllMovement = {
+        ...mockKeys,
+        space: true,
+        w: true,
+        a: true,
+        s: true,
+        d: true,
+      };
+      const renderer = await create(
+        <Character keys={jumpingWithAllMovement} settings={defaultSettings} />,
+      );
+      await renderer.advanceFrames(1, 1 / 60);
+
+      // Jump takes priority - velocity should be zero
+      expect(mockSetLinvel).toHaveBeenCalledWith({ x: 0, y: 0, z: 0 }, true);
+    });
+
+    it('should set zero velocity when crouching even with all movement keys pressed', async () => {
+      const crouchingWithAllMovement = {
+        ...mockKeys,
+        ctrl: true,
+        w: true,
+        a: true,
+        s: true,
+        d: true,
+      };
+      const renderer = await create(
+        <Character
+          keys={crouchingWithAllMovement}
+          settings={defaultSettings}
+        />,
+      );
+      await renderer.advanceFrames(1, 1 / 60);
+
+      // Crouch takes priority - velocity should be zero
+      expect(mockSetLinvel).toHaveBeenCalledWith({ x: 0, y: 0, z: 0 }, true);
+    });
+
+    it('should set zero velocity when crouch attacking with Ctrl + Q keys', async () => {
+      const crouchAttackKeys = { ...mockKeys, ctrl: true, q: true };
+      const renderer = await create(
+        <Character keys={crouchAttackKeys} settings={defaultSettings} />,
+      );
+      await renderer.advanceFrames(1, 1 / 60);
+
+      // Crouch attack takes priority - velocity should be zero
+      expect(mockSetLinvel).toHaveBeenCalledWith({ x: 0, y: 0, z: 0 }, true);
+    });
+
+    it('should set zero velocity when crouch attacking even with all movement keys pressed', async () => {
+      const crouchAttackWithAllMovement = {
+        ...mockKeys,
+        ctrl: true,
+        q: true,
+        w: true,
+        a: true,
+        s: true,
+        d: true,
+      };
+      const renderer = await create(
+        <Character
+          keys={crouchAttackWithAllMovement}
+          settings={defaultSettings}
+        />,
+      );
+      await renderer.advanceFrames(1, 1 / 60);
+
+      // Crouch attack takes priority - velocity should be zero
+      expect(mockSetLinvel).toHaveBeenCalledWith({ x: 0, y: 0, z: 0 }, true);
+    });
+
+    it('should set zero velocity when special attacking with E key even with W key pressed', async () => {
+      const specialAttackingWithMovementKeys = {
+        ...mockKeys,
+        e: true,
+        w: true,
+      };
+      const renderer = await create(
+        <Character
+          keys={specialAttackingWithMovementKeys}
+          settings={defaultSettings}
+        />,
+      );
+      await renderer.advanceFrames(1, 1 / 60);
+
+      // Special attack takes priority - velocity should be zero
+      expect(mockSetLinvel).toHaveBeenCalledWith({ x: 0, y: 0, z: 0 }, true);
+    });
+
+    it('should set zero velocity when special attacking even with all movement keys pressed', async () => {
+      const specialAttackWithAllMovement = {
+        ...mockKeys,
+        e: true,
+        w: true,
+        a: true,
+        s: true,
+        d: true,
+      };
+      const renderer = await create(
+        <Character
+          keys={specialAttackWithAllMovement}
+          settings={defaultSettings}
+        />,
+      );
+      await renderer.advanceFrames(1, 1 / 60);
+
+      // Special attack takes priority - velocity should be zero
+      expect(mockSetLinvel).toHaveBeenCalledWith({ x: 0, y: 0, z: 0 }, true);
+    });
   });
 
   describe('Hit Detection', () => {

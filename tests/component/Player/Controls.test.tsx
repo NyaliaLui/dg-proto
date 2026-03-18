@@ -59,6 +59,7 @@ describe('Controls Component', () => {
       );
 
       const jumpButton = screen.getByTestId(CONTROLS_TEST_IDS.JUMP_BUTTON);
+      const crouchButton = screen.getByTestId(CONTROLS_TEST_IDS.CROUCH_BUTTON);
       const specialButton = screen.getByTestId(
         CONTROLS_TEST_IDS.SPECIAL_BUTTON,
       );
@@ -66,6 +67,7 @@ describe('Controls Component', () => {
       const itemButton = screen.getByTestId(CONTROLS_TEST_IDS.ITEM_BUTTON);
 
       expect(jumpButton).toBeInTheDocument();
+      expect(crouchButton).toBeInTheDocument();
       expect(specialButton).toBeInTheDocument();
       expect(normalButton).toBeInTheDocument();
       expect(itemButton).toBeInTheDocument();
@@ -129,12 +131,43 @@ describe('Controls Component', () => {
       expect(mockUpdateKey).toHaveBeenCalledWith('p', true);
     });
 
+    it('should call updateKey with ctrl true on crouch button mouse down', () => {
+      render(
+        <OnscreenKeys updateKey={mockUpdateKey} settings={defaultSettings} />,
+      );
+      const crouchButton = screen.getByTestId(CONTROLS_TEST_IDS.CROUCH_BUTTON);
+
+      fireEvent.mouseDown(crouchButton);
+      expect(mockUpdateKey).toHaveBeenCalledWith('ctrl', true);
+    });
+
+    it('should call updateKey with ctrl false on crouch button mouse up', () => {
+      render(
+        <OnscreenKeys updateKey={mockUpdateKey} settings={defaultSettings} />,
+      );
+      const crouchButton = screen.getByTestId(CONTROLS_TEST_IDS.CROUCH_BUTTON);
+
+      fireEvent.mouseUp(crouchButton);
+      expect(mockUpdateKey).toHaveBeenCalledWith('ctrl', false);
+    });
+
+    it('should call updateKey with ctrl false on crouch button mouse leave', () => {
+      render(
+        <OnscreenKeys updateKey={mockUpdateKey} settings={defaultSettings} />,
+      );
+      const crouchButton = screen.getByTestId(CONTROLS_TEST_IDS.CROUCH_BUTTON);
+
+      fireEvent.mouseLeave(crouchButton);
+      expect(mockUpdateKey).toHaveBeenCalledWith('ctrl', false);
+    });
+
     it('should have correct aria-labels for all buttons', () => {
       render(
         <OnscreenKeys updateKey={mockUpdateKey} settings={defaultSettings} />,
       );
 
       expect(screen.getByLabelText('Jump')).toBeInTheDocument();
+      expect(screen.getByLabelText('Crouch')).toBeInTheDocument();
       expect(screen.getByLabelText('Special')).toBeInTheDocument();
       expect(screen.getByLabelText('Normal')).toBeInTheDocument();
       expect(screen.getByLabelText('Item')).toBeInTheDocument();

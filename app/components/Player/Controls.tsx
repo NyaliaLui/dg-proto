@@ -77,8 +77,8 @@ function OnscreenKeys({ updateKey, settings }: OnscreenKeysProps) {
       aria-label="Action buttons"
       data-testid={CONTROLS_TEST_IDS.ONSCREEN_KEYS}
     >
-      {/* Top row - Jump button */}
-      <div className="flex justify-center">
+      {/* Top row - Jump and Crouch buttons */}
+      <div className="flex justify-center gap-2">
         <button
           className={smallButtonClass}
           data-testid={CONTROLS_TEST_IDS.JUMP_BUTTON}
@@ -90,6 +90,18 @@ function OnscreenKeys({ updateKey, settings }: OnscreenKeysProps) {
           onTouchEnd={() => handleMechanics('space')}
         >
           Jump
+        </button>
+        <button
+          className={smallButtonClass}
+          data-testid={CONTROLS_TEST_IDS.CROUCH_BUTTON}
+          aria-label="Crouch"
+          onMouseDown={() => updateKey('ctrl', true)}
+          onMouseUp={() => updateKey('ctrl', false)}
+          onMouseLeave={() => updateKey('ctrl', false)}
+          onTouchStart={() => updateKey('ctrl', true)}
+          onTouchEnd={() => updateKey('ctrl', false)}
+        >
+          Crouch
         </button>
       </div>
 

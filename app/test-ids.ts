@@ -5,4 +5,5 @@ export const CONTROLS_TEST_IDS = {
   SPECIAL_BUTTON: 'special-button',
   NORMAL_BUTTON: 'normal-button',
   ITEM_BUTTON: 'item-button',
+  CROUCH_BUTTON: 'crouch-button',
 };

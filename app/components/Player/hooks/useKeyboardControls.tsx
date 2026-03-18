@@ -16,6 +16,7 @@ interface KeyState {
   e: boolean;
   p: boolean;
   space: boolean;
+  ctrl: boolean;
 }
 
 type KeyHandlerFn = (keys: KeyState) => void;
@@ -66,6 +67,9 @@ function useKeyboardControls(settings: DebugSettings) {
         case ' ':
           updateKey('space', true);
           break;
+        case 'control':
+          updateKey('ctrl', true);
+          break;
       }
     },
     [updateKey],
@@ -110,6 +114,9 @@ function useKeyboardControls(settings: DebugSettings) {
         },
       };
 
+      if (key === 'control') {
+        updateKey('ctrl', false);
+      }
       keyUps.handleMove(key);
       setTimeout(keyUps.handleMechanics, settings.attackSpeed, key);
     },
