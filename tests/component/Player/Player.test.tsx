@@ -401,7 +401,7 @@ describe('Player Component', () => {
     it('should set zero velocity when crouching with Ctrl key', async () => {
       const crouchingKeys = { ...mockKeys, ctrl: true, w: true };
       const renderer = await create(
-        <Character keys={crouchingKeys} settings={defaultSettings} />,
+        <Player keys={crouchingKeys} settings={defaultSettings} />,
       );
       await renderer.advanceFrames(1, 1 / 60);
 
@@ -412,7 +412,7 @@ describe('Player Component', () => {
     it('should set zero velocity when jumping with space key even with W key pressed', async () => {
       const jumpingWithMovementKeys = { ...mockKeys, space: true, w: true };
       const renderer = await create(
-        <Character keys={jumpingWithMovementKeys} settings={defaultSettings} />,
+        <Player keys={jumpingWithMovementKeys} settings={defaultSettings} />,
       );
       await renderer.advanceFrames(1, 1 / 60);
 
@@ -430,7 +430,7 @@ describe('Player Component', () => {
         d: true,
       };
       const renderer = await create(
-        <Character keys={jumpingWithAllMovement} settings={defaultSettings} />,
+        <Player keys={jumpingWithAllMovement} settings={defaultSettings} />,
       );
       await renderer.advanceFrames(1, 1 / 60);
 
@@ -448,10 +448,7 @@ describe('Player Component', () => {
         d: true,
       };
       const renderer = await create(
-        <Character
-          keys={crouchingWithAllMovement}
-          settings={defaultSettings}
-        />,
+        <Player keys={crouchingWithAllMovement} settings={defaultSettings} />,
       );
       await renderer.advanceFrames(1, 1 / 60);
 
@@ -462,7 +459,7 @@ describe('Player Component', () => {
     it('should set zero velocity when crouch attacking with Ctrl + Q keys', async () => {
       const crouchAttackKeys = { ...mockKeys, ctrl: true, q: true };
       const renderer = await create(
-        <Character keys={crouchAttackKeys} settings={defaultSettings} />,
+        <Player keys={crouchAttackKeys} settings={defaultSettings} />,
       );
       await renderer.advanceFrames(1, 1 / 60);
 
@@ -481,7 +478,7 @@ describe('Player Component', () => {
         d: true,
       };
       const renderer = await create(
-        <Character
+        <Player
           keys={crouchAttackWithAllMovement}
           settings={defaultSettings}
         />,
@@ -499,7 +496,7 @@ describe('Player Component', () => {
         w: true,
       };
       const renderer = await create(
-        <Character
+        <Player
           keys={specialAttackingWithMovementKeys}
           settings={defaultSettings}
         />,
@@ -520,7 +517,7 @@ describe('Player Component', () => {
         d: true,
       };
       const renderer = await create(
-        <Character
+        <Player
           keys={specialAttackWithAllMovement}
           settings={defaultSettings}
         />,

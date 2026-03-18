@@ -112,9 +112,7 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
   const crouchAttackAnim = getAnimation(
     useFBX(PLAYER_DEFAULTS.ANIMATIONS.CROUCH_ATTACK),
   );
-  const specialAnim = getAnimation(
-    useFBX(PLAYER_DEFAULTS.ANIMATIONS.SPECIAL),
-  );
+  const specialAnim = getAnimation(useFBX(PLAYER_DEFAULTS.ANIMATIONS.SPECIAL));
 
   // Clone the model so it can be used independently
   const model = useMemo(() => SkeletonUtils.clone(modelFbx), [modelFbx]);
