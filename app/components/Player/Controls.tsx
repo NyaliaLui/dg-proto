@@ -1,8 +1,8 @@
 'use client';
 import { useRef } from 'react';
 
-import { SetKeyStateFn } from '@/app/components/hooks/useKeyboardControls';
-import { useAnalogControls } from '@/app/components/hooks/useAnalogControls';
+import { SetKeyStateFn } from '@/app/components/Player/hooks/useKeyboardControls';
+import { useAnalogControls } from '@/app/components/Player/hooks/useAnalogControls';
 import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
 import { CONTROLS_TEST_IDS } from '@/app/test-ids';
 

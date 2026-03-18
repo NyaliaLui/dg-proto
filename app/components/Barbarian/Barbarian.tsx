@@ -13,7 +13,8 @@ import { SkeletonUtils } from 'three-stdlib';
 import { SkeletonHelper } from 'three';
 
 import {
-  CHARACTER_DEFAULTS,
+  SHARED_DEFAULTS,
+  BARBARIAN_DEFAULTS,
   GAME_DEFAULTS,
   DEFAULT_COLORS,
 } from '@/app/constants';
@@ -40,13 +41,13 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
   const skeletonHelperRef = useRef<SkeletonHelper | null>(null);
   const boneVertexMapRef = useRef<BoneVertexMap | null>(null);
   const [torsoPosition, setTorsoPosition] = useState<[number, number, number]>([
-    ...CHARACTER_DEFAULTS.COLLIDERS.TORSO.position,
+    ...SHARED_DEFAULTS.COLLIDERS.TORSO.position,
   ]);
   const [headPosition, setHeadPosition] = useState<[number, number, number]>([
-    ...CHARACTER_DEFAULTS.COLLIDERS.HEAD.position,
+    ...SHARED_DEFAULTS.COLLIDERS.HEAD.position,
   ]);
   const [handPosition, setHandPosition] = useState<[number, number, number]>([
-    ...CHARACTER_DEFAULTS.COLLIDERS.HAND.position,
+    ...BARBARIAN_DEFAULTS.COLLIDERS.HAND.position,
   ]);
   const [hp, setHp] = useState(GAME_DEFAULTS.INITIAL_BARBARIAN_HP);
   const [isWalking, setIsWalking] = useState(false);
@@ -69,12 +70,12 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
   }, [hp, id, onDeath]);
 
   // Load the skinned model
-  const modelFbx = useFBX(CHARACTER_DEFAULTS.MODELS.XBOT);
+  const modelFbx = useFBX(BARBARIAN_DEFAULTS.MODEL);
 
   // Load animations from separate files
-  const idleAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.IDLE));
-  const walkAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.WALK));
-  const punchAnim = getAnimation(useFBX(CHARACTER_DEFAULTS.ANIMATIONS.NORMAL));
+  const idleAnim = getAnimation(useFBX(SHARED_DEFAULTS.ANIMATIONS.IDLE));
+  const walkAnim = getAnimation(useFBX(SHARED_DEFAULTS.ANIMATIONS.WALK));
+  const punchAnim = getAnimation(useFBX(BARBARIAN_DEFAULTS.ANIMATIONS.NORMAL));
 
   const mixer = useRef<THREE.AnimationMixer | null>(null);
 
@@ -180,11 +181,11 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
           positions,
         );
         if (spinePos) {
-          spinePos.multiplyScalar(CHARACTER_DEFAULTS.SCALE);
+          spinePos.multiplyScalar(SHARED_DEFAULTS.SCALE);
           setTorsoPosition([
             spinePos.x,
-            spinePos.y + CHARACTER_DEFAULTS.COLLIDERS.TORSO.offset.y,
-            spinePos.z + CHARACTER_DEFAULTS.COLLIDERS.TORSO.offset.z,
+            spinePos.y + SHARED_DEFAULTS.COLLIDERS.TORSO.offset.y,
+            spinePos.z + SHARED_DEFAULTS.COLLIDERS.TORSO.offset.z,
           ]);
         }
 
@@ -195,11 +196,11 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
           positions,
         );
         if (headBonePos) {
-          headBonePos.multiplyScalar(CHARACTER_DEFAULTS.SCALE);
+          headBonePos.multiplyScalar(SHARED_DEFAULTS.SCALE);
           setHeadPosition([
             headBonePos.x,
-            headBonePos.y + CHARACTER_DEFAULTS.COLLIDERS.HEAD.offset.y,
-            headBonePos.z + CHARACTER_DEFAULTS.COLLIDERS.HEAD.offset.z,
+            headBonePos.y + SHARED_DEFAULTS.COLLIDERS.HEAD.offset.y,
+            headBonePos.z + SHARED_DEFAULTS.COLLIDERS.HEAD.offset.z,
           ]);
         }
 
@@ -211,11 +212,11 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
             positions,
           );
           if (leftHandPos) {
-            leftHandPos.multiplyScalar(CHARACTER_DEFAULTS.SCALE);
+            leftHandPos.multiplyScalar(SHARED_DEFAULTS.SCALE);
             setHandPosition([
               leftHandPos.x,
-              leftHandPos.y + CHARACTER_DEFAULTS.COLLIDERS.HAND.offset.y,
-              leftHandPos.z + CHARACTER_DEFAULTS.COLLIDERS.HAND.offset.z,
+              leftHandPos.y + BARBARIAN_DEFAULTS.COLLIDERS.HAND.offset.y,
+              leftHandPos.z + BARBARIAN_DEFAULTS.COLLIDERS.HAND.offset.z,
             ]);
           }
         }
@@ -224,7 +225,7 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
 
     // Movement and rotation logic
     if (rigidBodyRef.current) {
-      const moveSpeed = CHARACTER_DEFAULTS.MOVE_SPEED;
+      const moveSpeed = SHARED_DEFAULTS.MOVE_SPEED;
       const velocity = { x: 0, y: 0, z: 0 };
 
       // Block movement during attacks - attacks take priority
@@ -290,8 +291,8 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
       {/* Torso capsule */}
       <CapsuleCollider
         args={[
-          CHARACTER_DEFAULTS.COLLIDERS.TORSO.halfHeight,
-          CHARACTER_DEFAULTS.COLLIDERS.TORSO.radius,
+          SHARED_DEFAULTS.COLLIDERS.TORSO.halfHeight,
+          SHARED_DEFAULTS.COLLIDERS.TORSO.radius,
         ]}
         position={torsoPosition}
         sensor
@@ -300,8 +301,8 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
       {/* Head capsule */}
       <CapsuleCollider
         args={[
-          CHARACTER_DEFAULTS.COLLIDERS.HEAD.halfHeight,
-          CHARACTER_DEFAULTS.COLLIDERS.HEAD.radius,
+          SHARED_DEFAULTS.COLLIDERS.HEAD.halfHeight,
+          SHARED_DEFAULTS.COLLIDERS.HEAD.radius,
         ]}
         position={headPosition}
         sensor
@@ -311,8 +312,8 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
       {isAttacking && (
         <CapsuleCollider
           args={[
-            CHARACTER_DEFAULTS.COLLIDERS.HAND.halfHeight,
-            CHARACTER_DEFAULTS.COLLIDERS.HAND.radius,
+            BARBARIAN_DEFAULTS.COLLIDERS.HAND.halfHeight,
+            BARBARIAN_DEFAULTS.COLLIDERS.HAND.radius,
           ]}
           position={handPosition}
         />
@@ -326,7 +327,7 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
       <group ref={modelRef}>
         <primitive
           object={model}
-          scale={CHARACTER_DEFAULTS.SCALE}
+          scale={SHARED_DEFAULTS.SCALE}
           position={[0, -0.9, 0]}
         />
       </group>

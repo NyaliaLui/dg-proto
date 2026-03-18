@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import { expect, describe, it } from '@jest/globals';
-import { HealthBar } from '@/app/components/HealthBar';
+import { HealthBar } from '@/app/components/Player/HealthBar';
 
 describe('HealthBar Component', () => {
   describe('Rendering', () => {

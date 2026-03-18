@@ -2,10 +2,10 @@ import '@testing-library/jest-dom';
 import { expect } from '@jest/globals';
 import { create } from '@react-three/test-renderer';
 import { Group } from 'three';
-import { Character } from '@/app/components/Character';
+import { Player } from '@/app/components/Player/Player';
 import {
   CONTROLS_DEFAULTS,
-  CHARACTER_DEFAULTS,
+  SHARED_DEFAULTS,
   BARBARIAN_DEFAULTS,
 } from '@/app/constants';
 import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
@@ -42,7 +42,7 @@ jest.mock('@react-three/drei', () => {
   };
 });
 
-jest.mock('../../app/utils', () => ({
+jest.mock('../../../app/utils', () => ({
   getAnimation: jest.fn((model) => model.animations[0]),
   getBoneList: jest.fn(() => []),
   makeBoneVertexMap: jest.fn(() => ({})),
@@ -128,7 +128,7 @@ jest.mock('@react-three/rapier', () => {
   };
 });
 
-describe('Character Component', () => {
+describe('Player Component', () => {
   const mockKeys = CONTROLS_DEFAULTS.KEYBOARD;
   const defaultSettings: DebugSettings = {
     debugMode: false,
@@ -141,7 +141,7 @@ describe('Character Component', () => {
   describe('Rendering', () => {
     it('should render a group element', async () => {
       const renderer = await create(
-        <Character keys={mockKeys} settings={defaultSettings} />,
+        <Player keys={mockKeys} settings={defaultSettings} />,
       );
       const group = renderer.scene.children[0];
       expect(group).toBeDefined();
@@ -150,7 +150,7 @@ describe('Character Component', () => {
 
     it('should have correct initial position', async () => {
       const renderer = await create(
-        <Character keys={mockKeys} settings={defaultSettings} />,
+        <Player keys={mockKeys} settings={defaultSettings} />,
       );
       const rigidBody = renderer.scene.children[0];
       expect(rigidBody.instance.position.x).toBe(-1);
@@ -160,7 +160,7 @@ describe('Character Component', () => {
 
     it('should render with idle model', async () => {
       const renderer = await create(
-        <Character keys={mockKeys} settings={defaultSettings} />,
+        <Player keys={mockKeys} settings={defaultSettings} />,
       );
       const group = renderer.scene.children[0];
       expect(group).toBeDefined();
@@ -168,7 +168,7 @@ describe('Character Component', () => {
 
     it('should have correct scale', async () => {
       const renderer = await create(
-        <Character keys={mockKeys} settings={defaultSettings} />,
+        <Player keys={mockKeys} settings={defaultSettings} />,
       );
       const rigidBody = renderer.scene.children[0];
       // RigidBody (group) -> inner group (modelRef) -> primitive
@@ -190,12 +190,12 @@ describe('Character Component', () => {
     it('should set negative Z velocity when W key is pressed', async () => {
       const movingKeys = { ...mockKeys, w: true };
       const renderer = await create(
-        <Character keys={movingKeys} settings={defaultSettings} />,
+        <Player keys={movingKeys} settings={defaultSettings} />,
       );
       await renderer.advanceFrames(1, 1 / 60);
 
       expect(mockSetLinvel).toHaveBeenCalledWith(
-        { x: 0, y: 0, z: -CHARACTER_DEFAULTS.MOVE_SPEED },
+        { x: 0, y: 0, z: -SHARED_DEFAULTS.MOVE_SPEED },
         true,
       );
     });
@@ -203,12 +203,12 @@ describe('Character Component', () => {
     it('should set positive Z velocity when S key is pressed', async () => {
       const movingKeys = { ...mockKeys, s: true };
       const renderer = await create(
-        <Character keys={movingKeys} settings={defaultSettings} />,
+        <Player keys={movingKeys} settings={defaultSettings} />,
       );
       await renderer.advanceFrames(1, 1 / 60);
 
       expect(mockSetLinvel).toHaveBeenCalledWith(
-        { x: 0, y: 0, z: CHARACTER_DEFAULTS.MOVE_SPEED },
+        { x: 0, y: 0, z: SHARED_DEFAULTS.MOVE_SPEED },
         true,
       );
     });
@@ -216,12 +216,12 @@ describe('Character Component', () => {
     it('should set negative X velocity when A key is pressed', async () => {
       const movingKeys = { ...mockKeys, a: true };
       const renderer = await create(
-        <Character keys={movingKeys} settings={defaultSettings} />,
+        <Player keys={movingKeys} settings={defaultSettings} />,
       );
       await renderer.advanceFrames(1, 1 / 60);
 
       expect(mockSetLinvel).toHaveBeenCalledWith(
-        { x: -CHARACTER_DEFAULTS.MOVE_SPEED, y: 0, z: 0 },
+        { x: -SHARED_DEFAULTS.MOVE_SPEED, y: 0, z: 0 },
         true,
       );
     });
@@ -229,19 +229,19 @@ describe('Character Component', () => {
     it('should set positive X velocity when D key is pressed', async () => {
       const movingKeys = { ...mockKeys, d: true };
       const renderer = await create(
-        <Character keys={movingKeys} settings={defaultSettings} />,
+        <Player keys={movingKeys} settings={defaultSettings} />,
       );
       await renderer.advanceFrames(1, 1 / 60);
 
       expect(mockSetLinvel).toHaveBeenCalledWith(
-        { x: CHARACTER_DEFAULTS.MOVE_SPEED, y: 0, z: 0 },
+        { x: SHARED_DEFAULTS.MOVE_SPEED, y: 0, z: 0 },
         true,
       );
     });
 
     it('should set zero velocity when no movement keys are pressed', async () => {
       const renderer = await create(
-        <Character keys={mockKeys} settings={defaultSettings} />,
+        <Player keys={mockKeys} settings={defaultSettings} />,
       );
       await renderer.advanceFrames(1, 1 / 60);
 
@@ -251,7 +251,7 @@ describe('Character Component', () => {
     it('should not rotate to face -Z direction when W key is pressed', async () => {
       const movingKeys = { ...mockKeys, w: true };
       const renderer = await create(
-        <Character keys={movingKeys} settings={defaultSettings} />,
+        <Player keys={movingKeys} settings={defaultSettings} />,
       );
       await renderer.advanceFrames(1, 1 / 60);
 
@@ -265,7 +265,7 @@ describe('Character Component', () => {
     it('should not rotate to face +Z direction when S key is pressed', async () => {
       const movingKeys = { ...mockKeys, s: true };
       const renderer = await create(
-        <Character keys={movingKeys} settings={defaultSettings} />,
+        <Player keys={movingKeys} settings={defaultSettings} />,
       );
       await renderer.advanceFrames(1, 1 / 60);
 
@@ -279,7 +279,7 @@ describe('Character Component', () => {
     it('should maintain last horizontal rotation when W key is pressed', async () => {
       const movingKeys = { ...mockKeys, w: true };
       const renderer = await create(
-        <Character keys={movingKeys} settings={defaultSettings} />,
+        <Player keys={movingKeys} settings={defaultSettings} />,
       );
       await renderer.advanceFrames(1, 1 / 60);
 
@@ -294,7 +294,7 @@ describe('Character Component', () => {
     it('should maintain last horizontal rotation when S key is pressed', async () => {
       const movingKeys = { ...mockKeys, s: true };
       const renderer = await create(
-        <Character keys={movingKeys} settings={defaultSettings} />,
+        <Player keys={movingKeys} settings={defaultSettings} />,
       );
       await renderer.advanceFrames(1, 1 / 60);
 
@@ -309,7 +309,7 @@ describe('Character Component', () => {
     it('should rotate to face -X when A key is pressed', async () => {
       const movingKeys = { ...mockKeys, a: true };
       const renderer = await create(
-        <Character keys={movingKeys} settings={defaultSettings} />,
+        <Player keys={movingKeys} settings={defaultSettings} />,
       );
       await renderer.advanceFrames(1, 1 / 60);
 
@@ -323,7 +323,7 @@ describe('Character Component', () => {
     it('should rotate to face +X when D key is pressed', async () => {
       const movingKeys = { ...mockKeys, d: true };
       const renderer = await create(
-        <Character keys={movingKeys} settings={defaultSettings} />,
+        <Player keys={movingKeys} settings={defaultSettings} />,
       );
       await renderer.advanceFrames(1, 1 / 60);
 
@@ -337,10 +337,7 @@ describe('Character Component', () => {
     it('should set zero velocity when attacking even with W key pressed', async () => {
       const attackingWithMovementKeys = { ...mockKeys, q: true, w: true };
       const renderer = await create(
-        <Character
-          keys={attackingWithMovementKeys}
-          settings={defaultSettings}
-        />,
+        <Player keys={attackingWithMovementKeys} settings={defaultSettings} />,
       );
       await renderer.advanceFrames(1, 1 / 60);
 
@@ -358,10 +355,7 @@ describe('Character Component', () => {
         d: true,
       };
       const renderer = await create(
-        <Character
-          keys={attackingWithAllMovement}
-          settings={defaultSettings}
-        />,
+        <Player keys={attackingWithAllMovement} settings={defaultSettings} />,
       );
       await renderer.advanceFrames(1, 1 / 60);
 
@@ -372,13 +366,13 @@ describe('Character Component', () => {
     it('should allow movement when not attacking', async () => {
       const movingKeys = { ...mockKeys, w: true, q: false };
       const renderer = await create(
-        <Character keys={movingKeys} settings={defaultSettings} />,
+        <Player keys={movingKeys} settings={defaultSettings} />,
       );
       await renderer.advanceFrames(1, 1 / 60);
 
       // Not attacking, so movement should work
       expect(mockSetLinvel).toHaveBeenCalledWith(
-        { x: 0, y: 0, z: -CHARACTER_DEFAULTS.MOVE_SPEED },
+        { x: 0, y: 0, z: -SHARED_DEFAULTS.MOVE_SPEED },
         true,
       );
     });
@@ -386,7 +380,7 @@ describe('Character Component', () => {
     it('should set zero velocity when attacking with E key', async () => {
       const attackingWithE = { ...mockKeys, e: true, w: true };
       const renderer = await create(
-        <Character keys={attackingWithE} settings={defaultSettings} />,
+        <Player keys={attackingWithE} settings={defaultSettings} />,
       );
       await renderer.advanceFrames(1, 1 / 60);
 
@@ -405,11 +399,7 @@ describe('Character Component', () => {
     it('should call onHit when torso collider is hit', async () => {
       const mockOnHit = jest.fn();
       await create(
-        <Character
-          keys={mockKeys}
-          settings={defaultSettings}
-          onHit={mockOnHit}
-        />,
+        <Player keys={mockKeys} settings={defaultSettings} onHit={mockOnHit} />,
       );
 
       // Simulate torso hit
@@ -423,11 +413,7 @@ describe('Character Component', () => {
     it('should call onHit when head collider is hit', async () => {
       const mockOnHit = jest.fn();
       await create(
-        <Character
-          keys={mockKeys}
-          settings={defaultSettings}
-          onHit={mockOnHit}
-        />,
+        <Player keys={mockKeys} settings={defaultSettings} onHit={mockOnHit} />,
       );
 
       // Simulate head hit
@@ -441,11 +427,7 @@ describe('Character Component', () => {
     it('should call onHit multiple times for multiple hits', async () => {
       const mockOnHit = jest.fn();
       await create(
-        <Character
-          keys={mockKeys}
-          settings={defaultSettings}
-          onHit={mockOnHit}
-        />,
+        <Player keys={mockKeys} settings={defaultSettings} onHit={mockOnHit} />,
       );
 
       // Simulate multiple hits
@@ -462,7 +444,7 @@ describe('Character Component', () => {
 
     it('should not throw when onHit is not provided', async () => {
       await expect(
-        create(<Character keys={mockKeys} settings={defaultSettings} />),
+        create(<Player keys={mockKeys} settings={defaultSettings} />),
       ).resolves.not.toThrow();
     });
   });

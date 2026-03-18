@@ -4,13 +4,13 @@ import { useState, useCallback, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { Physics } from '@react-three/rapier';
-import { Character } from '@/app/components/Character';
-import { Barbarian } from '@/app/components/Barbarian';
+import { Player } from '@/app/components/Player/Player';
+import { Barbarian } from '@/app/components/Barbarian/Barbarian';
 import { World } from '@/app/components/World';
-import { useKeyboardControls } from '@/app/components/hooks/useKeyboardControls';
-import { Controls } from '@/app/components/Controls';
+import { useKeyboardControls } from '@/app/components/Player/hooks/useKeyboardControls';
+import { Controls } from '@/app/components/Player/Controls';
 import { DebugGui } from '@/app/components/DebugGui';
-import { HealthBar } from '@/app/components/HealthBar';
+import { HealthBar } from '@/app/components/Player/HealthBar';
 import { GameOver } from '@/app/components/GameOver';
 import { useDebugSettings } from '@/app/components/hooks/useDebugSettings';
 import { ENVIRONMENT_DEFAULTS, GAME_DEFAULTS } from '@/app/constants';
@@ -27,7 +27,9 @@ function createInitialBarbarians(): Record<string, boolean> {
 export default function Home() {
   const { settings, updateSettings } = useDebugSettings();
   const { keys, updateKey } = useKeyboardControls(settings);
-  const [barbarians, setBarbarians] = useState<Record<string, boolean>>(createInitialBarbarians);
+  const [barbarians, setBarbarians] = useState<Record<string, boolean>>(
+    createInitialBarbarians,
+  );
   const [playerHP, setPlayerHP] = useState(GAME_DEFAULTS.PLAYER_MAX_HP);
   const [debugGuiHidden, setDebugGuiHidden] = useState(true);
 
@@ -70,7 +72,7 @@ export default function Home() {
         />
         <Physics gravity={[0, 0, 0]} debug={settings.debugMode}>
           {barbarianComponents}
-          <Character keys={keys} onHit={handlePlayerHit} settings={settings} />
+          <Player keys={keys} onHit={handlePlayerHit} settings={settings} />
         </Physics>
         <World />
         <OrbitControls
