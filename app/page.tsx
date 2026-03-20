@@ -26,7 +26,7 @@ function createInitialBarbarians(): Record<string, boolean> {
 
 export default function Home() {
   const { settings, updateSettings } = useDebugSettings();
-  const { keys, updateKey } = useKeyboardControls(settings);
+  const { keys, updateKey } = useKeyboardControls();
   const [barbarians, setBarbarians] = useState<Record<string, boolean>>(
     createInitialBarbarians,
   );
@@ -81,7 +81,7 @@ export default function Home() {
           enableRotate={ENVIRONMENT_DEFAULTS.orbitControls.enableRotate}
         />
       </Canvas>
-      <Controls updateKey={updateKey} settings={settings} />
+      <Controls updateKey={updateKey} />
       <Button
         onClick={() => setDebugGuiHidden((prev) => !prev)}
         color="gray"

@@ -5,36 +5,17 @@ import {
   useKeyboardControls,
   isAttacking,
 } from '@/app/components/Player/hooks/useKeyboardControls';
-import { CONTROLS_DEFAULTS, BARBARIAN_DEFAULTS } from '@/app/constants';
-import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
-
-const defaultSettings: DebugSettings = {
-  debugMode: false,
-  enableBarbarianWalk: BARBARIAN_DEFAULTS.enableBarbarianWalk,
-  barbarianWalkDurationMS: BARBARIAN_DEFAULTS.barbarianWalkDurationMS,
-  enableBarbarianAttack: BARBARIAN_DEFAULTS.enableBarbarianAttack,
-  attackSpeed: BARBARIAN_DEFAULTS.attackSpeed,
-  enableBarbarianJump: BARBARIAN_DEFAULTS.enableBarbarianJump,
-  jumpDurationMS: BARBARIAN_DEFAULTS.jumpDurationMS,
-  enableBarbarianLeftBlock: BARBARIAN_DEFAULTS.enableBarbarianLeftBlock,
-  blockDurationMS: BARBARIAN_DEFAULTS.blockDurationMS,
-  enableBarbarianRightBlock: BARBARIAN_DEFAULTS.enableBarbarianRightBlock,
-  rightBlockDurationMS: BARBARIAN_DEFAULTS.rightBlockDurationMS,
-  enableBarbarianKick: BARBARIAN_DEFAULTS.enableBarbarianKick,
-  kickSpeed: BARBARIAN_DEFAULTS.kickSpeed,
-  enableBarbarianDuck: BARBARIAN_DEFAULTS.enableBarbarianDuck,
-  duckDurationMS: BARBARIAN_DEFAULTS.duckDurationMS,
-};
+import { CONTROLS_DEFAULTS } from '@/app/constants';
 
 describe('useKeyboardControls Hook', () => {
   describe('Initialization', () => {
     it('should initialize with default keyboard state', () => {
-      const { result } = renderHook(() => useKeyboardControls(defaultSettings));
+      const { result } = renderHook(() => useKeyboardControls());
       expect(result.current.keys).toEqual(CONTROLS_DEFAULTS.KEYBOARD);
     });
 
     it('should have all keys set to false initially', () => {
-      const { result } = renderHook(() => useKeyboardControls(defaultSettings));
+      const { result } = renderHook(() => useKeyboardControls());
       const keys = result.current.keys;
 
       expect(keys.w).toBe(false);
@@ -51,7 +32,7 @@ describe('useKeyboardControls Hook', () => {
 
   describe('updateKey Function', () => {
     it('should update a specific key to true', () => {
-      const { result } = renderHook(() => useKeyboardControls(defaultSettings));
+      const { result } = renderHook(() => useKeyboardControls());
 
       act(() => {
         result.current.updateKey('w', true);
@@ -61,7 +42,7 @@ describe('useKeyboardControls Hook', () => {
     });
 
     it('should update a specific key to false', () => {
-      const { result } = renderHook(() => useKeyboardControls(defaultSettings));
+      const { result } = renderHook(() => useKeyboardControls());
 
       act(() => {
         result.current.updateKey('w', true);
@@ -75,7 +56,7 @@ describe('useKeyboardControls Hook', () => {
     });
 
     it('should update multiple keys independently', () => {
-      const { result } = renderHook(() => useKeyboardControls(defaultSettings));
+      const { result } = renderHook(() => useKeyboardControls());
 
       act(() => {
         result.current.updateKey('w', true);
@@ -91,7 +72,7 @@ describe('useKeyboardControls Hook', () => {
 
   describe('Keyboard Event Handlers', () => {
     it('should set w key to true on W keydown', () => {
-      const { result } = renderHook(() => useKeyboardControls(defaultSettings));
+      const { result } = renderHook(() => useKeyboardControls());
 
       act(() => {
         const event = new KeyboardEvent('keydown', { key: 'w' });
@@ -102,7 +83,7 @@ describe('useKeyboardControls Hook', () => {
     });
 
     it('should set w key to false on W keyup', () => {
-      const { result } = renderHook(() => useKeyboardControls(defaultSettings));
+      const { result } = renderHook(() => useKeyboardControls());
 
       act(() => {
         window.dispatchEvent(new KeyboardEvent('keydown', { key: 'w' }));
@@ -116,7 +97,7 @@ describe('useKeyboardControls Hook', () => {
     });
 
     it('should handle uppercase W key', () => {
-      const { result } = renderHook(() => useKeyboardControls(defaultSettings));
+      const { result } = renderHook(() => useKeyboardControls());
 
       act(() => {
         window.dispatchEvent(new KeyboardEvent('keydown', { key: 'W' }));
@@ -126,7 +107,7 @@ describe('useKeyboardControls Hook', () => {
     });
 
     it('should handle A key', () => {
-      const { result } = renderHook(() => useKeyboardControls(defaultSettings));
+      const { result } = renderHook(() => useKeyboardControls());
 
       act(() => {
         window.dispatchEvent(new KeyboardEvent('keydown', { key: 'a' }));
@@ -136,7 +117,7 @@ describe('useKeyboardControls Hook', () => {
     });
 
     it('should handle S key', () => {
-      const { result } = renderHook(() => useKeyboardControls(defaultSettings));
+      const { result } = renderHook(() => useKeyboardControls());
 
       act(() => {
         window.dispatchEvent(new KeyboardEvent('keydown', { key: 's' }));
@@ -146,7 +127,7 @@ describe('useKeyboardControls Hook', () => {
     });
 
     it('should handle D key', () => {
-      const { result } = renderHook(() => useKeyboardControls(defaultSettings));
+      const { result } = renderHook(() => useKeyboardControls());
 
       act(() => {
         window.dispatchEvent(new KeyboardEvent('keydown', { key: 'd' }));
@@ -156,7 +137,7 @@ describe('useKeyboardControls Hook', () => {
     });
 
     it('should handle Q key', () => {
-      const { result } = renderHook(() => useKeyboardControls(defaultSettings));
+      const { result } = renderHook(() => useKeyboardControls());
 
       act(() => {
         window.dispatchEvent(new KeyboardEvent('keydown', { key: 'q' }));
@@ -166,7 +147,7 @@ describe('useKeyboardControls Hook', () => {
     });
 
     it('should handle E key', () => {
-      const { result } = renderHook(() => useKeyboardControls(defaultSettings));
+      const { result } = renderHook(() => useKeyboardControls());
 
       act(() => {
         window.dispatchEvent(new KeyboardEvent('keydown', { key: 'e' }));
@@ -176,7 +157,7 @@ describe('useKeyboardControls Hook', () => {
     });
 
     it('should handle P key', () => {
-      const { result } = renderHook(() => useKeyboardControls(defaultSettings));
+      const { result } = renderHook(() => useKeyboardControls());
 
       act(() => {
         window.dispatchEvent(new KeyboardEvent('keydown', { key: 'p' }));
@@ -186,7 +167,7 @@ describe('useKeyboardControls Hook', () => {
     });
 
     it('should handle Space key', () => {
-      const { result } = renderHook(() => useKeyboardControls(defaultSettings));
+      const { result } = renderHook(() => useKeyboardControls());
 
       act(() => {
         window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }));
@@ -196,7 +177,7 @@ describe('useKeyboardControls Hook', () => {
     });
 
     it('should handle Control key', () => {
-      const { result } = renderHook(() => useKeyboardControls(defaultSettings));
+      const { result } = renderHook(() => useKeyboardControls());
 
       act(() => {
         window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Control' }));
@@ -206,7 +187,7 @@ describe('useKeyboardControls Hook', () => {
     });
 
     it('should set ctrl key to false on Control keyup immediately', () => {
-      const { result } = renderHook(() => useKeyboardControls(defaultSettings));
+      const { result } = renderHook(() => useKeyboardControls());
 
       act(() => {
         window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Control' }));
@@ -220,7 +201,7 @@ describe('useKeyboardControls Hook', () => {
     });
 
     it('should handle multiple simultaneous keys', () => {
-      const { result } = renderHook(() => useKeyboardControls(defaultSettings));
+      const { result } = renderHook(() => useKeyboardControls());
 
       act(() => {
         window.dispatchEvent(new KeyboardEvent('keydown', { key: 'w' }));
@@ -234,9 +215,7 @@ describe('useKeyboardControls Hook', () => {
 
   describe('Event Cleanup', () => {
     it('should remove event listeners on unmount', () => {
-      const { unmount } = renderHook(() =>
-        useKeyboardControls(defaultSettings),
-      );
+      const { unmount } = renderHook(() => useKeyboardControls());
       const removeEventListenerSpy = jest.spyOn(window, 'removeEventListener');
 
       unmount();

@@ -2,7 +2,6 @@
 import { useState, useCallback, useEffect } from 'react';
 
 import { CONTROLS_DEFAULTS } from '@/app/constants';
-import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
 
 export type { KeyState, KeyHandlerFn, SetKeyStateFn };
 export { useKeyboardControls, isAttacking };
@@ -29,7 +28,7 @@ function isAttacking(keys: KeyState): boolean {
   return keys.q || keys.e;
 }
 
-function useKeyboardControls(settings: DebugSettings) {
+function useKeyboardControls() {
   const [keys, setKeys] = useState<KeyState>(CONTROLS_DEFAULTS.KEYBOARD);
 
   const updateKey = useCallback((key: keyof KeyState, value: boolean) => {
@@ -79,48 +78,37 @@ function useKeyboardControls(settings: DebugSettings) {
     (event: KeyboardEvent) => {
       const key = event.key.toLowerCase();
 
-      const keyUps = {
-        handleMove: (k: string) => {
-          switch (k) {
-            case 'w':
-              updateKey('w', false);
-              break;
-            case 'a':
-              updateKey('a', false);
-              break;
-            case 's':
-              updateKey('s', false);
-              break;
-            case 'd':
-              updateKey('d', false);
-              break;
-          }
-        },
-        handleMechanics: (k: string) => {
-          switch (k) {
-            case 'q':
-              updateKey('q', false);
-              break;
-            case 'e':
-              updateKey('e', false);
-              break;
-            case 'p':
-              updateKey('p', false);
-              break;
-            case ' ':
-              updateKey('space', false);
-              break;
-          }
-        },
-      };
-
-      if (key === 'control') {
-        updateKey('ctrl', false);
+      switch (key) {
+        case 'w':
+          updateKey('w', false);
+          break;
+        case 'a':
+          updateKey('a', false);
+          break;
+        case 's':
+          updateKey('s', false);
+          break;
+        case 'd':
+          updateKey('d', false);
+          break;
+        case 'q':
+          updateKey('q', false);
+          break;
+        case 'e':
+          updateKey('e', false);
+          break;
+        case 'p':
+          updateKey('p', false);
+          break;
+        case ' ':
+          updateKey('space', false);
+          break;
+        case 'control':
+          updateKey('ctrl', false);
+          break;
       }
-      keyUps.handleMove(key);
-      setTimeout(keyUps.handleMechanics, settings.attackSpeed, key);
     },
-    [updateKey, settings],
+    [updateKey],
   );
 
   useEffect(() => {
