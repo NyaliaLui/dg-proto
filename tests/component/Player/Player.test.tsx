@@ -197,23 +197,16 @@ describe('Player Component', () => {
       mockSetRotation.mockClear();
     });
 
-    it('should set negative Z velocity when W key is pressed', async () => {
+    it('should set camera-forward velocity when W key is pressed', async () => {
+      // At yaw=0: sin(0)=0, cos(0)=1 → forward = +Z (exact IEEE 754 values)
       const movingKeys = { ...mockKeys, w: true };
+      const cameraYawRef = { current: 0 };
       const renderer = await create(
-        <Player keys={movingKeys} settings={defaultSettings} />,
-      );
-      await renderer.advanceFrames(1, 1 / 60);
-
-      expect(mockSetLinvel).toHaveBeenCalledWith(
-        { x: 0, y: 0, z: -SHARED_DEFAULTS.MOVE_SPEED },
-        true,
-      );
-    });
-
-    it('should set positive Z velocity when S key is pressed', async () => {
-      const movingKeys = { ...mockKeys, s: true };
-      const renderer = await create(
-        <Player keys={movingKeys} settings={defaultSettings} />,
+        <Player
+          keys={movingKeys}
+          settings={defaultSettings}
+          cameraYawRef={cameraYawRef}
+        />,
       );
       await renderer.advanceFrames(1, 1 / 60);
 
@@ -223,28 +216,59 @@ describe('Player Component', () => {
       );
     });
 
-    it('should set negative X velocity when A key is pressed', async () => {
-      const movingKeys = { ...mockKeys, a: true };
+    it('should set camera-backward velocity when S key is pressed', async () => {
+      // At yaw=0: backward = -Z
+      const movingKeys = { ...mockKeys, s: true };
+      const cameraYawRef = { current: 0 };
       const renderer = await create(
-        <Player keys={movingKeys} settings={defaultSettings} />,
+        <Player
+          keys={movingKeys}
+          settings={defaultSettings}
+          cameraYawRef={cameraYawRef}
+        />,
       );
       await renderer.advanceFrames(1, 1 / 60);
 
       expect(mockSetLinvel).toHaveBeenCalledWith(
-        { x: -SHARED_DEFAULTS.MOVE_SPEED, y: 0, z: 0 },
+        { x: 0, y: 0, z: -SHARED_DEFAULTS.MOVE_SPEED },
         true,
       );
     });
 
-    it('should set positive X velocity when D key is pressed', async () => {
-      const movingKeys = { ...mockKeys, d: true };
+    it('should set camera-left strafe velocity when A key is pressed', async () => {
+      // At yaw=0: rightX=cos(0)=1, rightZ=-sin(0)=0 → left strafe = +X
+      const movingKeys = { ...mockKeys, a: true };
+      const cameraYawRef = { current: 0 };
       const renderer = await create(
-        <Player keys={movingKeys} settings={defaultSettings} />,
+        <Player
+          keys={movingKeys}
+          settings={defaultSettings}
+          cameraYawRef={cameraYawRef}
+        />,
       );
       await renderer.advanceFrames(1, 1 / 60);
 
       expect(mockSetLinvel).toHaveBeenCalledWith(
         { x: SHARED_DEFAULTS.MOVE_SPEED, y: 0, z: 0 },
+        true,
+      );
+    });
+
+    it('should set camera-right strafe velocity when D key is pressed', async () => {
+      // At yaw=0: right strafe = -X
+      const movingKeys = { ...mockKeys, d: true };
+      const cameraYawRef = { current: 0 };
+      const renderer = await create(
+        <Player
+          keys={movingKeys}
+          settings={defaultSettings}
+          cameraYawRef={cameraYawRef}
+        />,
+      );
+      await renderer.advanceFrames(1, 1 / 60);
+
+      expect(mockSetLinvel).toHaveBeenCalledWith(
+        { x: -SHARED_DEFAULTS.MOVE_SPEED, y: 0, z: 0 },
         true,
       );
     });
@@ -316,30 +340,42 @@ describe('Player Component', () => {
       );
     });
 
-    it('should rotate to face -X when A key is pressed', async () => {
+    it('should always face camera direction when A key is pressed', async () => {
       const movingKeys = { ...mockKeys, a: true };
+      const cameraYawRef = { current: Math.PI / 2 };
       const renderer = await create(
-        <Player keys={movingKeys} settings={defaultSettings} />,
+        <Player
+          keys={movingKeys}
+          settings={defaultSettings}
+          cameraYawRef={cameraYawRef}
+        />,
       );
       await renderer.advanceFrames(1, 1 / 60);
 
-      // A key should rotate to face -X direction
+      // Player always faces cameraYaw regardless of movement key
+      const halfAngle = Math.PI / 4;
       expect(mockSetRotation).toHaveBeenCalledWith(
-        { x: 0, y: -0.707, z: 0, w: 0.707 },
+        { x: 0, y: Math.sin(halfAngle), z: 0, w: Math.cos(halfAngle) },
         true,
       );
     });
 
-    it('should rotate to face +X when D key is pressed', async () => {
+    it('should always face camera direction when D key is pressed', async () => {
       const movingKeys = { ...mockKeys, d: true };
+      const cameraYawRef = { current: Math.PI / 2 };
       const renderer = await create(
-        <Player keys={movingKeys} settings={defaultSettings} />,
+        <Player
+          keys={movingKeys}
+          settings={defaultSettings}
+          cameraYawRef={cameraYawRef}
+        />,
       );
       await renderer.advanceFrames(1, 1 / 60);
 
-      // D key should rotate to face +X direction
+      // Player always faces cameraYaw regardless of movement key
+      const halfAngle = Math.PI / 4;
       expect(mockSetRotation).toHaveBeenCalledWith(
-        { x: 0, y: 0.707, z: 0, w: 0.707 },
+        { x: 0, y: Math.sin(halfAngle), z: 0, w: Math.cos(halfAngle) },
         true,
       );
     });
@@ -375,14 +411,19 @@ describe('Player Component', () => {
 
     it('should allow movement when not attacking', async () => {
       const movingKeys = { ...mockKeys, w: true, q: false };
+      const cameraYawRef = { current: 0 };
       const renderer = await create(
-        <Player keys={movingKeys} settings={defaultSettings} />,
+        <Player
+          keys={movingKeys}
+          settings={defaultSettings}
+          cameraYawRef={cameraYawRef}
+        />,
       );
       await renderer.advanceFrames(1, 1 / 60);
 
-      // Not attacking, so movement should work
+      // Not attacking, so movement should work (W = camera forward = +Z at yaw 0)
       expect(mockSetLinvel).toHaveBeenCalledWith(
-        { x: 0, y: 0, z: -SHARED_DEFAULTS.MOVE_SPEED },
+        { x: 0, y: 0, z: SHARED_DEFAULTS.MOVE_SPEED },
         true,
       );
     });

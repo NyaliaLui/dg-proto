@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { POVCamera } from '@/app/components/POVCamera';
+import * as THREE from 'three';
 import { Physics } from '@react-three/rapier';
 import { Player } from '@/app/components/Player/Player';
 import { Barbarian } from '@/app/components/Barbarian/Barbarian';
@@ -25,6 +26,8 @@ function createInitialBarbarians(): Record<string, boolean> {
 }
 
 export default function Home() {
+  const playerPosRef = useRef(new THREE.Vector3(-1, 0.9, 0));
+  const cameraYawRef = useRef(Math.PI / 2);
   const { settings, updateSettings } = useDebugSettings();
   const { keys, updateKey } = useKeyboardControls(settings);
   const [barbarians, setBarbarians] = useState<Record<string, boolean>>(
@@ -72,16 +75,22 @@ export default function Home() {
         />
         <Physics gravity={[0, 0, 0]} debug={settings.debugMode}>
           {barbarianComponents}
-          <Player keys={keys} onHit={handlePlayerHit} settings={settings} />
+          <Player
+            keys={keys}
+            onHit={handlePlayerHit}
+            settings={settings}
+            playerPosRef={playerPosRef}
+            cameraYawRef={cameraYawRef}
+          />
         </Physics>
         <World />
-        <OrbitControls
-          enableZoom={ENVIRONMENT_DEFAULTS.orbitControls.enableZoom}
-          enablePan={ENVIRONMENT_DEFAULTS.orbitControls.enablePan}
-          enableRotate={ENVIRONMENT_DEFAULTS.orbitControls.enableRotate}
-        />
+        <POVCamera playerPosRef={playerPosRef} cameraYawRef={cameraYawRef} />
       </Canvas>
-      <Controls updateKey={updateKey} settings={settings} />
+      <Controls
+        updateKey={updateKey}
+        settings={settings}
+        cameraYawRef={cameraYawRef}
+      />
       <Button
         onClick={() => setDebugGuiHidden((prev) => !prev)}
         color="gray"

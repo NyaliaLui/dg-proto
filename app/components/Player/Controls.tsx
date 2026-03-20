@@ -5,9 +5,10 @@ import { SetKeyStateFn } from '@/app/components/Player/hooks/useKeyboardControls
 import { useAnalogControls } from '@/app/components/Player/hooks/useAnalogControls';
 import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
 import { CONTROLS_TEST_IDS } from '@/app/test-ids';
+import { CAMERA_DEFAULTS } from '@/app/constants';
 
 export type { AnalogStickProps, OnscreenKeysProps, ControlsProps };
-export { AnalogStick, OnscreenKeys, Controls };
+export { AnalogStick, OnscreenKeys, Controls, LookZone };
 
 interface AnalogStickProps {
   updateKey: SetKeyStateFn;
@@ -148,14 +149,49 @@ function OnscreenKeys({ updateKey, settings }: OnscreenKeysProps) {
   );
 }
 
+interface LookZoneProps {
+  cameraYawRef: { current: number };
+}
+
+function LookZone({ cameraYawRef }: LookZoneProps) {
+  const lastTouchXRef = useRef<number | null>(null);
+
+  return (
+    <div
+      className="lg:hidden fixed top-0 right-0 w-1/2 h-full z-40"
+      style={{ touchAction: 'none' }}
+      data-testid={CONTROLS_TEST_IDS.LOOK_ZONE}
+      onTouchStart={(e) => {
+        lastTouchXRef.current = e.touches[0].clientX;
+      }}
+      onTouchMove={(e) => {
+        e.preventDefault();
+        if (lastTouchXRef.current === null) return;
+        const dx = e.touches[0].clientX - lastTouchXRef.current;
+        cameraYawRef.current -= dx * CAMERA_DEFAULTS.TOUCH_SENSITIVITY;
+        cameraYawRef.current =
+          ((cameraYawRef.current + Math.PI) % (2 * Math.PI)) - Math.PI;
+        lastTouchXRef.current = e.touches[0].clientX;
+      }}
+      onTouchEnd={() => {
+        lastTouchXRef.current = null;
+      }}
+    />
+  );
+}
+
 interface ControlsProps {
   updateKey: SetKeyStateFn;
   settings: DebugSettings;
+  cameraYawRef?: { current: number };
 }
 
-function Controls({ updateKey, settings }: ControlsProps) {
+function Controls({ updateKey, settings, cameraYawRef }: ControlsProps) {
   return (
     <>
+      {/* Camera look zone (mobile right-side touch drag) */}
+      {cameraYawRef && <LookZone cameraYawRef={cameraYawRef} />}
+
       {/* Analog Stick */}
       <div className="lg:hidden fixed bottom-1/12 left-1/12 z-50">
         <AnalogStick updateKey={updateKey} />

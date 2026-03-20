@@ -5,6 +5,7 @@ import {
   Controls,
   AnalogStick,
   OnscreenKeys,
+  LookZone,
 } from '@/app/components/Player/Controls';
 import { CONTROLS_TEST_IDS } from '@/app/test-ids';
 import { BARBARIAN_DEFAULTS } from '@/app/constants';
@@ -181,6 +182,79 @@ describe('Controls Component', () => {
       expect(screen.getByLabelText('Special')).toBeInTheDocument();
       expect(screen.getByLabelText('Normal')).toBeInTheDocument();
       expect(screen.getByLabelText('Item')).toBeInTheDocument();
+    });
+  });
+
+  describe('LookZone', () => {
+    it('should render look zone when cameraYawRef is provided', () => {
+      const cameraYawRef = { current: Math.PI / 2 };
+      render(
+        <Controls
+          updateKey={mockUpdateKey}
+          settings={defaultSettings}
+          cameraYawRef={cameraYawRef}
+        />,
+      );
+      expect(
+        screen.getByTestId(CONTROLS_TEST_IDS.LOOK_ZONE),
+      ).toBeInTheDocument();
+    });
+
+    it('should not render look zone when cameraYawRef is not provided', () => {
+      render(<Controls updateKey={mockUpdateKey} settings={defaultSettings} />);
+      expect(
+        screen.queryByTestId(CONTROLS_TEST_IDS.LOOK_ZONE),
+      ).not.toBeInTheDocument();
+    });
+
+    it('should decrease cameraYawRef when dragging right', () => {
+      const cameraYawRef = { current: Math.PI / 2 };
+      render(<LookZone cameraYawRef={cameraYawRef} />);
+      const lookZone = screen.getByTestId(CONTROLS_TEST_IDS.LOOK_ZONE);
+
+      fireEvent.touchStart(lookZone, {
+        touches: [{ clientX: 200, clientY: 300 }],
+      });
+      fireEvent.touchMove(lookZone, {
+        touches: [{ clientX: 300, clientY: 300 }],
+      });
+
+      // Dragging right (dx=100) should decrease yaw
+      expect(cameraYawRef.current).toBeLessThan(Math.PI / 2);
+    });
+
+    it('should increase cameraYawRef when dragging left', () => {
+      const cameraYawRef = { current: Math.PI / 2 };
+      render(<LookZone cameraYawRef={cameraYawRef} />);
+      const lookZone = screen.getByTestId(CONTROLS_TEST_IDS.LOOK_ZONE);
+
+      fireEvent.touchStart(lookZone, {
+        touches: [{ clientX: 300, clientY: 300 }],
+      });
+      fireEvent.touchMove(lookZone, {
+        touches: [{ clientX: 200, clientY: 300 }],
+      });
+
+      // Dragging left (dx=-100) should increase yaw
+      expect(cameraYawRef.current).toBeGreaterThan(Math.PI / 2);
+    });
+
+    it('should reset tracking on touch end', () => {
+      const cameraYawRef = { current: Math.PI / 2 };
+      render(<LookZone cameraYawRef={cameraYawRef} />);
+      const lookZone = screen.getByTestId(CONTROLS_TEST_IDS.LOOK_ZONE);
+
+      fireEvent.touchStart(lookZone, {
+        touches: [{ clientX: 200, clientY: 300 }],
+      });
+      fireEvent.touchEnd(lookZone, { touches: [] });
+
+      // A subsequent move should not update yaw (no active drag)
+      const yawAfterEnd = cameraYawRef.current;
+      fireEvent.touchMove(lookZone, {
+        touches: [{ clientX: 300, clientY: 300 }],
+      });
+      expect(cameraYawRef.current).toBe(yawAfterEnd);
     });
   });
 });

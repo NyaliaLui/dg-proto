@@ -6,4 +6,5 @@ export const CONTROLS_TEST_IDS = {
   NORMAL_BUTTON: 'normal-button',
   ITEM_BUTTON: 'item-button',
   CROUCH_BUTTON: 'crouch-button',
+  LOOK_ZONE: 'look-zone',
 };

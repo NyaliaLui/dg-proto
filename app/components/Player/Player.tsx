@@ -29,12 +29,19 @@ interface PlayerProps {
   keys: KeyState;
   onHit?: () => void;
   settings: DebugSettings;
+  playerPosRef?: { current: THREE.Vector3 };
+  cameraYawRef?: { current: number };
 }
 
-export function Player({ keys, onHit, settings }: PlayerProps) {
+export function Player({
+  keys,
+  onHit,
+  settings,
+  playerPosRef,
+  cameraYawRef,
+}: PlayerProps) {
   const rigidBodyRef = useRef<RapierRigidBody>(null);
   const modelRef = useRef<THREE.Group>(null);
-  const lastRotationRef = useRef<number>(Math.PI / 2);
   const [torsoPosition, setTorsoPosition] = useState<[number, number, number]>([
     ...SHARED_DEFAULTS.COLLIDERS.TORSO.position,
   ]);
@@ -409,6 +416,12 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
     }
 
     if (rigidBodyRef.current) {
+      if (playerPosRef) {
+        const t = rigidBodyRef.current.translation();
+        playerPosRef.current.set(t.x, t.y, t.z);
+      }
+
+      const yaw = cameraYawRef?.current ?? Math.PI / 2;
       const moveSpeed = SHARED_DEFAULTS.MOVE_SPEED;
       const velocity = { x: 0, y: 0, z: 0 };
 
@@ -420,50 +433,45 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
         !crouchAttackingRef.current &&
         !specialAttackingRef.current
       ) {
-        // WASD movement with rotation to face direction
+        // Camera-relative WASD movement
+        const fwdX = Math.sin(yaw);
+        const fwdZ = Math.cos(yaw);
+        const rightX = Math.cos(yaw);
+        const rightZ = -Math.sin(yaw);
+
         if (keys.w) {
-          velocity.z = -moveSpeed;
+          velocity.x += fwdX * moveSpeed;
+          velocity.z += fwdZ * moveSpeed;
         }
         if (keys.s) {
-          velocity.z = moveSpeed;
+          velocity.x -= fwdX * moveSpeed;
+          velocity.z -= fwdZ * moveSpeed;
         }
         if (keys.a) {
-          velocity.x = -moveSpeed;
-          rigidBodyRef.current.setRotation(
-            { x: 0, y: -0.707, z: 0, w: 0.707 },
-            true,
-          ); // Face -X
-          lastRotationRef.current = -Math.PI / 2;
+          velocity.x += rightX * moveSpeed;
+          velocity.z += rightZ * moveSpeed;
         }
         if (keys.d) {
-          velocity.x = moveSpeed;
-          rigidBodyRef.current.setRotation(
-            { x: 0, y: 0.707, z: 0, w: 0.707 },
-            true,
-          ); // Face +X
-          lastRotationRef.current = Math.PI / 2;
+          velocity.x -= rightX * moveSpeed;
+          velocity.z -= rightZ * moveSpeed;
         }
 
-        // Apply last horizontal rotation when moving vertically without horizontal input
-        if ((keys.w || keys.s) && !keys.a && !keys.d) {
-          const halfAngle = lastRotationRef.current / 2;
-          rigidBodyRef.current.setRotation(
-            { x: 0, y: Math.sin(halfAngle), z: 0, w: Math.cos(halfAngle) },
-            true,
-          );
+        // Normalize diagonal movement to keep consistent speed
+        const speed = Math.sqrt(velocity.x ** 2 + velocity.z ** 2);
+        if (speed > moveSpeed) {
+          velocity.x = (velocity.x / speed) * moveSpeed;
+          velocity.z = (velocity.z / speed) * moveSpeed;
         }
       }
 
       rigidBodyRef.current.setLinvel(velocity, true);
 
-      // When idle, maintain last rotation
-      if (!moving) {
-        const halfAngle = lastRotationRef.current / 2;
-        rigidBodyRef.current.setRotation(
-          { x: 0, y: Math.sin(halfAngle), z: 0, w: Math.cos(halfAngle) },
-          true,
-        );
-      }
+      // Player model always faces camera direction
+      const halfAngle = yaw / 2;
+      rigidBodyRef.current.setRotation(
+        { x: 0, y: Math.sin(halfAngle), z: 0, w: Math.cos(halfAngle) },
+        true,
+      );
     }
   });
 

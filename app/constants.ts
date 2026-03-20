@@ -194,3 +194,8 @@ export const LEVA_THEMES = {
     },
   },
 };
+
+export const CAMERA_DEFAULTS = {
+  MOUSE_SENSITIVITY: 0.002,
+  TOUCH_SENSITIVITY: 0.004,
+};
