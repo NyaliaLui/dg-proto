@@ -27,7 +27,10 @@ import {
   getBoneWorldPosition,
   BoneVertexMap,
 } from '@/app/utils';
-import type { ClientBarbarianState, BarbarianDecision } from '@/app/ai/sharedTypes';
+import type {
+  ClientBarbarianState,
+  BarbarianDecision,
+} from '@/app/ai/sharedTypes';
 import { applyAction, decisionChanged } from '@/app/ai/ActionApplier';
 
 // Collision groups:
@@ -37,8 +40,8 @@ import { applyAction, decisionChanged } from '@/app/ai/ActionApplier';
 //   3 = barbarian hand         — only triggers group 0
 //   4 = solid character bodies — collide only with each other (physical push-apart)
 const BARBARIAN_BODY_GROUPS = interactionGroups([2], [1]);
-const BARBARIAN_HAND_GROUPS  = interactionGroups([3], [0]);
-const SOLID_BODY_GROUPS      = interactionGroups([4], [4]);
+const BARBARIAN_HAND_GROUPS = interactionGroups([3], [0]);
+const SOLID_BODY_GROUPS = interactionGroups([4], [4]);
 
 interface BarbarianProps {
   id: string;
@@ -50,7 +53,15 @@ interface BarbarianProps {
   barbarianDecisionsRef?: { current: Record<string, BarbarianDecision | null> };
 }
 
-export function Barbarian({ id, initialPosition, onDeath, settings, playerPositionRef, barbarianStatesRef, barbarianDecisionsRef }: BarbarianProps) {
+export function Barbarian({
+  id,
+  initialPosition,
+  onDeath,
+  settings,
+  playerPositionRef,
+  barbarianStatesRef,
+  barbarianDecisionsRef,
+}: BarbarianProps) {
   const rigidBodyRef = useRef<RapierRigidBody>(null);
   const modelRef = useRef<THREE.Group>(null);
   const lastRotationRef = useRef<number>(-Math.PI / 2);
@@ -80,7 +91,16 @@ export function Barbarian({ id, initialPosition, onDeath, settings, playerPositi
   const isGroundedRef = useRef<boolean>(true);
   const jumpStartYRef = useRef<number>(0);
   const jumpPendingRef = useRef<boolean>(false);
-  const lastDecisionRef = useRef<{ action: BarbarianDecision['action']; direction: number } | null>(null);
+  /** ms timestamp (performance.now()) when utility AI last entered ATTACK. */
+  const utilityAttackStartRef = useRef<number>(0);
+  /** True while utility AI is holding the barbarian in ATTACK mode. */
+  const utilityIsAttackingRef = useRef<boolean>(false);
+  /** ms timestamp when server last applied a STRATEGIC_ACTION. -Infinity means no strategic action has ever been applied. */
+  const strategicActionStartRef = useRef<number>(-Infinity);
+  const lastDecisionRef = useRef<{
+    action: BarbarianDecision['action'];
+    direction: number;
+  } | null>(null);
 
   const handleHit = useCallback(() => {
     setHp((prevHp) => {
@@ -355,9 +375,76 @@ export function Barbarian({ id, initialPosition, onDeath, settings, playerPositi
           setIsRightBlocking,
           setIsDucking,
           setDirection,
-          setJumpPending: () => { jumpPendingRef.current = true; },
+          setJumpPending: () => {
+            jumpPendingRef.current = true;
+          },
         });
-        lastDecisionRef.current = { action: decision.action, direction: decision.direction };
+        lastDecisionRef.current = {
+          action: decision.action,
+          direction: decision.direction,
+        };
+        // Stamp strategic action so utility AI defers during the animation
+        if (
+          (
+            BARBARIAN_DEFAULTS.UTILITY_AI.STRATEGIC_ACTIONS as readonly string[]
+          ).includes(decision.action)
+        ) {
+          strategicActionStartRef.current = performance.now();
+          utilityIsAttackingRef.current = false;
+        }
+      }
+    }
+
+    // ── Utility AI (fast loop ~60 fps) ────────────────────────────────────────
+    // Runs after server-decision block so it can override stale IDLE/CHASE.
+    // Inactive when playerPositionRef is null (tests, debug-only mode).
+    if (playerPositionRef?.current && rigidBodyRef.current) {
+      const now = performance.now();
+      const t = rigidBodyRef.current.translation();
+      const dx = playerPositionRef.current.x - t.x;
+      const dy = playerPositionRef.current.y - t.y;
+      const dz = playerPositionRef.current.z - t.z;
+      const distToPlayer = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+      const inStrategicPause =
+        now - strategicActionStartRef.current <
+        BARBARIAN_DEFAULTS.UTILITY_AI.MIN_ATTACK_DURATION_MS;
+
+      if (!inStrategicPause) {
+        if (distToPlayer <= BARBARIAN_DEFAULTS.UTILITY_AI.ATTACK_RANGE) {
+          // In range → attack
+          if (!utilityIsAttackingRef.current) {
+            utilityIsAttackingRef.current = true;
+            utilityAttackStartRef.current = now;
+            setIsAttacking(true);
+            setIsWalking(false);
+          }
+          // Face the player while attacking
+          const toPlayerAngle = Math.atan2(dx, dz);
+          const halfAngle = toPlayerAngle / 2;
+          rigidBodyRef.current.setRotation(
+            { x: 0, y: Math.sin(halfAngle), z: 0, w: Math.cos(halfAngle) },
+            true,
+          );
+          lastRotationRef.current = toPlayerAngle;
+        } else {
+          // Out of range → chase (after minimum attack duration expires)
+          const attackHeld =
+            utilityIsAttackingRef.current &&
+            now - utilityAttackStartRef.current <
+              BARBARIAN_DEFAULTS.UTILITY_AI.MIN_ATTACK_DURATION_MS;
+
+          if (!attackHeld) {
+            if (utilityIsAttackingRef.current) {
+              utilityIsAttackingRef.current = false;
+              setIsAttacking(false);
+            }
+            // Always chase — never idle while player is alive
+            if (!isWalking) {
+              setIsWalking(true);
+            }
+          }
+        }
       }
     }
 
@@ -443,14 +530,21 @@ export function Barbarian({ id, initialPosition, onDeath, settings, playerPositi
       if (barbarianStatesRef) {
         const t = rigidBodyRef.current.translation();
         const v = rigidBodyRef.current.linvel?.() ?? { x: 0, y: 0, z: 0 };
-        const currentAction = isAttacking ? 'ATTACK'
-          : isWalking ? 'CHASE'
-          : isJumping ? 'JUMP'
-          : isKicking ? 'KICK'
-          : isBlocking ? 'LEFT_BLOCK'
-          : isRightBlocking ? 'RIGHT_BLOCK'
-          : isDucking ? 'DUCK'
-          : 'IDLE';
+        const currentAction = isAttacking
+          ? 'ATTACK'
+          : isWalking
+            ? 'CHASE'
+            : isJumping
+              ? 'JUMP'
+              : isKicking
+                ? 'KICK'
+                : isBlocking
+                  ? 'LEFT_BLOCK'
+                  : isRightBlocking
+                    ? 'RIGHT_BLOCK'
+                    : isDucking
+                      ? 'DUCK'
+                      : 'IDLE';
         barbarianStatesRef.current[id] = {
           id,
           position: { x: t.x, y: t.y, z: t.z },
@@ -464,7 +558,15 @@ export function Barbarian({ id, initialPosition, onDeath, settings, playerPositi
       }
 
       // Follow player position when walking (if AI not driving direction)
-      if (playerPositionRef?.current && isWalking && !isAttacking && !isKicking && !isBlocking && !isRightBlocking && !isDucking) {
+      if (
+        playerPositionRef?.current &&
+        isWalking &&
+        !isAttacking &&
+        !isKicking &&
+        !isBlocking &&
+        !isRightBlocking &&
+        !isDucking
+      ) {
         const t = rigidBodyRef.current.translation();
         const dx = playerPositionRef.current.x - t.x;
         const dz = playerPositionRef.current.z - t.z;
@@ -472,10 +574,20 @@ export function Barbarian({ id, initialPosition, onDeath, settings, playerPositi
         if (dist > 0.1) {
           const nx = dx / dist;
           const nz = dz / dist;
-          rigidBodyRef.current.setLinvel({ x: nx * SHARED_DEFAULTS.MOVE_SPEED, y: velocity.y, z: nz * SHARED_DEFAULTS.MOVE_SPEED }, true);
+          rigidBodyRef.current.setLinvel(
+            {
+              x: nx * SHARED_DEFAULTS.MOVE_SPEED,
+              y: velocity.y,
+              z: nz * SHARED_DEFAULTS.MOVE_SPEED,
+            },
+            true,
+          );
           const angle = Math.atan2(nx, nz);
           const halfAngle = angle / 2;
-          rigidBodyRef.current.setRotation({ x: 0, y: Math.sin(halfAngle), z: 0, w: Math.cos(halfAngle) }, true);
+          rigidBodyRef.current.setRotation(
+            { x: 0, y: Math.sin(halfAngle), z: 0, w: Math.cos(halfAngle) },
+            true,
+          );
           lastRotationRef.current = angle;
         }
       }

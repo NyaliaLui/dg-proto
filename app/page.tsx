@@ -37,9 +37,9 @@ function createInitialBarbarians(): Record<string, [number, number, number]> {
 export default function Home() {
   const { settings, updateSettings } = useDebugSettings();
   const { keys, updateKey } = useKeyboardControls(settings);
-  const [barbarians, setBarbarians] = useState<Record<string, [number, number, number]>>(
-    createInitialBarbarians,
-  );
+  const [barbarians, setBarbarians] = useState<
+    Record<string, [number, number, number]>
+  >(createInitialBarbarians);
   const [playerHP, setPlayerHP] = useState(GAME_DEFAULTS.PLAYER_MAX_HP);
   const [debugGuiHidden, setDebugGuiHidden] = useState(true);
 
@@ -48,7 +48,9 @@ export default function Home() {
   const playerStateRef = useRef<ClientPlayerState | null>(null);
   const playerHPRef = useRef<number>(GAME_DEFAULTS.PLAYER_MAX_HP);
   const barbarianStatesRef = useRef<Record<string, ClientBarbarianState>>({});
-  const barbarianDecisionsRef = useRef<Record<string, BarbarianDecision | null>>({});
+  const barbarianDecisionsRef = useRef<
+    Record<string, BarbarianDecision | null>
+  >({});
   const aiClientRef = useRef<BarbarianAIClient | null>(null);
 
   // Keep playerHPRef in sync with React state

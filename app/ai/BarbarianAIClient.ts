@@ -24,7 +24,7 @@ import type {
 } from './sharedTypes';
 import { GAME_DEFAULTS } from '@/app/constants';
 
-const SEND_INTERVAL_MS = 100;
+const SEND_INTERVAL_MS = 50;
 const RECONNECT_BASE_MS = 1000;
 const RECONNECT_MAX_MS = 10_000;
 

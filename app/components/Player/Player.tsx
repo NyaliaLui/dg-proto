@@ -14,7 +14,11 @@ import * as THREE from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 import { SkeletonHelper } from 'three';
 
-import { SHARED_DEFAULTS, PLAYER_DEFAULTS, GAME_DEFAULTS } from '@/app/constants';
+import {
+  SHARED_DEFAULTS,
+  PLAYER_DEFAULTS,
+  GAME_DEFAULTS,
+} from '@/app/constants';
 import { KeyState } from '@/app/components/Player/hooks/useKeyboardControls';
 import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
 import {
@@ -31,9 +35,9 @@ import type { ClientPlayerState } from '@/app/ai/sharedTypes';
 //   0 = player body  — only hit by barbarian hand (group 3)
 //   1 = player sword — only hits barbarian body (group 2)
 //   4 = solid character bodies — collide only with each other (physical push-apart)
-const PLAYER_BODY_GROUPS  = interactionGroups([0], [3]);
+const PLAYER_BODY_GROUPS = interactionGroups([0], [3]);
 const PLAYER_SWORD_GROUPS = interactionGroups([1], [2]);
-const SOLID_BODY_GROUPS   = interactionGroups([4], [4]);
+const SOLID_BODY_GROUPS = interactionGroups([4], [4]);
 
 interface PlayerProps {
   keys: KeyState;
@@ -43,7 +47,13 @@ interface PlayerProps {
   playerStateRef?: { current: ClientPlayerState | null };
 }
 
-export function Player({ keys, onHit, settings, playerPositionRef, playerStateRef }: PlayerProps) {
+export function Player({
+  keys,
+  onHit,
+  settings,
+  playerPositionRef,
+  playerStateRef,
+}: PlayerProps) {
   const rigidBodyRef = useRef<RapierRigidBody>(null);
   const modelRef = useRef<THREE.Group>(null);
   const lastRotationRef = useRef<number>(Math.PI / 2);
@@ -493,11 +503,17 @@ export function Player({ keys, onHit, settings, playerPositionRef, playerStateRe
           hp: 0, // filled in by BarbarianAIClient from playerHPRef
           maxHp: GAME_DEFAULTS.PLAYER_MAX_HP,
           facingDirection: lastRotationRef.current > 0 ? 1 : -1,
-          isAttacking: normalAttackingRef.current || crouchAttackingRef.current || specialAttackingRef.current,
-          attackType: normalAttackingRef.current ? 'normal'
-            : crouchAttackingRef.current ? 'crouch'
-            : specialAttackingRef.current ? 'special'
-            : null,
+          isAttacking:
+            normalAttackingRef.current ||
+            crouchAttackingRef.current ||
+            specialAttackingRef.current,
+          attackType: normalAttackingRef.current
+            ? 'normal'
+            : crouchAttackingRef.current
+              ? 'crouch'
+              : specialAttackingRef.current
+                ? 'special'
+                : null,
           attackStartedAt: null,
           isJumping: jumpingRef.current,
           isCrouching: crouching,
