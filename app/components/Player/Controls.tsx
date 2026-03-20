@@ -3,7 +3,6 @@ import { useRef } from 'react';
 
 import { SetKeyStateFn } from '@/app/components/Player/hooks/useKeyboardControls';
 import { useAnalogControls } from '@/app/components/Player/hooks/useAnalogControls';
-import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
 import { CONTROLS_TEST_IDS } from '@/app/test-ids';
 
 export type { AnalogStickProps, OnscreenKeysProps, ControlsProps };
@@ -55,21 +54,13 @@ function AnalogStick({ updateKey }: AnalogStickProps) {
 
 interface OnscreenKeysProps {
   updateKey: SetKeyStateFn;
-  settings: DebugSettings;
 }
 
-function OnscreenKeys({ updateKey, settings }: OnscreenKeysProps) {
+function OnscreenKeys({ updateKey }: OnscreenKeysProps) {
   const smallButtonClass =
     'w-12 h-12 bg-gray-700 bg-opacity-80 border-1 border-gray-500 rounded-full flex items-center justify-center cursor-pointer select-none active:bg-gray-600 transition-colors text-white font-semibold text-xs';
   const largeButtonClass =
     'w-16 h-16 bg-gray-700 bg-opacity-80 border-1 border-gray-500 rounded-full flex items-center justify-center cursor-pointer select-none active:bg-gray-600 transition-colors text-white font-semibold text-sm';
-
-  // Helper function to handle mechanics key release with timeout
-  const handleMechanics = (key: 'q' | 'e' | 'p' | 'space') => {
-    setTimeout(() => {
-      updateKey(key, false);
-    }, settings.attackSpeed);
-  };
 
   return (
     <div
@@ -84,10 +75,10 @@ function OnscreenKeys({ updateKey, settings }: OnscreenKeysProps) {
           data-testid={CONTROLS_TEST_IDS.JUMP_BUTTON}
           aria-label="Jump"
           onMouseDown={() => updateKey('space', true)}
-          onMouseUp={() => handleMechanics('space')}
-          onMouseLeave={() => handleMechanics('space')}
+          onMouseUp={() => updateKey('space', false)}
+          onMouseLeave={() => updateKey('space', false)}
           onTouchStart={() => updateKey('space', true)}
-          onTouchEnd={() => handleMechanics('space')}
+          onTouchEnd={() => updateKey('space', false)}
         >
           Jump
         </button>
@@ -112,10 +103,10 @@ function OnscreenKeys({ updateKey, settings }: OnscreenKeysProps) {
           data-testid={CONTROLS_TEST_IDS.SPECIAL_BUTTON}
           aria-label="Special"
           onMouseDown={() => updateKey('e', true)}
-          onMouseUp={() => handleMechanics('e')}
-          onMouseLeave={() => handleMechanics('e')}
+          onMouseUp={() => updateKey('e', false)}
+          onMouseLeave={() => updateKey('e', false)}
           onTouchStart={() => updateKey('e', true)}
-          onTouchEnd={() => handleMechanics('e')}
+          onTouchEnd={() => updateKey('e', false)}
         >
           Special
         </button>
@@ -124,10 +115,10 @@ function OnscreenKeys({ updateKey, settings }: OnscreenKeysProps) {
           data-testid={CONTROLS_TEST_IDS.NORMAL_BUTTON}
           aria-label="Normal"
           onMouseDown={() => updateKey('q', true)}
-          onMouseUp={() => handleMechanics('q')}
-          onMouseLeave={() => handleMechanics('q')}
+          onMouseUp={() => updateKey('q', false)}
+          onMouseLeave={() => updateKey('q', false)}
           onTouchStart={() => updateKey('q', true)}
-          onTouchEnd={() => handleMechanics('q')}
+          onTouchEnd={() => updateKey('q', false)}
         >
           Normal
         </button>
@@ -136,10 +127,10 @@ function OnscreenKeys({ updateKey, settings }: OnscreenKeysProps) {
           data-testid={CONTROLS_TEST_IDS.ITEM_BUTTON}
           aria-label="Item"
           onMouseDown={() => updateKey('p', true)}
-          onMouseUp={() => handleMechanics('p')}
-          onMouseLeave={() => handleMechanics('p')}
+          onMouseUp={() => updateKey('p', false)}
+          onMouseLeave={() => updateKey('p', false)}
           onTouchStart={() => updateKey('p', true)}
-          onTouchEnd={() => handleMechanics('p')}
+          onTouchEnd={() => updateKey('p', false)}
         >
           Item
         </button>
@@ -150,10 +141,9 @@ function OnscreenKeys({ updateKey, settings }: OnscreenKeysProps) {
 
 interface ControlsProps {
   updateKey: SetKeyStateFn;
-  settings: DebugSettings;
 }
 
-function Controls({ updateKey, settings }: ControlsProps) {
+function Controls({ updateKey }: ControlsProps) {
   return (
     <>
       {/* Analog Stick */}
@@ -163,7 +153,7 @@ function Controls({ updateKey, settings }: ControlsProps) {
 
       {/* Onscreen Keys */}
       <div className="lg:hidden fixed bottom-1/12 right-1/12 z-50">
-        <OnscreenKeys updateKey={updateKey} settings={settings} />
+        <OnscreenKeys updateKey={updateKey} />
       </div>
     </>
   );

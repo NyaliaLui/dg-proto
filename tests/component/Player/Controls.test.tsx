@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { expect, describe, it } from '@jest/globals';
 import {
   Controls,
@@ -7,28 +7,9 @@ import {
   OnscreenKeys,
 } from '@/app/components/Player/Controls';
 import { CONTROLS_TEST_IDS } from '@/app/test-ids';
-import { BARBARIAN_DEFAULTS } from '@/app/constants';
-import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
 
 describe('Controls Component', () => {
   const mockUpdateKey = jest.fn();
-  const defaultSettings: DebugSettings = {
-    debugMode: false,
-    enableBarbarianWalk: BARBARIAN_DEFAULTS.enableBarbarianWalk,
-    barbarianWalkDurationMS: BARBARIAN_DEFAULTS.barbarianWalkDurationMS,
-    enableBarbarianAttack: BARBARIAN_DEFAULTS.enableBarbarianAttack,
-    attackSpeed: BARBARIAN_DEFAULTS.attackSpeed,
-    enableBarbarianJump: BARBARIAN_DEFAULTS.enableBarbarianJump,
-    jumpDurationMS: BARBARIAN_DEFAULTS.jumpDurationMS,
-    enableBarbarianLeftBlock: BARBARIAN_DEFAULTS.enableBarbarianLeftBlock,
-    blockDurationMS: BARBARIAN_DEFAULTS.blockDurationMS,
-    enableBarbarianRightBlock: BARBARIAN_DEFAULTS.enableBarbarianRightBlock,
-    rightBlockDurationMS: BARBARIAN_DEFAULTS.rightBlockDurationMS,
-    enableBarbarianKick: BARBARIAN_DEFAULTS.enableBarbarianKick,
-    kickSpeed: BARBARIAN_DEFAULTS.kickSpeed,
-    enableBarbarianDuck: BARBARIAN_DEFAULTS.enableBarbarianDuck,
-    duckDurationMS: BARBARIAN_DEFAULTS.duckDurationMS,
-  };
 
   beforeEach(() => {
     mockUpdateKey.mockClear();
@@ -36,7 +17,7 @@ describe('Controls Component', () => {
 
   describe('Controls', () => {
     it('should render AnalogStick and OnscreenKeys', () => {
-      render(<Controls updateKey={mockUpdateKey} settings={defaultSettings} />);
+      render(<Controls updateKey={mockUpdateKey} />);
 
       const analogStick = screen.getByTestId(CONTROLS_TEST_IDS.ANALOG_STICK);
       const onscreenKeys = screen.getByTestId(CONTROLS_TEST_IDS.ONSCREEN_KEYS);
@@ -64,9 +45,7 @@ describe('Controls Component', () => {
 
   describe('OnscreenKeys', () => {
     it('should render all action buttons', () => {
-      render(
-        <OnscreenKeys updateKey={mockUpdateKey} settings={defaultSettings} />,
-      );
+      render(<OnscreenKeys updateKey={mockUpdateKey} />);
 
       const jumpButton = screen.getByTestId(CONTROLS_TEST_IDS.JUMP_BUTTON);
       const crouchButton = screen.getByTestId(CONTROLS_TEST_IDS.CROUCH_BUTTON);
@@ -84,9 +63,7 @@ describe('Controls Component', () => {
     });
 
     it('should call updateKey with space true on jump button mouse down', () => {
-      render(
-        <OnscreenKeys updateKey={mockUpdateKey} settings={defaultSettings} />,
-      );
+      render(<OnscreenKeys updateKey={mockUpdateKey} />);
       const jumpButton = screen.getByTestId(CONTROLS_TEST_IDS.JUMP_BUTTON);
 
       fireEvent.mouseDown(jumpButton);
@@ -94,25 +71,16 @@ describe('Controls Component', () => {
     });
 
     it('should call updateKey with space false on jump button mouse up', () => {
-      render(
-        <OnscreenKeys updateKey={mockUpdateKey} settings={defaultSettings} />,
-      );
+      render(<OnscreenKeys updateKey={mockUpdateKey} />);
       const jumpButton = screen.getByTestId(CONTROLS_TEST_IDS.JUMP_BUTTON);
 
       fireEvent.mouseUp(jumpButton);
 
-      waitFor(
-        () => {
-          expect(mockUpdateKey).toHaveBeenCalledWith('space', false);
-        },
-        { timeout: BARBARIAN_DEFAULTS.attackSpeed },
-      );
+      expect(mockUpdateKey).toHaveBeenCalledWith('space', false);
     });
 
     it('should call updateKey with q true on normal button mouse down', () => {
-      render(
-        <OnscreenKeys updateKey={mockUpdateKey} settings={defaultSettings} />,
-      );
+      render(<OnscreenKeys updateKey={mockUpdateKey} />);
       const normalButton = screen.getByTestId(CONTROLS_TEST_IDS.NORMAL_BUTTON);
 
       fireEvent.mouseDown(normalButton);
@@ -120,9 +88,7 @@ describe('Controls Component', () => {
     });
 
     it('should call updateKey with e true on special button mouse down', () => {
-      render(
-        <OnscreenKeys updateKey={mockUpdateKey} settings={defaultSettings} />,
-      );
+      render(<OnscreenKeys updateKey={mockUpdateKey} />);
       const specialButton = screen.getByTestId(
         CONTROLS_TEST_IDS.SPECIAL_BUTTON,
       );
@@ -132,9 +98,7 @@ describe('Controls Component', () => {
     });
 
     it('should call updateKey with p true on item button mouse down', () => {
-      render(
-        <OnscreenKeys updateKey={mockUpdateKey} settings={defaultSettings} />,
-      );
+      render(<OnscreenKeys updateKey={mockUpdateKey} />);
       const itemButton = screen.getByTestId(CONTROLS_TEST_IDS.ITEM_BUTTON);
 
       fireEvent.mouseDown(itemButton);
@@ -142,9 +106,7 @@ describe('Controls Component', () => {
     });
 
     it('should call updateKey with ctrl true on crouch button mouse down', () => {
-      render(
-        <OnscreenKeys updateKey={mockUpdateKey} settings={defaultSettings} />,
-      );
+      render(<OnscreenKeys updateKey={mockUpdateKey} />);
       const crouchButton = screen.getByTestId(CONTROLS_TEST_IDS.CROUCH_BUTTON);
 
       fireEvent.mouseDown(crouchButton);
@@ -152,9 +114,7 @@ describe('Controls Component', () => {
     });
 
     it('should call updateKey with ctrl false on crouch button mouse up', () => {
-      render(
-        <OnscreenKeys updateKey={mockUpdateKey} settings={defaultSettings} />,
-      );
+      render(<OnscreenKeys updateKey={mockUpdateKey} />);
       const crouchButton = screen.getByTestId(CONTROLS_TEST_IDS.CROUCH_BUTTON);
 
       fireEvent.mouseUp(crouchButton);
@@ -162,9 +122,7 @@ describe('Controls Component', () => {
     });
 
     it('should call updateKey with ctrl false on crouch button mouse leave', () => {
-      render(
-        <OnscreenKeys updateKey={mockUpdateKey} settings={defaultSettings} />,
-      );
+      render(<OnscreenKeys updateKey={mockUpdateKey} />);
       const crouchButton = screen.getByTestId(CONTROLS_TEST_IDS.CROUCH_BUTTON);
 
       fireEvent.mouseLeave(crouchButton);
@@ -172,9 +130,7 @@ describe('Controls Component', () => {
     });
 
     it('should have correct aria-labels for all buttons', () => {
-      render(
-        <OnscreenKeys updateKey={mockUpdateKey} settings={defaultSettings} />,
-      );
+      render(<OnscreenKeys updateKey={mockUpdateKey} />);
 
       expect(screen.getByLabelText('Jump')).toBeInTheDocument();
       expect(screen.getByLabelText('Crouch')).toBeInTheDocument();
