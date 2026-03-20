@@ -162,7 +162,7 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
       if (specialAttackingRef.current && rigidBodyRef.current) {
         const pos = rigidBodyRef.current.translation();
         rigidBodyRef.current.setTranslation(
-          { x: pos.x + 1, y: pos.y, z: pos.z },
+          { x: pos.x + 0.4, y: pos.y, z: pos.z },
           true,
         );
       }
@@ -222,7 +222,7 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
         const crouchAttackAction = m.clipAction(crouchAttackAnim);
         crouchAttackAction.reset();
         crouchAttackAction.setLoop(THREE.LoopOnce, 1);
-        crouchAttackAction.clampWhenFinished = false;
+        crouchAttackAction.clampWhenFinished = true;
 
         if (currentActionRef.current) {
           currentActionRef.current.fadeOut(0.1);
@@ -240,10 +240,12 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
         normalAttackingRef.current = true;
         setNormalAttacking(true);
 
+        console.log(`d: ${delta}, normal: ${normalAttackingRef.current}`);
+
         const attackAction = m.clipAction(normalAnim);
         attackAction.reset();
         attackAction.setLoop(THREE.LoopOnce, 1);
-        attackAction.clampWhenFinished = false;
+        attackAction.clampWhenFinished = true;
 
         if (currentActionRef.current) {
           currentActionRef.current.fadeOut(0.1);
@@ -270,7 +272,7 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
         const specialAction = m.clipAction(specialAnim);
         specialAction.reset();
         specialAction.setLoop(THREE.LoopOnce, 1);
-        specialAction.clampWhenFinished = false;
+        specialAction.clampWhenFinished = true;
 
         if (currentActionRef.current) {
           currentActionRef.current.fadeOut(0.1);
@@ -296,7 +298,7 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
         const jumpAction = m.clipAction(jumpAnim);
         jumpAction.reset();
         jumpAction.setLoop(THREE.LoopOnce, 1);
-        jumpAction.clampWhenFinished = false;
+        jumpAction.clampWhenFinished = true;
 
         if (currentActionRef.current) {
           currentActionRef.current.fadeOut(0.1);
@@ -317,6 +319,7 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
         const nextAction = m.clipAction(clip);
 
         if (currentActionRef.current !== nextAction) {
+          console.log(`d: ${delta}, normal: ${normalAttackingRef.current}`);
           nextAction.reset();
           nextAction.setLoop(THREE.LoopRepeat, Infinity);
           if (currentActionRef.current) {
