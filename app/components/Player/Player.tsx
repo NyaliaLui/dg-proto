@@ -8,12 +8,13 @@ import {
   ConvexHullCollider,
   RigidBody,
   RapierRigidBody,
+  interactionGroups,
 } from '@react-three/rapier';
 import * as THREE from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 import { SkeletonHelper } from 'three';
 
-import { SHARED_DEFAULTS, PLAYER_DEFAULTS } from '@/app/constants';
+import { SHARED_DEFAULTS, PLAYER_DEFAULTS, GAME_DEFAULTS } from '@/app/constants';
 import { KeyState } from '@/app/components/Player/hooks/useKeyboardControls';
 import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
 import {
@@ -24,14 +25,25 @@ import {
   makeFanVertices,
   BoneVertexMap,
 } from '@/app/utils';
+import type { ClientPlayerState } from '@/app/ai/sharedTypes';
+
+// Collision groups (must match Barbarian.tsx):
+//   0 = player body  — only hit by barbarian hand (group 3)
+//   1 = player sword — only hits barbarian body (group 2)
+//   4 = solid character bodies — collide only with each other (physical push-apart)
+const PLAYER_BODY_GROUPS  = interactionGroups([0], [3]);
+const PLAYER_SWORD_GROUPS = interactionGroups([1], [2]);
+const SOLID_BODY_GROUPS   = interactionGroups([4], [4]);
 
 interface PlayerProps {
   keys: KeyState;
   onHit?: () => void;
   settings: DebugSettings;
+  playerPositionRef?: { current: THREE.Vector3 };
+  playerStateRef?: { current: ClientPlayerState | null };
 }
 
-export function Player({ keys, onHit, settings }: PlayerProps) {
+export function Player({ keys, onHit, settings, playerPositionRef, playerStateRef }: PlayerProps) {
   const rigidBodyRef = useRef<RapierRigidBody>(null);
   const modelRef = useRef<THREE.Group>(null);
   const lastRotationRef = useRef<number>(Math.PI / 2);
@@ -464,6 +476,33 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
           true,
         );
       }
+
+      // Publish position so Barbarian can follow
+      const t = rigidBodyRef.current.translation();
+      if (playerPositionRef) {
+        playerPositionRef.current.set(t.x, t.y, t.z);
+      }
+
+      // Publish full player state for the AI server
+      if (playerStateRef) {
+        const v = rigidBodyRef.current.linvel?.() ?? { x: 0, y: 0, z: 0 };
+        playerStateRef.current = {
+          id: 'player-1',
+          position: { x: t.x, y: t.y, z: t.z },
+          velocity: { x: v.x, y: v.y, z: v.z },
+          hp: 0, // filled in by BarbarianAIClient from playerHPRef
+          maxHp: GAME_DEFAULTS.PLAYER_MAX_HP,
+          facingDirection: lastRotationRef.current > 0 ? 1 : -1,
+          isAttacking: normalAttackingRef.current || crouchAttackingRef.current || specialAttackingRef.current,
+          attackType: normalAttackingRef.current ? 'normal'
+            : crouchAttackingRef.current ? 'crouch'
+            : specialAttackingRef.current ? 'special'
+            : null,
+          attackStartedAt: null,
+          isJumping: jumpingRef.current,
+          isCrouching: crouching,
+        };
+      }
     }
   });
 
@@ -476,7 +515,16 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
       enabledRotations={[false, false, false]}
       colliders={false}
     >
-      {/* Torso capsule */}
+      {/* Solid body — group 4, physically blocks movement between characters */}
+      <CapsuleCollider
+        args={[
+          SHARED_DEFAULTS.COLLIDERS.BODY.halfHeight,
+          SHARED_DEFAULTS.COLLIDERS.BODY.radius,
+        ]}
+        position={[...SHARED_DEFAULTS.COLLIDERS.BODY.position]}
+        collisionGroups={SOLID_BODY_GROUPS}
+      />
+      {/* Torso capsule — group 0, only triggered by barbarian hand (group 3) */}
       <CapsuleCollider
         args={[
           SHARED_DEFAULTS.COLLIDERS.TORSO.halfHeight,
@@ -484,9 +532,10 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
         ]}
         position={torsoPosition}
         sensor
+        collisionGroups={PLAYER_BODY_GROUPS}
         onIntersectionEnter={onHit}
       />
-      {/* Head capsule */}
+      {/* Head capsule — group 0, only triggered by barbarian hand (group 3) */}
       <CapsuleCollider
         args={[
           SHARED_DEFAULTS.COLLIDERS.HEAD.halfHeight,
@@ -494,17 +543,19 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
         ]}
         position={headPosition}
         sensor
+        collisionGroups={PLAYER_BODY_GROUPS}
         onIntersectionEnter={onHit}
       />
-      {/* Sword fan collider - only active during normal attack */}
+      {/* Sword fan collider — group 1, only triggers barbarian body (group 2) */}
       {normalAttacking && (
         <ConvexHullCollider
           args={[fanVertices]}
           position={swordPosition}
           rotation={[...PLAYER_DEFAULTS.COLLIDERS.SWORD.rotation]}
+          collisionGroups={PLAYER_SWORD_GROUPS}
         />
       )}
-      {/* Special attack capsule collider - thin vertical, appears after delay */}
+      {/* Special attack capsule — group 1, only triggers barbarian body (group 2) */}
       {specialColliderActive && (
         <CapsuleCollider
           args={[
@@ -512,14 +563,16 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
             PLAYER_DEFAULTS.COLLIDERS.SPECIAL_SWORD.radius,
           ]}
           position={[...PLAYER_DEFAULTS.COLLIDERS.SPECIAL_SWORD.position]}
+          collisionGroups={PLAYER_SWORD_GROUPS}
         />
       )}
-      {/* Crouch sword fan collider - horizontal, only active during crouch attack */}
+      {/* Crouch sword fan collider — group 1, only triggers barbarian body (group 2) */}
       {crouchAttacking && (
         <ConvexHullCollider
           args={[crouchFanVertices]}
           position={crouchSwordPosition}
           rotation={[...PLAYER_DEFAULTS.COLLIDERS.CROUCH_SWORD.rotation]}
+          collisionGroups={PLAYER_SWORD_GROUPS}
         />
       )}
       <group ref={modelRef}>

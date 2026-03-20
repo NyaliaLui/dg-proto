@@ -7,6 +7,7 @@ import {
   CapsuleCollider,
   RigidBody,
   RapierRigidBody,
+  interactionGroups,
 } from '@react-three/rapier';
 import * as THREE from 'three';
 import { SkeletonUtils } from 'three-stdlib';
@@ -26,14 +27,30 @@ import {
   getBoneWorldPosition,
   BoneVertexMap,
 } from '@/app/utils';
+import type { ClientBarbarianState, BarbarianDecision } from '@/app/ai/sharedTypes';
+import { applyAction, decisionChanged } from '@/app/ai/ActionApplier';
+
+// Collision groups:
+//   0 = player body sensors    — only triggered by group 3
+//   1 = player sword           — only triggers group 2
+//   2 = barbarian body sensors — only triggered by group 1
+//   3 = barbarian hand         — only triggers group 0
+//   4 = solid character bodies — collide only with each other (physical push-apart)
+const BARBARIAN_BODY_GROUPS = interactionGroups([2], [1]);
+const BARBARIAN_HAND_GROUPS  = interactionGroups([3], [0]);
+const SOLID_BODY_GROUPS      = interactionGroups([4], [4]);
 
 interface BarbarianProps {
   id: string;
+  initialPosition?: [number, number, number];
   onDeath?: (id: string) => void;
   settings: DebugSettings;
+  playerPositionRef?: { current: THREE.Vector3 | null };
+  barbarianStatesRef?: { current: Record<string, ClientBarbarianState> };
+  barbarianDecisionsRef?: { current: Record<string, BarbarianDecision | null> };
 }
 
-export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
+export function Barbarian({ id, initialPosition, onDeath, settings, playerPositionRef, barbarianStatesRef, barbarianDecisionsRef }: BarbarianProps) {
   const rigidBodyRef = useRef<RapierRigidBody>(null);
   const modelRef = useRef<THREE.Group>(null);
   const lastRotationRef = useRef<number>(-Math.PI / 2);
@@ -63,6 +80,7 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
   const isGroundedRef = useRef<boolean>(true);
   const jumpStartYRef = useRef<number>(0);
   const jumpPendingRef = useRef<boolean>(false);
+  const lastDecisionRef = useRef<{ action: BarbarianDecision['action']; direction: number } | null>(null);
 
   const handleHit = useCallback(() => {
     setHp((prevHp) => {
@@ -325,6 +343,24 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
       }
     }
 
+    // Apply AI decision if one is available and has changed
+    if (barbarianDecisionsRef) {
+      const decision = barbarianDecisionsRef.current[id] ?? null;
+      if (decision && decisionChanged(lastDecisionRef.current, decision)) {
+        applyAction(decision.action, decision.direction, {
+          setIsAttacking,
+          setIsWalking,
+          setIsKicking,
+          setIsBlocking,
+          setIsRightBlocking,
+          setIsDucking,
+          setDirection,
+          setJumpPending: () => { jumpPendingRef.current = true; },
+        });
+        lastDecisionRef.current = { action: decision.action, direction: decision.direction };
+      }
+    }
+
     // Movement and rotation logic
     if (rigidBodyRef.current) {
       const moveSpeed = SHARED_DEFAULTS.MOVE_SPEED;
@@ -402,6 +438,47 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
       }
 
       rigidBodyRef.current.setLinvel(velocity, true);
+
+      // Publish own state so BarbarianAIClient can send it to the server
+      if (barbarianStatesRef) {
+        const t = rigidBodyRef.current.translation();
+        const v = rigidBodyRef.current.linvel?.() ?? { x: 0, y: 0, z: 0 };
+        const currentAction = isAttacking ? 'ATTACK'
+          : isWalking ? 'CHASE'
+          : isJumping ? 'JUMP'
+          : isKicking ? 'KICK'
+          : isBlocking ? 'LEFT_BLOCK'
+          : isRightBlocking ? 'RIGHT_BLOCK'
+          : isDucking ? 'DUCK'
+          : 'IDLE';
+        barbarianStatesRef.current[id] = {
+          id,
+          position: { x: t.x, y: t.y, z: t.z },
+          velocity: { x: v.x, y: v.y, z: v.z },
+          hp,
+          maxHp: GAME_DEFAULTS.INITIAL_BARBARIAN_HP,
+          facingDirection: lastRotationRef.current > 0 ? 1 : -1,
+          isGrounded: isGroundedRef.current,
+          currentAction,
+        };
+      }
+
+      // Follow player position when walking (if AI not driving direction)
+      if (playerPositionRef?.current && isWalking && !isAttacking && !isKicking && !isBlocking && !isRightBlocking && !isDucking) {
+        const t = rigidBodyRef.current.translation();
+        const dx = playerPositionRef.current.x - t.x;
+        const dz = playerPositionRef.current.z - t.z;
+        const dist = Math.sqrt(dx * dx + dz * dz);
+        if (dist > 0.1) {
+          const nx = dx / dist;
+          const nz = dz / dist;
+          rigidBodyRef.current.setLinvel({ x: nx * SHARED_DEFAULTS.MOVE_SPEED, y: velocity.y, z: nz * SHARED_DEFAULTS.MOVE_SPEED }, true);
+          const angle = Math.atan2(nx, nz);
+          const halfAngle = angle / 2;
+          rigidBodyRef.current.setRotation({ x: 0, y: Math.sin(halfAngle), z: 0, w: Math.cos(halfAngle) }, true);
+          lastRotationRef.current = angle;
+        }
+      }
     }
   });
 
@@ -427,12 +504,21 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
     <RigidBody
       ref={rigidBodyRef}
       type="dynamic"
-      position={[1, 0.9, 0]}
+      position={initialPosition ?? [1, 0.9, 0]}
       lockRotations
       enabledRotations={[false, false, false]}
       colliders={false}
     >
-      {/* Torso capsule */}
+      {/* Solid body — group 4, physically blocks movement between characters */}
+      <CapsuleCollider
+        args={[
+          SHARED_DEFAULTS.COLLIDERS.BODY.halfHeight,
+          SHARED_DEFAULTS.COLLIDERS.BODY.radius,
+        ]}
+        position={[...SHARED_DEFAULTS.COLLIDERS.BODY.position]}
+        collisionGroups={SOLID_BODY_GROUPS}
+      />
+      {/* Torso capsule — group 2, only triggered by player sword (group 1) */}
       <CapsuleCollider
         args={[
           SHARED_DEFAULTS.COLLIDERS.TORSO.halfHeight,
@@ -440,9 +526,10 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
         ]}
         position={torsoPosition}
         sensor
+        collisionGroups={BARBARIAN_BODY_GROUPS}
         onIntersectionEnter={handleHit}
       />
-      {/* Head capsule */}
+      {/* Head capsule — group 2, only triggered by player sword (group 1) */}
       <CapsuleCollider
         args={[
           SHARED_DEFAULTS.COLLIDERS.HEAD.halfHeight,
@@ -450,9 +537,10 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
         ]}
         position={headPosition}
         sensor
+        collisionGroups={BARBARIAN_BODY_GROUPS}
         onIntersectionEnter={handleHit}
       />
-      {/* Hand capsule - only active during attack */}
+      {/* Hand capsule — group 3, only triggers player body (group 0) */}
       {isAttacking && (
         <CapsuleCollider
           args={[
@@ -460,6 +548,7 @@ export function Barbarian({ id, onDeath, settings }: BarbarianProps) {
             BARBARIAN_DEFAULTS.COLLIDERS.HAND.radius,
           ]}
           position={handPosition}
+          collisionGroups={BARBARIAN_HAND_GROUPS}
         />
       )}
       {/* HP blocks floating above head */}
