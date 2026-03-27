@@ -1,11 +1,10 @@
 'use client';
 
-import { useRef, useMemo, useEffect, useState } from 'react';
+import { useRef, useMemo, useEffect, useState, RefObject } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useFBX } from '@react-three/drei';
 import {
   CapsuleCollider,
-  ConvexHullCollider,
   RigidBody,
   RapierRigidBody,
 } from '@react-three/rapier';
@@ -21,17 +20,52 @@ import {
   getBoneList,
   makeBoneVertexMap,
   getBoneWorldPosition,
-  makeFanVertices,
   BoneVertexMap,
 } from '@/app/utils';
+
+function castSwordRay(
+  raycaster: THREE.Raycaster,
+  origin: THREE.Vector3,
+  direction: THREE.Vector3,
+  maxDist: number,
+  targets: THREE.Object3D[],
+  hits: Set<string>,
+  onHit?: (id: string) => void,
+) {
+  raycaster.set(origin, direction);
+  raycaster.far = maxDist;
+  const intersections = raycaster.intersectObjects(targets, true);
+  for (const intersection of intersections) {
+    let obj: THREE.Object3D | null = intersection.object;
+    while (obj) {
+      if (obj.userData.barbarianId) {
+        const id = obj.userData.barbarianId as string;
+        if (!hits.has(id)) {
+          hits.add(id);
+          onHit?.(id);
+        }
+        break;
+      }
+      obj = obj.parent;
+    }
+  }
+}
 
 interface PlayerProps {
   keys: KeyState;
   onHit?: () => void;
+  onSwordHit?: (barbarianId: string) => void;
+  barbarianTargets?: RefObject<Map<string, THREE.Object3D> | null>;
   settings: DebugSettings;
 }
 
-export function Player({ keys, onHit, settings }: PlayerProps) {
+export function Player({
+  keys,
+  onHit,
+  onSwordHit,
+  barbarianTargets,
+  settings,
+}: PlayerProps) {
   const rigidBodyRef = useRef<RapierRigidBody>(null);
   const modelRef = useRef<THREE.Group>(null);
   const lastRotationRef = useRef<number>(Math.PI / 2);
@@ -41,34 +75,8 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
   const [headPosition, setHeadPosition] = useState<[number, number, number]>([
     ...SHARED_DEFAULTS.COLLIDERS.HEAD.position,
   ]);
-  const [swordPosition, setSwordPosition] = useState<[number, number, number]>([
-    ...PLAYER_DEFAULTS.COLLIDERS.SWORD.position,
-  ]);
-  const [crouchSwordPosition, setCrouchSwordPosition] = useState<
-    [number, number, number]
-  >([...PLAYER_DEFAULTS.COLLIDERS.CROUCH_SWORD.position]);
-  const fanVertices = useMemo(
-    () =>
-      makeFanVertices(
-        PLAYER_DEFAULTS.COLLIDERS.SWORD.innerRadius,
-        PLAYER_DEFAULTS.COLLIDERS.SWORD.outerRadius,
-        PLAYER_DEFAULTS.COLLIDERS.SWORD.halfAngle,
-        PLAYER_DEFAULTS.COLLIDERS.SWORD.halfThickness,
-        PLAYER_DEFAULTS.COLLIDERS.SWORD.segments,
-      ),
-    [],
-  );
-  const crouchFanVertices = useMemo(
-    () =>
-      makeFanVertices(
-        PLAYER_DEFAULTS.COLLIDERS.CROUCH_SWORD.innerRadius,
-        PLAYER_DEFAULTS.COLLIDERS.CROUCH_SWORD.outerRadius,
-        PLAYER_DEFAULTS.COLLIDERS.CROUCH_SWORD.halfAngle,
-        PLAYER_DEFAULTS.COLLIDERS.CROUCH_SWORD.halfThickness,
-        PLAYER_DEFAULTS.COLLIDERS.CROUCH_SWORD.segments,
-      ),
-    [],
-  );
+  const raycasterRef = useRef(new THREE.Raycaster());
+  const attackHitsRef = useRef<Set<string>>(new Set());
   const { scene } = useThree();
   const skeletonHelperRef = useRef<SkeletonHelper | null>(null);
   const boneVertexMapRef = useRef<BoneVertexMap | null>(null);
@@ -218,6 +226,7 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
       ) {
         crouchAttackingRef.current = true;
         setCrouchAttacking(true);
+        attackHitsRef.current.clear();
 
         const crouchAttackAction = m.clipAction(crouchAttackAnim);
         crouchAttackAction.reset();
@@ -239,6 +248,7 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
       ) {
         normalAttackingRef.current = true;
         setNormalAttacking(true);
+        attackHitsRef.current.clear();
 
         console.log(`d: ${delta}, normal: ${normalAttackingRef.current}`);
 
@@ -262,12 +272,13 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
       ) {
         specialAttackingRef.current = true;
         setSpecialAttacking(true);
+        attackHitsRef.current.clear();
 
-        // Activate the special collider after a delay
+        // Activate the special ray after a delay
         specialTimerRef.current = setTimeout(() => {
           setSpecialColliderActive(true);
           specialTimerRef.current = null;
-        }, PLAYER_DEFAULTS.COLLIDERS.SPECIAL_SWORD.delay * 1000);
+        }, PLAYER_DEFAULTS.RAYCAST.SPECIAL_DELAY * 1000);
 
         const specialAction = m.clipAction(specialAnim);
         specialAction.reset();
@@ -373,40 +384,57 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
           ]);
         }
 
-        // Update sword position (only during normal attack)
-        if (normalAttacking) {
-          const swordPos = getBoneWorldPosition(
-            'mixamorigSpine1',
-            boneVertexMapRef.current,
-            positions,
-          );
-          if (swordPos) {
-            swordPos.multiplyScalar(SHARED_DEFAULTS.SCALE);
-            setSwordPosition([
-              swordPos.x,
-              swordPos.y + PLAYER_DEFAULTS.COLLIDERS.SWORD.offset.y,
-              swordPos.z + PLAYER_DEFAULTS.COLLIDERS.SWORD.offset.z,
-            ]);
-          }
-        }
+        // Raycast for all sword attacks
+        if (normalAttacking || crouchAttacking || specialColliderActive) {
+          const swordBone = model.getObjectByName('mixamorigSword_joint');
 
-        // Update crouch sword position (only during crouch attack)
-        if (crouchAttacking) {
-          const crouchSwordPos = getBoneWorldPosition(
-            'mixamorigSpine1',
-            boneVertexMapRef.current,
-            positions,
-          );
-          if (crouchSwordPos) {
-            crouchSwordPos.multiplyScalar(SHARED_DEFAULTS.SCALE);
-            setCrouchSwordPosition([
-              crouchSwordPos.x,
-              crouchSwordPos.y +
-                PLAYER_DEFAULTS.COLLIDERS.CROUCH_SWORD.offset.y,
-              crouchSwordPos.z +
-                PLAYER_DEFAULTS.COLLIDERS.CROUCH_SWORD.offset.z,
-            ]);
+          if (swordBone) {
+            const origin = new THREE.Vector3();
+            swordBone.getWorldPosition(origin);
+
+            const quat = new THREE.Quaternion();
+            swordBone.getWorldQuaternion(quat);
+            const direction = new THREE.Vector3(0, 0, 1)
+              .applyQuaternion(quat)
+              .normalize();
+
+            // Hit detection against barbarian targets
+            if (barbarianTargets?.current) {
+              const targets: THREE.Object3D[] = [];
+              for (const group of barbarianTargets.current.values()) {
+                targets.push(group);
+              }
+              if (targets.length > 0) {
+                castSwordRay(
+                  raycasterRef.current,
+                  origin,
+                  direction,
+                  PLAYER_DEFAULTS.RAYCAST.SWORD_LENGTH,
+                  targets,
+                  attackHitsRef.current,
+                  onSwordHit,
+                );
+              }
+            }
+
+            // Debug arrow
+            if (settings.debugMode) {
+              const existing = scene.getObjectByName('swordRayDebug');
+              if (existing) scene.remove(existing);
+              const arrow = new THREE.ArrowHelper(
+                direction,
+                origin,
+                PLAYER_DEFAULTS.RAYCAST.SWORD_LENGTH,
+                PLAYER_DEFAULTS.RAYCAST.COLOR,
+              );
+              arrow.name = 'swordRayDebug';
+              scene.add(arrow);
+            }
           }
+        } else if (settings.debugMode) {
+          // Clean up debug arrows when not attacking
+          const swordArrow = scene.getObjectByName('swordRayDebug');
+          if (swordArrow) scene.remove(swordArrow);
         }
       }
     }
@@ -499,32 +527,6 @@ export function Player({ keys, onHit, settings }: PlayerProps) {
         sensor
         onIntersectionEnter={onHit}
       />
-      {/* Sword fan collider - only active during normal attack */}
-      {normalAttacking && (
-        <ConvexHullCollider
-          args={[fanVertices]}
-          position={swordPosition}
-          rotation={[...PLAYER_DEFAULTS.COLLIDERS.SWORD.rotation]}
-        />
-      )}
-      {/* Special attack capsule collider - thin vertical, appears after delay */}
-      {specialColliderActive && (
-        <CapsuleCollider
-          args={[
-            PLAYER_DEFAULTS.COLLIDERS.SPECIAL_SWORD.halfHeight,
-            PLAYER_DEFAULTS.COLLIDERS.SPECIAL_SWORD.radius,
-          ]}
-          position={[...PLAYER_DEFAULTS.COLLIDERS.SPECIAL_SWORD.position]}
-        />
-      )}
-      {/* Crouch sword fan collider - horizontal, only active during crouch attack */}
-      {crouchAttacking && (
-        <ConvexHullCollider
-          args={[crouchFanVertices]}
-          position={crouchSwordPosition}
-          rotation={[...PLAYER_DEFAULTS.COLLIDERS.CROUCH_SWORD.rotation]}
-        />
-      )}
       <group ref={modelRef}>
         <primitive
           object={model}

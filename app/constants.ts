@@ -33,33 +33,10 @@ export const PLAYER_DEFAULTS = {
     CROUCH_ATTACK: '/models/Player/SwordCrouchSlashWithoutSkin.fbx',
     SPECIAL: '/models/Player/SwordSpecialWithoutSkin.fbx',
   },
-  COLLIDERS: {
-    SWORD: {
-      innerRadius: 0.05,
-      outerRadius: 1.4,
-      halfAngle: Math.PI / 4,
-      halfThickness: 0.05,
-      segments: 10,
-      position: [0, 1.6, 0] as const,
-      offset: { y: -0.89, z: 0 },
-      rotation: [0, 0, -Math.PI / 5] as const,
-    },
-    SPECIAL_SWORD: {
-      halfHeight: 0.4,
-      radius: 0.05,
-      position: [0, 0.5, 1.7] as const,
-      delay: 1.1,
-    },
-    CROUCH_SWORD: {
-      innerRadius: 0.05,
-      outerRadius: 1.4,
-      halfAngle: Math.PI / 4,
-      halfThickness: 0.05,
-      segments: 10,
-      position: [0, 1.6, 0] as const,
-      offset: { y: -0.89, z: 0 },
-      rotation: [0, 0, 0] as const,
-    },
+  RAYCAST: {
+    SWORD_LENGTH: 1.2,
+    SPECIAL_DELAY: 1.1,
+    COLOR: 0x00ff00,
   },
 };
 
