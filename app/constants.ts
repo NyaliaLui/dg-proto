@@ -27,15 +27,17 @@ export const SHARED_DEFAULTS = {
 export const PLAYER_DEFAULTS = {
   MODEL: '/models/Player/Paladin.fbx',
   ANIMATIONS: {
-    NORMAL: '/models/Player/SlashWithoutSkin.fbx',
-    CROUCH: '/models/Player/CrouchWithoutSkin.fbx',
-    JUMP: '/models/Player/SwordJumpWithoutSkin.fbx',
-    CROUCH_ATTACK: '/models/Player/SwordCrouchSlashWithoutSkin.fbx',
-    SPECIAL: '/models/Player/SwordSpecialWithoutSkin.fbx',
+    IDLE: 'Armature|Idle',
+    WALK: 'Armature|Walk',
+    NORMAL: 'Armature|Normal_Attack',
+    CROUCH: 'Armature|Crouch',
+    JUMP: 'Armature|Jump',
+    CROUCH_ATTACK: 'Armature|Crouch_Normal_Attack',
+    SPECIAL: 'Armature|Special_Attack',
   },
   RAYCAST: {
     SWORD_LENGTH: 1.2,
-    SPECIAL_DELAY: 1.1,
+    SPECIAL_DELAY: 0.3,
     COLOR: 0x00ff00,
   },
 };

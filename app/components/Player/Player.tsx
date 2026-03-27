@@ -16,7 +16,7 @@ import { SHARED_DEFAULTS, PLAYER_DEFAULTS } from '@/app/constants';
 import { KeyState } from '@/app/components/Player/hooks/useKeyboardControls';
 import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
 import {
-  getAnimation,
+  getAnimationByName,
   getBoneList,
   makeBoneVertexMap,
   getBoneWorldPosition,
@@ -111,16 +111,35 @@ export function Player({
   // Load the skinned model
   const modelFbx = useFBX(PLAYER_DEFAULTS.MODEL);
 
-  // Load animations from separate files
-  const idleAnim = getAnimation(useFBX(SHARED_DEFAULTS.ANIMATIONS.IDLE));
-  const walkAnim = getAnimation(useFBX(SHARED_DEFAULTS.ANIMATIONS.WALK));
-  const normalAnim = getAnimation(useFBX(PLAYER_DEFAULTS.ANIMATIONS.NORMAL));
-  const crouchAnim = getAnimation(useFBX(PLAYER_DEFAULTS.ANIMATIONS.CROUCH));
-  const jumpAnim = getAnimation(useFBX(PLAYER_DEFAULTS.ANIMATIONS.JUMP));
-  const crouchAttackAnim = getAnimation(
-    useFBX(PLAYER_DEFAULTS.ANIMATIONS.CROUCH_ATTACK),
+  // Extract animations embedded in the model FBX
+  const idleAnim = getAnimationByName(
+    modelFbx.animations,
+    PLAYER_DEFAULTS.ANIMATIONS.IDLE,
   );
-  const specialAnim = getAnimation(useFBX(PLAYER_DEFAULTS.ANIMATIONS.SPECIAL));
+  const walkAnim = getAnimationByName(
+    modelFbx.animations,
+    PLAYER_DEFAULTS.ANIMATIONS.WALK,
+  );
+  const normalAnim = getAnimationByName(
+    modelFbx.animations,
+    PLAYER_DEFAULTS.ANIMATIONS.NORMAL,
+  );
+  const crouchAnim = getAnimationByName(
+    modelFbx.animations,
+    PLAYER_DEFAULTS.ANIMATIONS.CROUCH,
+  );
+  const jumpAnim = getAnimationByName(
+    modelFbx.animations,
+    PLAYER_DEFAULTS.ANIMATIONS.JUMP,
+  );
+  const crouchAttackAnim = getAnimationByName(
+    modelFbx.animations,
+    PLAYER_DEFAULTS.ANIMATIONS.CROUCH_ATTACK,
+  );
+  const specialAnim = getAnimationByName(
+    modelFbx.animations,
+    PLAYER_DEFAULTS.ANIMATIONS.SPECIAL,
+  );
 
   // Clone the model so it can be used independently
   const model = useMemo(() => SkeletonUtils.clone(modelFbx), [modelFbx]);
@@ -330,7 +349,6 @@ export function Player({
         const nextAction = m.clipAction(clip);
 
         if (currentActionRef.current !== nextAction) {
-          console.log(`d: ${delta}, normal: ${normalAttackingRef.current}`);
           nextAction.reset();
           nextAction.setLoop(THREE.LoopRepeat, Infinity);
           if (currentActionRef.current) {
