@@ -89,6 +89,7 @@ jest.mock('@react-three/rapier', () => {
   const React = jest.requireActual('react');
   let colliderIndex = 0;
   return {
+    interactionGroups: jest.fn(() => 0),
     RigidBody: React.forwardRef(function MockRigidBody(
       {
         children,
