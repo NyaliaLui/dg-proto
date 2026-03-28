@@ -1,11 +1,14 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { Physics } from '@react-three/rapier';
 import { Player } from '@/app/components/Player/Player';
-import { Barbarian } from '@/app/components/Barbarian/Barbarian';
+import {
+  Barbarian,
+  BarbarianHandle,
+} from '@/app/components/Barbarian/Barbarian';
 import { World } from '@/app/components/World';
 import { useKeyboardControls } from '@/app/components/Player/hooks/useKeyboardControls';
 import { Controls } from '@/app/components/Player/Controls';
@@ -13,6 +16,7 @@ import { DebugGui } from '@/app/components/DebugGui';
 import { HealthBar } from '@/app/components/Player/HealthBar';
 import { GameOver } from '@/app/components/GameOver';
 import { useDebugSettings } from '@/app/components/hooks/useDebugSettings';
+import * as THREE from 'three';
 import { ENVIRONMENT_DEFAULTS, GAME_DEFAULTS } from '@/app/constants';
 import { Button } from 'flowbite-react';
 
@@ -32,6 +36,8 @@ export default function Home() {
   );
   const [playerHP, setPlayerHP] = useState(GAME_DEFAULTS.PLAYER_MAX_HP);
   const [debugGuiHidden, setDebugGuiHidden] = useState(true);
+  const barbarianGroupsRef = useRef<Map<string, THREE.Object3D>>(new Map());
+  const barbarianRefsRef = useRef<Map<string, BarbarianHandle>>(new Map());
 
   const handleBarbarianDeath = useCallback((id: string) => {
     setBarbarians((prevBarbarians) => {
@@ -45,16 +51,46 @@ export default function Home() {
     setPlayerHP((prevHP) => Math.max(0, prevHP - 10));
   }, []);
 
+  const handleBarbarianRegister = useCallback(
+    (id: string, model: THREE.Object3D) => {
+      barbarianGroupsRef.current.set(id, model);
+    },
+    [],
+  );
+
+  const handleBarbarianUnregister = useCallback((id: string) => {
+    barbarianGroupsRef.current.delete(id);
+  }, []);
+
+  const handleSwordHit = useCallback((barbarianId: string) => {
+    barbarianRefsRef.current.get(barbarianId)?.takeDamage();
+  }, []);
+
   const barbarianComponents = useMemo(() => {
     return Object.keys(barbarians).map((id) => (
       <Barbarian
         key={id}
+        ref={(handle) => {
+          if (handle) {
+            barbarianRefsRef.current.set(id, handle);
+          } else {
+            barbarianRefsRef.current.delete(id);
+          }
+        }}
         id={id}
         onDeath={handleBarbarianDeath}
+        onRegister={handleBarbarianRegister}
+        onUnregister={handleBarbarianUnregister}
         settings={settings}
       />
     ));
-  }, [barbarians, handleBarbarianDeath, settings]);
+  }, [
+    barbarians,
+    handleBarbarianDeath,
+    handleBarbarianRegister,
+    handleBarbarianUnregister,
+    settings,
+  ]);
 
   return (
     <div className="flex h-screen w-full bg-zinc-900">
@@ -72,7 +108,13 @@ export default function Home() {
         />
         <Physics gravity={[0, 0, 0]} debug={settings.debugMode}>
           {barbarianComponents}
-          <Player keys={keys} onHit={handlePlayerHit} settings={settings} />
+          <Player
+            keys={keys}
+            onHit={handlePlayerHit}
+            onSwordHit={handleSwordHit}
+            barbarianTargets={barbarianGroupsRef}
+            settings={settings}
+          />
         </Physics>
         <World />
         <OrbitControls

@@ -2,8 +2,11 @@ import '@testing-library/jest-dom';
 import { expect } from '@jest/globals';
 import { create, ReactThreeTestRenderer } from '@react-three/test-renderer';
 import { Group } from 'three';
-import { act } from 'react';
-import { Barbarian } from '@/app/components/Barbarian/Barbarian';
+import { act, createRef } from 'react';
+import {
+  Barbarian,
+  BarbarianHandle,
+} from '@/app/components/Barbarian/Barbarian';
 import { DebugSettings } from '@/app/components/hooks/useDebugSettings';
 import {
   BARBARIAN_DEFAULTS,
@@ -1207,6 +1210,115 @@ describe('Barbarian Component', () => {
         (call) => call[0].x !== 0,
       );
       expect(hasHorizontalMovement).toBe(true);
+    });
+  });
+
+  describe('Registration', () => {
+    it('should call onRegister with id and model on mount', async () => {
+      const mockOnRegister = jest.fn();
+      await act(async () => {
+        await create(
+          <Barbarian
+            id="test-barbarian"
+            onRegister={mockOnRegister}
+            settings={defaultSettings}
+          />,
+        );
+      });
+
+      expect(mockOnRegister).toHaveBeenCalledWith(
+        'test-barbarian',
+        expect.any(Object),
+      );
+    });
+
+    it('should call onUnregister with id on unmount', async () => {
+      const mockOnUnregister = jest.fn();
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Barbarian
+            id="test-barbarian"
+            onUnregister={mockOnUnregister}
+            settings={defaultSettings}
+          />,
+        );
+      });
+
+      const callCountBeforeUnmount = mockOnUnregister.mock.calls.length;
+
+      await act(async () => {
+        await renderer!.unmount();
+      });
+
+      // Should have at least one more call after unmount
+      expect(mockOnUnregister.mock.calls.length).toBeGreaterThan(
+        callCountBeforeUnmount,
+      );
+      expect(mockOnUnregister).toHaveBeenCalledWith('test-barbarian');
+    });
+  });
+
+  describe('takeDamage via ref', () => {
+    it('should decrement HP when takeDamage is called', async () => {
+      const ref = createRef<BarbarianHandle>();
+      const mockOnDeath = jest.fn();
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Barbarian
+            ref={ref}
+            id="test-barbarian"
+            onDeath={mockOnDeath}
+            settings={defaultSettings}
+          />,
+        );
+      });
+
+      // Reuse HP blocks counting logic
+      const countHpBlocks = () => {
+        const rigidBody = renderer!.scene.children[0];
+        const hpGroup = rigidBody.children.find(
+          (child: { type: string; children: { type: string }[] }) =>
+            child.type === 'Group' &&
+            child.children.some((c: { type: string }) => c.type === 'Mesh'),
+        );
+        if (!hpGroup) return 0;
+        return hpGroup.children.filter(
+          (child: { type: string }) => child.type === 'Mesh',
+        ).length;
+      };
+
+      expect(countHpBlocks()).toBe(GAME_DEFAULTS.INITIAL_BARBARIAN_HP);
+
+      await act(async () => {
+        ref.current!.takeDamage();
+      });
+
+      expect(countHpBlocks()).toBe(GAME_DEFAULTS.INITIAL_BARBARIAN_HP - 1);
+    });
+
+    it('should call onDeath when takeDamage reduces HP to zero', async () => {
+      const ref = createRef<BarbarianHandle>();
+      const mockOnDeath = jest.fn();
+      await act(async () => {
+        await create(
+          <Barbarian
+            ref={ref}
+            id="test-barbarian"
+            onDeath={mockOnDeath}
+            settings={defaultSettings}
+          />,
+        );
+      });
+
+      await act(async () => {
+        for (let i = 0; i < GAME_DEFAULTS.INITIAL_BARBARIAN_HP; i++) {
+          ref.current!.takeDamage();
+        }
+      });
+
+      expect(mockOnDeath).toHaveBeenCalledWith('test-barbarian');
     });
   });
 

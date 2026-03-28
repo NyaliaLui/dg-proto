@@ -27,39 +27,18 @@ export const SHARED_DEFAULTS = {
 export const PLAYER_DEFAULTS = {
   MODEL: '/models/Player/Paladin.fbx',
   ANIMATIONS: {
-    NORMAL: '/models/Player/SlashWithoutSkin.fbx',
-    CROUCH: '/models/Player/CrouchWithoutSkin.fbx',
-    JUMP: '/models/Player/SwordJumpWithoutSkin.fbx',
-    CROUCH_ATTACK: '/models/Player/SwordCrouchSlashWithoutSkin.fbx',
-    SPECIAL: '/models/Player/SwordSpecialWithoutSkin.fbx',
+    IDLE: 'Armature|Idle',
+    WALK: 'Armature|Walk',
+    NORMAL: 'Armature|Normal_Attack',
+    CROUCH: 'Armature|Crouch',
+    JUMP: 'Armature|Jump',
+    CROUCH_ATTACK: 'Armature|Crouch_Normal_Attack',
+    SPECIAL: 'Armature|Special_Attack',
   },
-  COLLIDERS: {
-    SWORD: {
-      innerRadius: 0.05,
-      outerRadius: 1.4,
-      halfAngle: Math.PI / 4,
-      halfThickness: 0.05,
-      segments: 10,
-      position: [0, 1.6, 0] as const,
-      offset: { y: -0.89, z: 0 },
-      rotation: [0, 0, -Math.PI / 5] as const,
-    },
-    SPECIAL_SWORD: {
-      halfHeight: 0.4,
-      radius: 0.05,
-      position: [0, 0.5, 1.7] as const,
-      delay: 1.1,
-    },
-    CROUCH_SWORD: {
-      innerRadius: 0.05,
-      outerRadius: 1.4,
-      halfAngle: Math.PI / 4,
-      halfThickness: 0.05,
-      segments: 10,
-      position: [0, 1.6, 0] as const,
-      offset: { y: -0.89, z: 0 },
-      rotation: [0, 0, 0] as const,
-    },
+  RAYCAST: {
+    SWORD_LENGTH: 1.2,
+    SPECIAL_DELAY: 0.3,
+    COLOR: 0x00ff00,
   },
 };
 

@@ -6,6 +6,18 @@ export function getAnimation(model: THREE.Group<THREE.Object3DEventMap>) {
   return model.animations[0];
 }
 
+export function getAnimationByName(
+  clips: THREE.AnimationClip[],
+  name: string,
+): THREE.AnimationClip {
+  const clip = clips.find((c) => c.name === name);
+  if (!clip)
+    throw new Error(
+      `Animation "${name}" not found. Available: ${clips.map((c) => c.name).join(', ')}`,
+    );
+  return clip;
+}
+
 // Log all children of a model with their positions
 export function logModelChildren(
   object: THREE.Object3D,
