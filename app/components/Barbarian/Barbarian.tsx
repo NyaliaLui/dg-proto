@@ -68,7 +68,20 @@ interface BarbarianProps {
 }
 
 export const Barbarian = forwardRef<BarbarianHandle, BarbarianProps>(
-  function Barbarian({ id, initialPosition, onDeath, onRegister, onUnregister, settings, playerPositionRef, barbarianStatesRef, barbarianDecisionsRef }, ref) {
+  function Barbarian(
+    {
+      id,
+      initialPosition,
+      onDeath,
+      onRegister,
+      onUnregister,
+      settings,
+      playerPositionRef,
+      barbarianStatesRef,
+      barbarianDecisionsRef,
+    },
+    ref,
+  ) {
     const rigidBodyRef = useRef<RapierRigidBody>(null);
     const modelRef = useRef<THREE.Group>(null);
     const lastRotationRef = useRef<number>(-Math.PI / 2);
@@ -413,7 +426,8 @@ export const Barbarian = forwardRef<BarbarianHandle, BarbarianProps>(
           // Stamp strategic action so utility AI defers during the animation
           if (
             (
-              BARBARIAN_DEFAULTS.UTILITY_AI.STRATEGIC_ACTIONS as readonly string[]
+              BARBARIAN_DEFAULTS.UTILITY_AI
+                .STRATEGIC_ACTIONS as readonly string[]
             ).includes(decision.action)
           ) {
             strategicActionStartRef.current = performance.now();
@@ -558,14 +572,21 @@ export const Barbarian = forwardRef<BarbarianHandle, BarbarianProps>(
         if (barbarianStatesRef) {
           const t = rigidBodyRef.current.translation();
           const v = rigidBodyRef.current.linvel?.() ?? { x: 0, y: 0, z: 0 };
-          const currentAction = isAttacking ? 'ATTACK'
-            : isWalking ? 'CHASE'
-            : isJumping ? 'JUMP'
-            : isKicking ? 'KICK'
-            : isBlocking ? 'LEFT_BLOCK'
-            : isRightBlocking ? 'RIGHT_BLOCK'
-            : isDucking ? 'DUCK'
-            : 'IDLE';
+          const currentAction = isAttacking
+            ? 'ATTACK'
+            : isWalking
+              ? 'CHASE'
+              : isJumping
+                ? 'JUMP'
+                : isKicking
+                  ? 'KICK'
+                  : isBlocking
+                    ? 'LEFT_BLOCK'
+                    : isRightBlocking
+                      ? 'RIGHT_BLOCK'
+                      : isDucking
+                        ? 'DUCK'
+                        : 'IDLE';
           barbarianStatesRef.current[id] = {
             id,
             position: { x: t.x, y: t.y, z: t.z },
@@ -579,7 +600,15 @@ export const Barbarian = forwardRef<BarbarianHandle, BarbarianProps>(
         }
 
         // Follow player position when walking (if AI not driving direction)
-        if (playerPositionRef?.current && isWalking && !isAttacking && !isKicking && !isBlocking && !isRightBlocking && !isDucking) {
+        if (
+          playerPositionRef?.current &&
+          isWalking &&
+          !isAttacking &&
+          !isKicking &&
+          !isBlocking &&
+          !isRightBlocking &&
+          !isDucking
+        ) {
           const t = rigidBodyRef.current.translation();
           const dx = playerPositionRef.current.x - t.x;
           const dz = playerPositionRef.current.z - t.z;
@@ -587,10 +616,20 @@ export const Barbarian = forwardRef<BarbarianHandle, BarbarianProps>(
           if (dist > 0.1) {
             const nx = dx / dist;
             const nz = dz / dist;
-            rigidBodyRef.current.setLinvel({ x: nx * SHARED_DEFAULTS.MOVE_SPEED, y: velocity.y, z: nz * SHARED_DEFAULTS.MOVE_SPEED }, true);
+            rigidBodyRef.current.setLinvel(
+              {
+                x: nx * SHARED_DEFAULTS.MOVE_SPEED,
+                y: velocity.y,
+                z: nz * SHARED_DEFAULTS.MOVE_SPEED,
+              },
+              true,
+            );
             const angle = Math.atan2(nx, nz);
             const halfAngle = angle / 2;
-            rigidBodyRef.current.setRotation({ x: 0, y: Math.sin(halfAngle), z: 0, w: Math.cos(halfAngle) }, true);
+            rigidBodyRef.current.setRotation(
+              { x: 0, y: Math.sin(halfAngle), z: 0, w: Math.cos(halfAngle) },
+              true,
+            );
             lastRotationRef.current = angle;
           }
         }

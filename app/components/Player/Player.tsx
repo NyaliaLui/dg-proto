@@ -33,8 +33,8 @@ import type { ClientPlayerState } from '@/app/ai/sharedTypes';
 //   0 = player body  — only hit by barbarian hand (group 3)
 //   1 = player sword — only hits barbarian body (group 2)
 //   4 = solid character bodies — collide only with each other (physical push-apart)
-const PLAYER_BODY_GROUPS  = interactionGroups([0], [3]);
-const SOLID_BODY_GROUPS   = interactionGroups([4], [4]);
+const PLAYER_BODY_GROUPS = interactionGroups([0], [3]);
+const SOLID_BODY_GROUPS = interactionGroups([4], [4]);
 
 function castSwordRay(
   raycaster: THREE.Raycaster,
