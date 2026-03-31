@@ -39,7 +39,7 @@ function createInitialBarbarians(): Record<string, [number, number, number]> {
 
 export default function Home() {
   const { settings, updateSettings } = useDebugSettings();
-  const { keys, updateKey } = useKeyboardControls(settings);
+  const { keys, updateKey } = useKeyboardControls();
   const [barbarians, setBarbarians] = useState<
     Record<string, [number, number, number]>
   >(createInitialBarbarians);
@@ -67,7 +67,7 @@ export default function Home() {
   useEffect(() => {
     const half = ENVIRONMENT_DEFAULTS.groundDim / 2;
     const client = new BarbarianAIClient({
-      serverUrl: 'ws://localhost:8765',
+      serverUrl: process.env.NEXT_PUBLIC_WS_URL ?? 'ws://localhost:8765',
       playerStateRef,
       playerHPRef,
       barbarianStatesRef,
