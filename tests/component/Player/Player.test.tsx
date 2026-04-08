@@ -88,7 +88,9 @@ jest.mock('three', () => {
 jest.mock('@react-three/rapier', () => {
   const React = jest.requireActual('react');
   let colliderIndex = 0;
+  let sensorColliderIndex = 0;
   return {
+    interactionGroups: jest.fn(() => 0),
     RigidBody: React.forwardRef(function MockRigidBody(
       {
         children,
@@ -104,8 +106,9 @@ jest.mock('@react-three/rapier', () => {
         setRotation: mocks.mockSetRotation,
         translation: () => ({ x: 0, y: 0, z: 0 }),
       }));
-      // Reset collider index when RigidBody renders
+      // Reset collider indices when RigidBody renders
       colliderIndex = 0;
+      sensorColliderIndex = 0;
       return <group position={position}>{children}</group>;
     }),
     CapsuleCollider: ({
@@ -115,10 +118,12 @@ jest.mock('@react-three/rapier', () => {
       onIntersectionEnter?: () => void;
       sensor?: boolean;
     }) => {
-      // Capture onIntersectionEnter callbacks for torso (0) and head (1)
+      // Capture onIntersectionEnter callbacks for torso (first sensor) and head (second sensor).
+      // Use a separate sensorColliderIndex so non-sensor colliders don't shift the count.
       if (sensor && onIntersectionEnter) {
-        const colliderName = colliderIndex === 0 ? 'torso' : 'head';
+        const colliderName = sensorColliderIndex === 0 ? 'torso' : 'head';
         mocks.capturedColliderCallbacks[colliderName] = onIntersectionEnter;
+        sensorColliderIndex++;
       }
       colliderIndex++;
       return null;

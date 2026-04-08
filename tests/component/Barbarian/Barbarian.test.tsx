@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
 import { expect } from '@jest/globals';
 import { create, ReactThreeTestRenderer } from '@react-three/test-renderer';
-import { Group } from 'three';
+import { Group, Vector3 } from 'three';
 import { act, createRef } from 'react';
 import {
   Barbarian,
@@ -13,6 +13,7 @@ import {
   GAME_DEFAULTS,
   DEFAULT_COLORS,
 } from '@/app/constants';
+import type { ClientBarbarianState } from '@/app/ai/sharedTypes';
 
 const defaultSettings: DebugSettings = {
   debugMode: false,
@@ -109,6 +110,7 @@ let capturedHitHandlers: (() => void)[] = [];
 jest.mock('@react-three/rapier', () => {
   const React = jest.requireActual('react');
   return {
+    interactionGroups: jest.fn(() => 0),
     RigidBody: React.forwardRef(function MockRigidBody(
       {
         children,
@@ -1413,6 +1415,182 @@ describe('Barbarian Component', () => {
         (call) => call[0].x !== 0,
       );
       expect(hasHorizontalMovement).toBe(true);
+    });
+  });
+
+  describe('Utility AI', () => {
+    // Run N separate single-frame act() calls so React commits state between each.
+    async function advanceNFrames(r: ReactThreeTestRenderer, count: number) {
+      for (let i = 0; i < count; i++) {
+        await act(async () => {
+          await r.advanceFrames(1, 1 / 60);
+        });
+      }
+    }
+
+    it('enters attack state when player is within ATTACK_RANGE', async () => {
+      const playerPositionRef = { current: new Vector3(0.5, 0, 0) };
+      const barbarianStatesRef: {
+        current: Record<string, ClientBarbarianState>;
+      } = { current: {} };
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Barbarian
+            id="b1"
+            settings={defaultSettings}
+            playerPositionRef={playerPositionRef}
+            barbarianStatesRef={barbarianStatesRef}
+          />,
+        );
+      });
+
+      // Frame 1: utility AI calls setIsAttacking(true) — state update queued.
+      // Frame 2: isAttacking=true committed; barbarian publishes currentAction='ATTACK'.
+      await advanceNFrames(renderer!, 2);
+
+      expect(barbarianStatesRef.current['b1']?.currentAction).toBe('ATTACK');
+    });
+
+    it('enters chase state when player is outside ATTACK_RANGE', async () => {
+      const playerPositionRef = { current: new Vector3(3, 0, 0) };
+      const barbarianStatesRef: {
+        current: Record<string, ClientBarbarianState>;
+      } = { current: {} };
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Barbarian
+            id="b1"
+            settings={defaultSettings}
+            playerPositionRef={playerPositionRef}
+            barbarianStatesRef={barbarianStatesRef}
+          />,
+        );
+      });
+
+      // Frame 1: utility AI calls setIsWalking(true) — state update queued.
+      // Frame 2: isWalking=true committed; barbarian publishes currentAction='CHASE'.
+      await advanceNFrames(renderer!, 2);
+
+      expect(barbarianStatesRef.current['b1']?.currentAction).toBe('CHASE');
+    });
+
+    it('never idles while player is alive and no server decisions present', async () => {
+      const playerPositionRef = { current: new Vector3(3, 0, 0) };
+      const barbarianStatesRef: {
+        current: Record<string, ClientBarbarianState>;
+      } = { current: {} };
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Barbarian
+            id="b1"
+            settings={defaultSettings}
+            playerPositionRef={playerPositionRef}
+            barbarianStatesRef={barbarianStatesRef}
+          />,
+        );
+      });
+
+      // After state settles (4 frames), barbarian should be chasing, not idle.
+      await advanceNFrames(renderer!, 4);
+
+      expect(barbarianStatesRef.current['b1']?.currentAction).not.toBe('IDLE');
+    });
+
+    it('holds attack for MIN_ATTACK_DURATION_MS when player steps back', async () => {
+      const playerPositionRef = { current: new Vector3(0.5, 0, 0) };
+      const barbarianStatesRef: {
+        current: Record<string, ClientBarbarianState>;
+      } = { current: {} };
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Barbarian
+            id="b1"
+            settings={defaultSettings}
+            playerPositionRef={playerPositionRef}
+            barbarianStatesRef={barbarianStatesRef}
+          />,
+        );
+      });
+
+      // Frame 1 sets state, frame 2 commits — barbarian is attacking.
+      await advanceNFrames(renderer!, 2);
+      expect(barbarianStatesRef.current['b1']?.currentAction).toBe('ATTACK');
+
+      // Player steps back — utility AI holds ATTACK for MIN_ATTACK_DURATION_MS.
+      playerPositionRef.current = new Vector3(3, 0, 0);
+      await advanceNFrames(renderer!, 1);
+      expect(barbarianStatesRef.current['b1']?.currentAction).toBe('ATTACK');
+
+      // After MIN_ATTACK_DURATION_MS elapses, should transition to CHASE.
+      await act(async () => {
+        jest.advanceTimersByTime(
+          BARBARIAN_DEFAULTS.UTILITY_AI.MIN_ATTACK_DURATION_MS,
+        );
+      });
+      // Frame: utility AI transitions (setIsWalking queued). Frame: committed → 'CHASE'.
+      await advanceNFrames(renderer!, 2);
+      expect(barbarianStatesRef.current['b1']?.currentAction).toBe('CHASE');
+    });
+
+    it('defers to server KICK decision during strategic pause', async () => {
+      const playerPositionRef = { current: new Vector3(0.5, 0, 0) };
+      const barbarianStatesRef: {
+        current: Record<string, ClientBarbarianState>;
+      } = { current: {} };
+      const barbarianDecisionsRef = {
+        current: {
+          b1: {
+            barbarianId: 'b1',
+            action: 'KICK' as const,
+            direction: 1,
+            durationMs: 400,
+            strategyTag: 'test',
+          },
+        },
+      };
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Barbarian
+            id="b1"
+            settings={defaultSettings}
+            playerPositionRef={playerPositionRef}
+            barbarianStatesRef={barbarianStatesRef}
+            barbarianDecisionsRef={barbarianDecisionsRef}
+          />,
+        );
+      });
+
+      // Frame 1: server applies KICK + stamps strategicActionStartRef; utility AI deferred.
+      // Frame 2: isKicking=true committed; barbarian publishes 'KICK'.
+      await advanceNFrames(renderer!, 2);
+
+      expect(barbarianStatesRef.current['b1']?.currentAction).toBe('KICK');
+    });
+
+    it('does not run when playerPositionRef is absent', async () => {
+      const barbarianStatesRef: {
+        current: Record<string, ClientBarbarianState>;
+      } = { current: {} };
+      let renderer: ReactThreeTestRenderer;
+      await act(async () => {
+        renderer = await create(
+          <Barbarian
+            id="b1"
+            settings={defaultSettings}
+            barbarianStatesRef={barbarianStatesRef}
+          />,
+        );
+      });
+
+      // Without playerPositionRef the utility AI block is unreachable; stays idle.
+      await advanceNFrames(renderer!, 5);
+
+      expect(barbarianStatesRef.current['b1']?.currentAction).toBe('IDLE');
     });
   });
 });

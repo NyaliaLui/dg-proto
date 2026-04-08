@@ -86,6 +86,24 @@ export const BARBARIAN_DEFAULTS = {
       offset: { y: -0.89, z: 0 },
     },
   },
+  UTILITY_AI: {
+    /** Euclidean distance (m) within which the barbarian auto-attacks. */
+    ATTACK_RANGE: 1.2,
+    /**
+     * Min ms to hold ATTACK before re-evaluating distance.
+     * Must be >= attackSpeed (320 ms) so one full punch completes.
+     * Also used as the strategic-action defer window.
+     */
+    MIN_ATTACK_DURATION_MS: 400,
+    /** Server actions the utility AI must not cancel mid-animation. */
+    STRATEGIC_ACTIONS: [
+      'KICK',
+      'LEFT_BLOCK',
+      'RIGHT_BLOCK',
+      'DUCK',
+      'JUMP',
+    ] as const,
+  },
   enableBarbarianWalk: false,
   barbarianWalkDurationMS: 500,
   enableBarbarianAttack: false,
