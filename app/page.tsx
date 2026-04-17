@@ -9,7 +9,7 @@ import {
   Barbarian,
   BarbarianHandle,
 } from '@/app/components/Barbarian/Barbarian';
-import { World } from '@/app/components/World/World';
+import { Background } from '@/app/components/World/Background';
 import { useKeyboardControls } from '@/app/components/Player/hooks/useKeyboardControls';
 import { Controls } from '@/app/components/Player/Controls';
 import { DebugGui } from '@/app/components/DebugGui';
@@ -183,7 +183,7 @@ export default function Home() {
             playerStateRef={playerStateRef}
           />
         </Physics>
-        <World />
+        <Background />
         <OrbitControls
           enableZoom={ENVIRONMENT_DEFAULTS.orbitControls.enableZoom}
           enablePan={ENVIRONMENT_DEFAULTS.orbitControls.enablePan}
