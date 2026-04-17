@@ -188,6 +188,9 @@ export function Player({
   const specialAttackingRef = useRef(false);
   const specialTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const currentActionRef = useRef<THREE.AnimationAction | null>(null);
+  const yVelocityRef = useRef<number>(0);
+  const isGroundedRef = useRef<boolean>(true);
+  const jumpStartYRef = useRef<number>(0);
 
   const prevQRef = useRef(false);
   const prevERef = useRef(false);
@@ -352,6 +355,12 @@ export function Player({
         }
         jumpAction.fadeIn(0.1).play();
         currentActionRef.current = jumpAction;
+
+        if (rigidBodyRef.current) {
+          jumpStartYRef.current = rigidBodyRef.current.translation().y;
+        }
+        yVelocityRef.current = SHARED_DEFAULTS.JUMP.VELOCITY;
+        isGroundedRef.current = false;
       }
       prevSpaceRef.current = keys.space;
 
@@ -478,11 +487,10 @@ export function Player({
       const moveSpeed = SHARED_DEFAULTS.MOVE_SPEED;
       const velocity = { x: 0, y: 0, z: 0 };
 
-      // Block movement during attacks, crouching, jumping, crouch attacking, or special attacking
+      // Block movement during attacks, crouching, crouch attacking, or special attacking
       if (
         !normalAttackingRef.current &&
         !crouching &&
-        !jumpingRef.current &&
         !crouchAttackingRef.current &&
         !specialAttackingRef.current
       ) {
@@ -519,6 +527,21 @@ export function Player({
           );
         }
       }
+
+      if (!isGroundedRef.current) {
+        const clampedDelta = Math.min(delta, 1 / 30);
+        yVelocityRef.current -= SHARED_DEFAULTS.JUMP.GRAVITY * clampedDelta;
+        const t = rigidBodyRef.current.translation();
+        if (yVelocityRef.current < 0 && t.y <= jumpStartYRef.current) {
+          yVelocityRef.current = 0;
+          isGroundedRef.current = true;
+          rigidBodyRef.current.setTranslation(
+            { x: t.x, y: jumpStartYRef.current, z: t.z },
+            true,
+          );
+        }
+      }
+      velocity.y = yVelocityRef.current;
 
       rigidBodyRef.current.setLinvel(velocity, true);
 

@@ -499,7 +499,7 @@ export const Barbarian = forwardRef<BarbarianHandle, BarbarianProps>(
           jumpPendingRef.current = false;
           const t = rigidBodyRef.current.translation();
           jumpStartYRef.current = t.y;
-          yVelocityRef.current = BARBARIAN_DEFAULTS.JUMP.VELOCITY;
+          yVelocityRef.current = SHARED_DEFAULTS.JUMP.VELOCITY;
           isGroundedRef.current = false;
           setIsJumping(true);
         }
@@ -507,8 +507,7 @@ export const Barbarian = forwardRef<BarbarianHandle, BarbarianProps>(
         // Simulate vertical physics while airborne
         if (!isGroundedRef.current) {
           const clampedDelta = Math.min(delta, 1 / 30);
-          yVelocityRef.current -=
-            BARBARIAN_DEFAULTS.JUMP.GRAVITY * clampedDelta;
+          yVelocityRef.current -= SHARED_DEFAULTS.JUMP.GRAVITY * clampedDelta;
           const t = rigidBodyRef.current.translation();
           if (yVelocityRef.current < 0 && t.y <= jumpStartYRef.current) {
             yVelocityRef.current = 0;

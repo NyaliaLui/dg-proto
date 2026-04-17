@@ -7,6 +7,10 @@ export const SHARED_DEFAULTS = {
   },
   MOVE_SPEED: 3,
   SCALE: 0.01,
+  JUMP: {
+    VELOCITY: 7,
+    GRAVITY: 13,
+  },
   COLLIDERS: {
     BODY: { halfHeight: 0.4, radius: 0.5, position: [0, 0, 0] as const },
     TORSO: {

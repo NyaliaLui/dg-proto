@@ -832,9 +832,9 @@ describe('Barbarian Component', () => {
       });
 
       // Advance enough frames for the full arc to complete
-      // With VELOCITY=5, GRAVITY=12: landing after ~25 frames at 1/60s delta
+      // With VELOCITY=7, GRAVITY=13: landing after ~33 frames at 1/60s delta
       await act(async () => {
-        await renderer!.advanceFrames(30, 1 / 60);
+        await renderer!.advanceFrames(40, 1 / 60);
       });
 
       // setTranslation should have been called to snap back to start Y on landing
