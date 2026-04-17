@@ -158,6 +158,18 @@ export const ENVIRONMENT_DEFAULTS = {
     ground: '/textures/grass.jpg',
     sky: '/textures/sky.jpg',
   },
+  background_z: -5,
+  mountain_z_offset: -20,
+  crate: {
+    position: [1, 0.6, 0] as [number, number, number],
+  },
+  platform: {
+    position: [-5, 1.2, -3] as [number, number, number],
+    scale: [3, 0.2, 2] as [number, number, number],
+  },
+  boulder: {
+    position: [5, 0.4, -2.5] as [number, number, number],
+  },
 };
 
 export const LEVA_THEMES = {

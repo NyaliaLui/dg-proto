@@ -51,9 +51,6 @@ function Background() {
   const { scene } = useThree();
   scene.background = sky;
 
-  const BACKGROUND_Z = -5;
-  const MOUNTAIN_Z_OFFSET = -20;
-
   return (
     <>
       <mesh
@@ -69,23 +66,38 @@ function Background() {
         <meshStandardMaterial map={grass} />
       </mesh>
       <Mountain
-        position={[-22, 8, BACKGROUND_Z + MOUNTAIN_Z_OFFSET]}
+        position={[
+          -22,
+          8,
+          ENVIRONMENT_DEFAULTS.background_z +
+            ENVIRONMENT_DEFAULTS.mountain_z_offset,
+        ]}
         width={14}
         height={16}
       />
       <Mountain
-        position={[6, 7, BACKGROUND_Z + MOUNTAIN_Z_OFFSET]}
+        position={[
+          6,
+          7,
+          ENVIRONMENT_DEFAULTS.background_z +
+            ENVIRONMENT_DEFAULTS.mountain_z_offset,
+        ]}
         width={13}
         height={14}
       />
       <Mountain
-        position={[32, 6, BACKGROUND_Z + MOUNTAIN_Z_OFFSET]}
+        position={[
+          32,
+          6,
+          ENVIRONMENT_DEFAULTS.background_z +
+            ENVIRONMENT_DEFAULTS.mountain_z_offset,
+        ]}
         width={12}
         height={12}
       />
-      <Tree position={[-8, 0, BACKGROUND_Z]} />
-      <Tree position={[0, 0, BACKGROUND_Z]} />
-      <Tree position={[10, 0, BACKGROUND_Z]} />
+      <Tree position={[-8, 0, ENVIRONMENT_DEFAULTS.background_z]} />
+      <Tree position={[0, 0, ENVIRONMENT_DEFAULTS.background_z]} />
+      <Tree position={[10, 0, ENVIRONMENT_DEFAULTS.background_z]} />
     </>
   );
 }

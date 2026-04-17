@@ -20,6 +20,7 @@ const config: Config = {
     '**/tests/component/*.tsx',
     '**/tests/component/Player/*.tsx',
     '**/tests/component/Barbarian/*.tsx',
+    '**/tests/component/World/*.tsx',
   ],
 };
 

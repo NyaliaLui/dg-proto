@@ -44,6 +44,7 @@ function castSwordRay(
   targets: THREE.Object3D[],
   hits: Set<string>,
   onHit?: (id: string) => void,
+  userDataKey: string = 'barbarianId',
 ) {
   raycaster.set(origin, direction);
   raycaster.far = maxDist;
@@ -51,8 +52,8 @@ function castSwordRay(
   for (const intersection of intersections) {
     let obj: THREE.Object3D | null = intersection.object;
     while (obj) {
-      if (obj.userData.barbarianId) {
-        const id = obj.userData.barbarianId as string;
+      if (obj.userData[userDataKey]) {
+        const id = obj.userData[userDataKey] as string;
         if (!hits.has(id)) {
           hits.add(id);
           onHit?.(id);
@@ -69,6 +70,8 @@ interface PlayerProps {
   onHit?: () => void;
   onSwordHit?: (barbarianId: string) => void;
   barbarianTargets?: RefObject<Map<string, THREE.Object3D> | null>;
+  obstacleTargets?: RefObject<Map<string, THREE.Object3D> | null>;
+  onObstacleHit?: (id: string) => void;
   settings: DebugSettings;
   playerPositionRef?: { current: THREE.Vector3 };
   playerStateRef?: { current: ClientPlayerState | null };
@@ -79,6 +82,8 @@ export function Player({
   onHit,
   onSwordHit,
   barbarianTargets,
+  obstacleTargets,
+  onObstacleHit,
   settings,
   playerPositionRef,
   playerStateRef,
@@ -457,6 +462,26 @@ export function Player({
                   targets,
                   attackHitsRef.current,
                   onSwordHit,
+                );
+              }
+            }
+
+            // Hit detection against obstacle targets (e.g. crates)
+            if (obstacleTargets?.current) {
+              const targets: THREE.Object3D[] = [];
+              for (const group of obstacleTargets.current.values()) {
+                targets.push(group);
+              }
+              if (targets.length > 0) {
+                castSwordRay(
+                  raycasterRef.current,
+                  origin,
+                  direction,
+                  PLAYER_DEFAULTS.RAYCAST.SWORD_LENGTH,
+                  targets,
+                  attackHitsRef.current,
+                  onObstacleHit,
+                  'crateId',
                 );
               }
             }

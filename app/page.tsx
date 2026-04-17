@@ -10,6 +10,9 @@ import {
   BarbarianHandle,
 } from '@/app/components/Barbarian/Barbarian';
 import { Background } from '@/app/components/World/Background';
+import { Crate, CrateHandle } from '@/app/components/World/Obstacles/Crate';
+import { Platform } from '@/app/components/World/Obstacles/Platform';
+import { Boulder } from '@/app/components/World/Obstacles/Boulder';
 import { useKeyboardControls } from '@/app/components/Player/hooks/useKeyboardControls';
 import { Controls } from '@/app/components/Player/Controls';
 import { DebugGui } from '@/app/components/DebugGui';
@@ -47,6 +50,8 @@ export default function Home() {
   const [debugGuiHidden, setDebugGuiHidden] = useState(true);
   const barbarianGroupsRef = useRef<Map<string, THREE.Object3D>>(new Map());
   const barbarianRefsRef = useRef<Map<string, BarbarianHandle>>(new Map());
+  const crateGroupsRef = useRef<Map<string, THREE.Object3D>>(new Map());
+  const crateRefsRef = useRef<Map<string, CrateHandle>>(new Map());
 
   // ── Shared refs for AI client ──────────────────────────────────────────────
   const playerPositionRef = useRef(new THREE.Vector3());
@@ -127,6 +132,18 @@ export default function Home() {
     barbarianRefsRef.current.get(barbarianId)?.takeDamage();
   }, []);
 
+  const handleCrateRegister = useCallback((id: string, obj: THREE.Object3D) => {
+    crateGroupsRef.current.set(id, obj);
+  }, []);
+
+  const handleCrateUnregister = useCallback((id: string) => {
+    crateGroupsRef.current.delete(id);
+  }, []);
+
+  const handleCrateHit = useCallback((id: string) => {
+    crateRefsRef.current.get(id)?.takeDamage();
+  }, []);
+
   const barbarianComponents = useMemo(() => {
     return Object.entries(barbarians).map(([id, initialPosition]) => (
       <Barbarian
@@ -178,17 +195,36 @@ export default function Home() {
             onHit={handlePlayerHit}
             onSwordHit={handleSwordHit}
             barbarianTargets={barbarianGroupsRef}
+            obstacleTargets={crateGroupsRef}
+            onObstacleHit={handleCrateHit}
             settings={settings}
             playerPositionRef={playerPositionRef}
             playerStateRef={playerStateRef}
           />
+          <Crate
+            id="crate-0"
+            position={ENVIRONMENT_DEFAULTS.crate.position}
+            onRegister={handleCrateRegister}
+            onUnregister={handleCrateUnregister}
+            ref={(handle) => {
+              if (handle) crateRefsRef.current.set('crate-0', handle);
+              else crateRefsRef.current.delete('crate-0');
+            }}
+          />
+          <Platform
+            position={ENVIRONMENT_DEFAULTS.platform.position}
+            scale={ENVIRONMENT_DEFAULTS.platform.scale}
+          />
+          <Boulder position={ENVIRONMENT_DEFAULTS.boulder.position} />
         </Physics>
         <Background />
-        <OrbitControls
-          enableZoom={ENVIRONMENT_DEFAULTS.orbitControls.enableZoom}
-          enablePan={ENVIRONMENT_DEFAULTS.orbitControls.enablePan}
-          enableRotate={ENVIRONMENT_DEFAULTS.orbitControls.enableRotate}
-        />
+        {settings.debugMode && (
+          <OrbitControls
+            enableZoom={ENVIRONMENT_DEFAULTS.orbitControls.enableZoom}
+            enablePan={ENVIRONMENT_DEFAULTS.orbitControls.enablePan}
+            enableRotate={ENVIRONMENT_DEFAULTS.orbitControls.enableRotate}
+          />
+        )}
       </Canvas>
       <Controls updateKey={updateKey} />
       <Button
