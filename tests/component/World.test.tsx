@@ -2,7 +2,7 @@ import '@testing-library/jest-dom';
 import { expect } from '@jest/globals';
 import { create } from '@react-three/test-renderer';
 import { Texture, RepeatWrapping } from 'three';
-import { World } from '@/app/components/World';
+import { World } from '@/app/components/World/World';
 import { ENVIRONMENT_DEFAULTS } from '@/app/constants';
 
 const testTexture = new Texture();

@@ -9,7 +9,7 @@ import {
   Barbarian,
   BarbarianHandle,
 } from '@/app/components/Barbarian/Barbarian';
-import { World } from '@/app/components/World';
+import { World } from '@/app/components/World/World';
 import { useKeyboardControls } from '@/app/components/Player/hooks/useKeyboardControls';
 import { Controls } from '@/app/components/Player/Controls';
 import { DebugGui } from '@/app/components/DebugGui';
