@@ -12,7 +12,8 @@ export const SHARED_DEFAULTS = {
     GRAVITY: 13,
   },
   COLLIDERS: {
-    BODY: { halfHeight: 0.4, radius: 0.5, position: [0, 0, 0] as const },
+    BODY: { halfHeight: 0.5, radius: 0.5, position: [0, 0, 0] as const },
+    GROUND_SPHERE: { radius: 0.01, position: [0, -0.89, 0] as const },
     TORSO: {
       halfHeight: 0.19,
       radius: 0.1,
@@ -40,10 +41,13 @@ export const PLAYER_DEFAULTS = {
     SPECIAL: 'Armature|Special_Attack',
   },
   RAYCAST: {
-    SWORD_LENGTH: 1.2,
+    SWORD_LENGTH: 2.0,
+    SWORD_SIDE_OFFSET: 0.4,
     SPECIAL_DELAY: 0.3,
     COLOR: 0x00ff00,
   },
+  ATTACK_SOUND: '/audio/paladin-attack.wav',
+  ATTACK_SOUND_DURATION_MS: 700,
 };
 
 export const CONTROLS_DEFAULTS = {
@@ -85,7 +89,7 @@ export const BARBARIAN_DEFAULTS = {
   COLLIDERS: {
     HAND: {
       halfHeight: 0.01,
-      radius: 0.08,
+      radius: 0.16,
       position: [0, 0.4, 0.75] as const,
       offset: { y: -0.89, z: 0 },
     },
@@ -100,13 +104,7 @@ export const BARBARIAN_DEFAULTS = {
      */
     MIN_ATTACK_DURATION_MS: 400,
     /** Server actions the utility AI must not cancel mid-animation. */
-    STRATEGIC_ACTIONS: [
-      'KICK',
-      'LEFT_BLOCK',
-      'RIGHT_BLOCK',
-      'DUCK',
-      'JUMP',
-    ] as const,
+    STRATEGIC_ACTIONS: ['JUMP'] as const,
   },
   enableBarbarianWalk: false,
   barbarianWalkDurationMS: 500,
@@ -126,8 +124,9 @@ export const BARBARIAN_DEFAULTS = {
 
 export const GAME_DEFAULTS = {
   INITIAL_BARBARIAN_COUNT: 1,
-  INITIAL_BARBARIAN_HP: 3,
+  INITIAL_BARBARIAN_HP: 1,
   PLAYER_MAX_HP: 100,
+  BOULDER_HP: 3,
 };
 
 export const DEFAULT_COLORS = {
@@ -144,13 +143,28 @@ export const ENVIRONMENT_DEFAULTS = {
     intensity: 1,
   },
   camera: {
-    position: new Vector3(0, 2, 5),
-    fov: 75,
+    position: new Vector3(0, 1.5, 10),
+    fov: 60,
   },
   orbitControls: {
     enablePan: true,
     enableZoom: true,
     enableRotate: true,
+  },
+  groundBlock: {
+    width: 5.4,
+    height: 5.4,
+    depth: 5.4,
+    screenFillCount: 5,
+    extraCount: 25,
+  },
+  platform: {
+    width: 5.4,
+    height: 0.4,
+    depth: 5.4,
+    y: 0.785,
+    color: '#8B4513',
+    spawnInterval: 5,
   },
   groundDim: 100,
   groundRotation: -Math.PI / 2,
