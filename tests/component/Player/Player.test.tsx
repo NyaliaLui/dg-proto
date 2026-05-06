@@ -118,6 +118,7 @@ jest.mock('@react-three/rapier', () => {
       sensorColliderIndex = 0;
       return <group position={position}>{children}</group>;
     }),
+    BallCollider: () => null,
     CapsuleCollider: ({
       onIntersectionEnter,
       sensor,
@@ -173,7 +174,7 @@ describe('Player Component', () => {
         <Player keys={mockKeys} settings={defaultSettings} />,
       );
       const rigidBody = renderer.scene.children[0];
-      expect(rigidBody.instance.position.x).toBe(-1);
+      expect(rigidBody.instance.position.x).toBe(0);
       expect(rigidBody.instance.position.y).toBe(0.9);
       expect(rigidBody.instance.position.z).toBe(0);
     });

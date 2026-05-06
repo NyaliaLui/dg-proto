@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { expect, describe, it } from '@jest/globals';
 import {
   Controls,
-  AnalogStick,
+  DirectionalButtons,
   OnscreenKeys,
 } from '@/app/components/Player/Controls';
 import { CONTROLS_TEST_IDS } from '@/app/test-ids';
@@ -16,127 +16,139 @@ describe('Controls Component', () => {
   });
 
   describe('Controls', () => {
-    it('should render AnalogStick and OnscreenKeys', () => {
+    it('renders DirectionalButtons and OnscreenKeys', () => {
       render(<Controls updateKey={mockUpdateKey} />);
 
-      const analogStick = screen.getByTestId(CONTROLS_TEST_IDS.ANALOG_STICK);
+      const directionalButtons = screen.getByTestId(
+        CONTROLS_TEST_IDS.DIRECTIONAL_BUTTONS,
+      );
       const onscreenKeys = screen.getByTestId(CONTROLS_TEST_IDS.ONSCREEN_KEYS);
 
-      expect(analogStick).toBeInTheDocument();
+      expect(directionalButtons).toBeInTheDocument();
       expect(onscreenKeys).toBeInTheDocument();
     });
   });
 
-  describe('AnalogStick', () => {
-    it('should render the analog stick', () => {
-      render(<AnalogStick updateKey={mockUpdateKey} />);
-      const analogStick = screen.getByTestId(CONTROLS_TEST_IDS.ANALOG_STICK);
-      expect(analogStick).toBeInTheDocument();
+  describe('DirectionalButtons', () => {
+    it('renders with data-testid directional-buttons', () => {
+      render(<DirectionalButtons updateKey={mockUpdateKey} />);
+      const container = screen.getByTestId(
+        CONTROLS_TEST_IDS.DIRECTIONAL_BUTTONS,
+      );
+      expect(container).toBeInTheDocument();
     });
 
-    it('should have correct aria-label', () => {
-      render(<AnalogStick updateKey={mockUpdateKey} />);
-      const analogStick = screen.getByLabelText(
-        'Move with the analog stick or WASD keys',
+    it('has aria-label "Move with directional buttons or WASD keys"', () => {
+      render(<DirectionalButtons updateKey={mockUpdateKey} />);
+      const container = screen.getByLabelText(
+        'Move with directional buttons or WASD keys',
       );
-      expect(analogStick).toBeInTheDocument();
+      expect(container).toBeInTheDocument();
+    });
+
+    it("left button calls updateKey('a', true) on mouseDown", () => {
+      render(<DirectionalButtons updateKey={mockUpdateKey} />);
+      const leftButton = screen.getByTestId(CONTROLS_TEST_IDS.LEFT_BUTTON);
+      fireEvent.mouseDown(leftButton);
+      expect(mockUpdateKey).toHaveBeenCalledWith('a', true);
+    });
+
+    it("left button calls updateKey('a', false) on mouseUp", () => {
+      render(<DirectionalButtons updateKey={mockUpdateKey} />);
+      const leftButton = screen.getByTestId(CONTROLS_TEST_IDS.LEFT_BUTTON);
+      fireEvent.mouseUp(leftButton);
+      expect(mockUpdateKey).toHaveBeenCalledWith('a', false);
+    });
+
+    it("left button calls updateKey('a', false) on mouseLeave", () => {
+      render(<DirectionalButtons updateKey={mockUpdateKey} />);
+      const leftButton = screen.getByTestId(CONTROLS_TEST_IDS.LEFT_BUTTON);
+      fireEvent.mouseLeave(leftButton);
+      expect(mockUpdateKey).toHaveBeenCalledWith('a', false);
+    });
+
+    it("right button calls updateKey('d', true) on mouseDown", () => {
+      render(<DirectionalButtons updateKey={mockUpdateKey} />);
+      const rightButton = screen.getByTestId(CONTROLS_TEST_IDS.RIGHT_BUTTON);
+      fireEvent.mouseDown(rightButton);
+      expect(mockUpdateKey).toHaveBeenCalledWith('d', true);
+    });
+
+    it("right button calls updateKey('d', false) on mouseUp", () => {
+      render(<DirectionalButtons updateKey={mockUpdateKey} />);
+      const rightButton = screen.getByTestId(CONTROLS_TEST_IDS.RIGHT_BUTTON);
+      fireEvent.mouseUp(rightButton);
+      expect(mockUpdateKey).toHaveBeenCalledWith('d', false);
+    });
+
+    it("right button calls updateKey('d', false) on mouseLeave", () => {
+      render(<DirectionalButtons updateKey={mockUpdateKey} />);
+      const rightButton = screen.getByTestId(CONTROLS_TEST_IDS.RIGHT_BUTTON);
+      fireEvent.mouseLeave(rightButton);
+      expect(mockUpdateKey).toHaveBeenCalledWith('d', false);
     });
   });
 
   describe('OnscreenKeys', () => {
-    it('should render all action buttons', () => {
+    it('renders Jump, Attack, and Crouch Attack buttons (no Special, Normal, Item)', () => {
       render(<OnscreenKeys updateKey={mockUpdateKey} />);
 
-      const jumpButton = screen.getByTestId(CONTROLS_TEST_IDS.JUMP_BUTTON);
-      const crouchButton = screen.getByTestId(CONTROLS_TEST_IDS.CROUCH_BUTTON);
-      const specialButton = screen.getByTestId(
-        CONTROLS_TEST_IDS.SPECIAL_BUTTON,
-      );
-      const normalButton = screen.getByTestId(CONTROLS_TEST_IDS.NORMAL_BUTTON);
-      const itemButton = screen.getByTestId(CONTROLS_TEST_IDS.ITEM_BUTTON);
+      expect(screen.getByTestId(CONTROLS_TEST_IDS.JUMP_BUTTON)).toBeInTheDocument();
+      expect(screen.getByTestId(CONTROLS_TEST_IDS.ATTACK_BUTTON)).toBeInTheDocument();
+      expect(screen.getByTestId(CONTROLS_TEST_IDS.CROUCH_ATTACK_BUTTON)).toBeInTheDocument();
 
-      expect(jumpButton).toBeInTheDocument();
-      expect(crouchButton).toBeInTheDocument();
-      expect(specialButton).toBeInTheDocument();
-      expect(normalButton).toBeInTheDocument();
-      expect(itemButton).toBeInTheDocument();
+      expect(screen.queryByLabelText('Special')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('Normal')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('Item')).not.toBeInTheDocument();
     });
 
-    it('should call updateKey with space true on jump button mouse down', () => {
+    it("Jump button calls updateKey('space', true) on mouseDown", () => {
       render(<OnscreenKeys updateKey={mockUpdateKey} />);
       const jumpButton = screen.getByTestId(CONTROLS_TEST_IDS.JUMP_BUTTON);
-
       fireEvent.mouseDown(jumpButton);
       expect(mockUpdateKey).toHaveBeenCalledWith('space', true);
     });
 
-    it('should call updateKey with space false on jump button mouse up', () => {
+    it("Jump button calls updateKey('space', false) on mouseUp", () => {
       render(<OnscreenKeys updateKey={mockUpdateKey} />);
       const jumpButton = screen.getByTestId(CONTROLS_TEST_IDS.JUMP_BUTTON);
-
       fireEvent.mouseUp(jumpButton);
-
       expect(mockUpdateKey).toHaveBeenCalledWith('space', false);
     });
 
-    it('should call updateKey with q true on normal button mouse down', () => {
+    it("Attack button calls updateKey('q', true) on mouseDown", () => {
       render(<OnscreenKeys updateKey={mockUpdateKey} />);
-      const normalButton = screen.getByTestId(CONTROLS_TEST_IDS.NORMAL_BUTTON);
-
-      fireEvent.mouseDown(normalButton);
+      const attackButton = screen.getByTestId(CONTROLS_TEST_IDS.ATTACK_BUTTON);
+      fireEvent.mouseDown(attackButton);
       expect(mockUpdateKey).toHaveBeenCalledWith('q', true);
     });
 
-    it('should call updateKey with e true on special button mouse down', () => {
+    it("Attack button calls updateKey('q', false) on mouseUp", () => {
       render(<OnscreenKeys updateKey={mockUpdateKey} />);
-      const specialButton = screen.getByTestId(
-        CONTROLS_TEST_IDS.SPECIAL_BUTTON,
-      );
-
-      fireEvent.mouseDown(specialButton);
-      expect(mockUpdateKey).toHaveBeenCalledWith('e', true);
+      const attackButton = screen.getByTestId(CONTROLS_TEST_IDS.ATTACK_BUTTON);
+      fireEvent.mouseUp(attackButton);
+      expect(mockUpdateKey).toHaveBeenCalledWith('q', false);
     });
 
-    it('should call updateKey with p true on item button mouse down', () => {
+    it('has aria-labels for Jump, Attack, and Crouch Attack', () => {
       render(<OnscreenKeys updateKey={mockUpdateKey} />);
-      const itemButton = screen.getByTestId(CONTROLS_TEST_IDS.ITEM_BUTTON);
-
-      fireEvent.mouseDown(itemButton);
-      expect(mockUpdateKey).toHaveBeenCalledWith('p', true);
+      expect(screen.getByLabelText('Jump')).toBeInTheDocument();
+      expect(screen.getByLabelText('Attack')).toBeInTheDocument();
+      expect(screen.getByLabelText('Crouch Attack')).toBeInTheDocument();
     });
 
-    it('should call updateKey with ctrl true on crouch button mouse down', () => {
+    it("Crouch Attack button calls updateKey for both q and ctrl on mouseDown", () => {
       render(<OnscreenKeys updateKey={mockUpdateKey} />);
-      const crouchButton = screen.getByTestId(CONTROLS_TEST_IDS.CROUCH_BUTTON);
-
-      fireEvent.mouseDown(crouchButton);
+      fireEvent.mouseDown(screen.getByTestId(CONTROLS_TEST_IDS.CROUCH_ATTACK_BUTTON));
+      expect(mockUpdateKey).toHaveBeenCalledWith('q', true);
       expect(mockUpdateKey).toHaveBeenCalledWith('ctrl', true);
     });
 
-    it('should call updateKey with ctrl false on crouch button mouse up', () => {
+    it("Crouch Attack button calls updateKey for both q and ctrl on mouseUp", () => {
       render(<OnscreenKeys updateKey={mockUpdateKey} />);
-      const crouchButton = screen.getByTestId(CONTROLS_TEST_IDS.CROUCH_BUTTON);
-
-      fireEvent.mouseUp(crouchButton);
+      fireEvent.mouseUp(screen.getByTestId(CONTROLS_TEST_IDS.CROUCH_ATTACK_BUTTON));
+      expect(mockUpdateKey).toHaveBeenCalledWith('q', false);
       expect(mockUpdateKey).toHaveBeenCalledWith('ctrl', false);
-    });
-
-    it('should call updateKey with ctrl false on crouch button mouse leave', () => {
-      render(<OnscreenKeys updateKey={mockUpdateKey} />);
-      const crouchButton = screen.getByTestId(CONTROLS_TEST_IDS.CROUCH_BUTTON);
-
-      fireEvent.mouseLeave(crouchButton);
-      expect(mockUpdateKey).toHaveBeenCalledWith('ctrl', false);
-    });
-
-    it('should have correct aria-labels for all buttons', () => {
-      render(<OnscreenKeys updateKey={mockUpdateKey} />);
-
-      expect(screen.getByLabelText('Jump')).toBeInTheDocument();
-      expect(screen.getByLabelText('Crouch')).toBeInTheDocument();
-      expect(screen.getByLabelText('Special')).toBeInTheDocument();
-      expect(screen.getByLabelText('Normal')).toBeInTheDocument();
-      expect(screen.getByLabelText('Item')).toBeInTheDocument();
     });
   });
 });
