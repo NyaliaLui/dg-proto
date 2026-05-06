@@ -10,21 +10,9 @@
 // Actions / roles / strategies (mirrors server/src/types/actions.ts)
 // ---------------------------------------------------------------------------
 
-export type BarbarianAction =
-  | 'IDLE'
-  | 'CHASE'
-  | 'RETREAT'
-  | 'FLANK'
-  | 'ATTACK'
-  | 'KICK'
-  | 'JUMP'
-  | 'LEFT_BLOCK'
-  | 'RIGHT_BLOCK'
-  | 'DUCK'
-  | 'BAIT'
-  | 'PUNISH';
+export type BarbarianAction = 'CHASE' | 'ATTACK' | 'JUMP';
 
-export type BarbarianRole = 'ATTACKER' | 'FLANKER' | 'BAITER' | 'SUPPORT';
+export type BarbarianRole = 'ATTACKER';
 
 // ---------------------------------------------------------------------------
 // Game state types (mirrors server/src/types/gameState.ts)
@@ -85,6 +73,7 @@ export interface WorldBounds {
 export interface EnvironmentState {
   worldBounds: WorldBounds;
   groundY: number;
+  targetBarbarianCount: number;
 }
 
 // ---------------------------------------------------------------------------

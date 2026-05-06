@@ -12,10 +12,6 @@ import type { BarbarianAction } from './sharedTypes';
 export interface BarbarianStateSetters {
   setIsAttacking: (v: boolean) => void;
   setIsWalking: (v: boolean) => void;
-  setIsKicking: (v: boolean) => void;
-  setIsBlocking: (v: boolean) => void;
-  setIsRightBlocking: (v: boolean) => void;
-  setIsDucking: (v: boolean) => void;
   setDirection: (v: number) => void;
   /** Sets jumpPendingRef.current = true in Barbarian's physics handler. */
   setJumpPending: () => void;
@@ -35,10 +31,6 @@ export function applyAction(
   // ── Reset all flags first ────────────────────────────────────────────────
   setters.setIsAttacking(false);
   setters.setIsWalking(false);
-  setters.setIsKicking(false);
-  setters.setIsBlocking(false);
-  setters.setIsRightBlocking(false);
-  setters.setIsDucking(false);
 
   // ── Apply direction ──────────────────────────────────────────────────────
   setters.setDirection(direction);
@@ -46,41 +38,15 @@ export function applyAction(
   // ── Apply action-specific flag ───────────────────────────────────────────
   switch (action) {
     case 'ATTACK':
-    case 'PUNISH':
       setters.setIsAttacking(true);
       break;
 
     case 'CHASE':
-    case 'RETREAT':
-    case 'FLANK':
       setters.setIsWalking(true);
       break;
 
-    case 'KICK':
-      setters.setIsKicking(true);
-      break;
-
-    case 'LEFT_BLOCK':
-      setters.setIsBlocking(true);
-      break;
-
-    case 'RIGHT_BLOCK':
-      setters.setIsRightBlocking(true);
-      break;
-
-    case 'DUCK':
-    case 'BAIT':
-      setters.setIsDucking(true);
-      break;
-
     case 'JUMP':
-      // The jump physics handler in Barbarian.tsx reads jumpPendingRef.current.
       setters.setJumpPending();
-      break;
-
-    case 'IDLE':
-    default:
-      // All flags already reset above — barbarian stands idle.
       break;
   }
 }

@@ -15,13 +15,19 @@ const testScene = new Group();
 // Mock velocity tracking - must be defined before jest.mock
 const mockSetLinvel = jest.fn();
 const mockSetRotation = jest.fn();
+const mockSetTranslation = jest.fn();
 
 // Store captured onIntersectionEnter callbacks for testing
 const capturedColliderCallbacks: { [key: string]: (() => void) | undefined } =
   {};
 
 // Store mocks in a module-level object that can be accessed inside jest.mock
-const mocks = { mockSetLinvel, mockSetRotation, capturedColliderCallbacks };
+const mocks = {
+  mockSetLinvel,
+  mockSetRotation,
+  mockSetTranslation,
+  capturedColliderCallbacks,
+};
 
 // Create a mock animation clip
 const mockAnimationClip = {
@@ -104,6 +110,7 @@ jest.mock('@react-three/rapier', () => {
       React.useImperativeHandle(ref, () => ({
         setLinvel: mocks.mockSetLinvel,
         setRotation: mocks.mockSetRotation,
+        setTranslation: mocks.mockSetTranslation,
         translation: () => ({ x: 0, y: 0, z: 0 }),
       }));
       // Reset collider indices when RigidBody renders
@@ -111,6 +118,7 @@ jest.mock('@react-three/rapier', () => {
       sensorColliderIndex = 0;
       return <group position={position}>{children}</group>;
     }),
+    BallCollider: () => null,
     CapsuleCollider: ({
       onIntersectionEnter,
       sensor,
@@ -166,7 +174,7 @@ describe('Player Component', () => {
         <Player keys={mockKeys} settings={defaultSettings} />,
       );
       const rigidBody = renderer.scene.children[0];
-      expect(rigidBody.instance.position.x).toBe(-1);
+      expect(rigidBody.instance.position.x).toBe(0);
       expect(rigidBody.instance.position.y).toBe(0.9);
       expect(rigidBody.instance.position.z).toBe(0);
     });
@@ -412,18 +420,33 @@ describe('Player Component', () => {
       expect(mockSetLinvel).toHaveBeenCalledWith({ x: 0, y: 0, z: 0 }, true);
     });
 
-    it('should set zero velocity when jumping with space key even with W key pressed', async () => {
+    it('should allow horizontal movement when jumping with space key and W key pressed', async () => {
       const jumpingWithMovementKeys = { ...mockKeys, space: true, w: true };
       const renderer = await create(
         <Player keys={jumpingWithMovementKeys} settings={defaultSettings} />,
       );
       await renderer.advanceFrames(1, 1 / 60);
 
-      // Jump takes priority - velocity should be zero
-      expect(mockSetLinvel).toHaveBeenCalledWith({ x: 0, y: 0, z: 0 }, true);
+      // Jump no longer blocks horizontal movement
+      expect(mockSetLinvel).toHaveBeenCalledWith(
+        expect.objectContaining({ z: -SHARED_DEFAULTS.MOVE_SPEED }),
+        true,
+      );
     });
 
-    it('should set zero velocity when jumping even with all movement keys pressed', async () => {
+    it('should set positive Y velocity when jumping', async () => {
+      const jumpingKeys = { ...mockKeys, space: true };
+      const renderer = await create(
+        <Player keys={jumpingKeys} settings={defaultSettings} />,
+      );
+      await renderer.advanceFrames(1, 1 / 60);
+
+      const lastCall =
+        mockSetLinvel.mock.calls[mockSetLinvel.mock.calls.length - 1];
+      expect(lastCall[0].y).toBeGreaterThan(0);
+    });
+
+    it('should allow horizontal movement when jumping with all movement keys pressed', async () => {
       const jumpingWithAllMovement = {
         ...mockKeys,
         space: true,
@@ -437,8 +460,10 @@ describe('Player Component', () => {
       );
       await renderer.advanceFrames(1, 1 / 60);
 
-      // Jump takes priority - velocity should be zero
-      expect(mockSetLinvel).toHaveBeenCalledWith({ x: 0, y: 0, z: 0 }, true);
+      // Jump no longer blocks horizontal movement; Y should be positive
+      const lastCall =
+        mockSetLinvel.mock.calls[mockSetLinvel.mock.calls.length - 1];
+      expect(lastCall[0].y).toBeGreaterThan(0);
     });
 
     it('should set zero velocity when crouching even with all movement keys pressed', async () => {

@@ -15,11 +15,15 @@ const config: Config = {
   globals: {
     IS_REACT_ACT_ENVIRONMENT: true,
   },
-  testPathIgnorePatterns: ['<rootDir>/tests/component/utils/'],
+  testPathIgnorePatterns: [
+    '<rootDir>/tests/component/utils/',
+    '<rootDir>/.claude/',
+  ],
   testMatch: [
     '**/tests/component/*.tsx',
     '**/tests/component/Player/*.tsx',
     '**/tests/component/Barbarian/*.tsx',
+    '**/tests/component/World/*.tsx',
   ],
 };
 

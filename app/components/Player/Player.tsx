@@ -1,12 +1,13 @@
 'use client';
 
-import { useRef, useMemo, useEffect, useState, RefObject } from 'react';
+import { useRef, useMemo, useEffect, useState, useCallback, RefObject } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useFBX } from '@react-three/drei';
 import {
   CapsuleCollider,
   RigidBody,
   RapierRigidBody,
+  BallCollider,
   interactionGroups,
 } from '@react-three/rapier';
 import * as THREE from 'three';
@@ -34,9 +35,9 @@ import type { ClientPlayerState } from '@/app/ai/sharedTypes';
 //   1 = player sword — only hits barbarian body (group 2)
 //   4 = solid character bodies — collide only with each other (physical push-apart)
 const PLAYER_BODY_GROUPS = interactionGroups([0], [3]);
-const SOLID_BODY_GROUPS = interactionGroups([4], [4]);
+const PLAYER_GROUND_GROUPS = interactionGroups([5], [4]);
 
-function castSwordRay(
+function castSingleRay(
   raycaster: THREE.Raycaster,
   origin: THREE.Vector3,
   direction: THREE.Vector3,
@@ -44,6 +45,7 @@ function castSwordRay(
   targets: THREE.Object3D[],
   hits: Set<string>,
   onHit?: (id: string) => void,
+  onBoulderHit?: (id: string) => void,
 ) {
   raycaster.set(origin, direction);
   raycaster.far = maxDist;
@@ -59,8 +61,37 @@ function castSwordRay(
         }
         break;
       }
+      if (obj.userData.boulderId) {
+        const id = obj.userData.boulderId as string;
+        if (!hits.has(id)) {
+          hits.add(id);
+          onBoulderHit?.(id);
+        }
+        return; // boulder blocks this ray
+      }
       obj = obj.parent;
     }
+  }
+}
+
+// Casts center ray plus two side rays offset perpendicular to the swing direction.
+// The shared hits Set deduplicates across all three rays.
+function castSwordRay(
+  raycaster: THREE.Raycaster,
+  origin: THREE.Vector3,
+  direction: THREE.Vector3,
+  maxDist: number,
+  sideOffset: number,
+  targets: THREE.Object3D[],
+  hits: Set<string>,
+  onHit?: (id: string) => void,
+  onBoulderHit?: (id: string) => void,
+) {
+  castSingleRay(raycaster, origin, direction, maxDist, targets, hits, onHit, onBoulderHit);
+  if (sideOffset > 0) {
+    const perp = new THREE.Vector3(-direction.z, 0, direction.x).normalize();
+    castSingleRay(raycaster, origin.clone().addScaledVector(perp, sideOffset), direction, maxDist, targets, hits, onHit, onBoulderHit);
+    castSingleRay(raycaster, origin.clone().addScaledVector(perp, -sideOffset), direction, maxDist, targets, hits, onHit, onBoulderHit);
   }
 }
 
@@ -69,6 +100,8 @@ interface PlayerProps {
   onHit?: () => void;
   onSwordHit?: (barbarianId: string) => void;
   barbarianTargets?: RefObject<Map<string, THREE.Object3D> | null>;
+  boulderTargets?: RefObject<Map<string, THREE.Object3D> | null>;
+  onBoulderHit?: (boulderId: string) => void;
   settings: DebugSettings;
   playerPositionRef?: { current: THREE.Vector3 };
   playerStateRef?: { current: ClientPlayerState | null };
@@ -79,6 +112,8 @@ export function Player({
   onHit,
   onSwordHit,
   barbarianTargets,
+  boulderTargets,
+  onBoulderHit,
   settings,
   playerPositionRef,
   playerStateRef,
@@ -188,10 +223,33 @@ export function Player({
   const specialAttackingRef = useRef(false);
   const specialTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const currentActionRef = useRef<THREE.AnimationAction | null>(null);
+  const isGroundedRef = useRef<boolean>(true);
+  const wasFallingRef = useRef(false);
 
   const prevQRef = useRef(false);
   const prevERef = useRef(false);
   const prevSpaceRef = useRef(false);
+  const attackAudioRef = useRef<HTMLAudioElement | null>(null);
+  const attackAudioTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const audio = new Audio(PLAYER_DEFAULTS.ATTACK_SOUND);
+    audio.preload = 'auto';
+    attackAudioRef.current = audio;
+  }, []);
+
+  const playAttackSound = useCallback(() => {
+    if (!attackAudioRef.current) return;
+    if (attackAudioTimerRef.current) clearTimeout(attackAudioTimerRef.current);
+    attackAudioRef.current.currentTime = 0;
+    attackAudioRef.current.play()?.catch(() => {});
+    attackAudioTimerRef.current = setTimeout(() => {
+      if (attackAudioRef.current) {
+        attackAudioRef.current.pause();
+        attackAudioRef.current.currentTime = 0;
+      }
+    }, PLAYER_DEFAULTS.ATTACK_SOUND_DURATION_MS);
+  }, []);
 
   // Initialize mixer once
   useEffect(() => {
@@ -246,6 +304,7 @@ export function Player({
   }, [model, idleAnim]);
 
   useFrame((_state, delta) => {
+    let jumpInitiated = false;
     if (mixer.current) {
       const m = mixer.current;
 
@@ -263,6 +322,7 @@ export function Player({
         crouchAttackingRef.current = true;
         setCrouchAttacking(true);
         attackHitsRef.current.clear();
+        playAttackSound();
 
         const crouchAttackAction = m.clipAction(crouchAttackAnim);
         crouchAttackAction.reset();
@@ -285,6 +345,7 @@ export function Player({
         normalAttackingRef.current = true;
         setNormalAttacking(true);
         attackHitsRef.current.clear();
+        playAttackSound();
 
         console.log(`d: ${delta}, normal: ${normalAttackingRef.current}`);
 
@@ -309,6 +370,7 @@ export function Player({
         specialAttackingRef.current = true;
         setSpecialAttacking(true);
         attackHitsRef.current.clear();
+        playAttackSound();
 
         // Activate the special ray after a delay
         specialTimerRef.current = setTimeout(() => {
@@ -352,6 +414,9 @@ export function Player({
         }
         jumpAction.fadeIn(0.1).play();
         currentActionRef.current = jumpAction;
+
+        jumpInitiated = true;
+        isGroundedRef.current = false;
       }
       prevSpaceRef.current = keys.space;
 
@@ -433,21 +498,23 @@ export function Player({
               .applyQuaternion(quat)
               .normalize();
 
-            // Hit detection against barbarian targets
-            if (barbarianTargets?.current) {
-              const targets: THREE.Object3D[] = [];
-              for (const group of barbarianTargets.current.values()) {
-                targets.push(group);
-              }
-              if (targets.length > 0) {
+            // Hit detection against barbarian and boulder targets
+            {
+              const allTargets: THREE.Object3D[] = [
+                ...Array.from(barbarianTargets?.current?.values() ?? []),
+                ...Array.from(boulderTargets?.current?.values() ?? []),
+              ];
+              if (allTargets.length > 0) {
                 castSwordRay(
                   raycasterRef.current,
                   origin,
                   direction,
                   PLAYER_DEFAULTS.RAYCAST.SWORD_LENGTH,
-                  targets,
+                  PLAYER_DEFAULTS.RAYCAST.SWORD_SIDE_OFFSET,
+                  allTargets,
                   attackHitsRef.current,
                   onSwordHit,
+                  onBoulderHit,
                 );
               }
             }
@@ -478,11 +545,10 @@ export function Player({
       const moveSpeed = SHARED_DEFAULTS.MOVE_SPEED;
       const velocity = { x: 0, y: 0, z: 0 };
 
-      // Block movement during attacks, crouching, jumping, crouch attacking, or special attacking
+      // Block movement during attacks, crouching, crouch attacking, or special attacking
       if (
         !normalAttackingRef.current &&
         !crouching &&
-        !jumpingRef.current &&
         !crouchAttackingRef.current &&
         !specialAttackingRef.current
       ) {
@@ -519,6 +585,16 @@ export function Player({
           );
         }
       }
+
+      const rapierVel = rigidBodyRef.current.linvel?.() ?? { x: 0, y: 0, z: 0 };
+      if (!isGroundedRef.current) {
+        if (rapierVel.y < -0.5) wasFallingRef.current = true;
+        if (wasFallingRef.current && Math.abs(rapierVel.y) < 0.1) {
+          isGroundedRef.current = true;
+          wasFallingRef.current = false;
+        }
+      }
+      velocity.y = jumpInitiated ? SHARED_DEFAULTS.JUMP.VELOCITY : rapierVel.y;
 
       rigidBodyRef.current.setLinvel(velocity, true);
 
@@ -570,19 +646,16 @@ export function Player({
     <RigidBody
       ref={rigidBodyRef}
       type="dynamic"
-      position={[-1, 0.9, 0]}
+      position={[0, 0.9, 0]}
       lockRotations
       enabledRotations={[false, false, false]}
       colliders={false}
     >
-      {/* Solid body — group 4, physically blocks movement between characters */}
-      <CapsuleCollider
-        args={[
-          SHARED_DEFAULTS.COLLIDERS.BODY.halfHeight,
-          SHARED_DEFAULTS.COLLIDERS.BODY.radius,
-        ]}
-        position={[...SHARED_DEFAULTS.COLLIDERS.BODY.position]}
-        collisionGroups={SOLID_BODY_GROUPS}
+      {/* Ground sphere — group 5, only collides with environment (group 4) */}
+      <BallCollider
+        args={[SHARED_DEFAULTS.COLLIDERS.GROUND_SPHERE.radius]}
+        position={[...SHARED_DEFAULTS.COLLIDERS.GROUND_SPHERE.position]}
+        collisionGroups={PLAYER_GROUND_GROUPS}
       />
       {/* Torso capsule — group 0, only triggered by barbarian hand (group 3) */}
       <CapsuleCollider
