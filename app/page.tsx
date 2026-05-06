@@ -2,19 +2,25 @@
 
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
 import { Physics } from '@react-three/rapier';
 import { Player } from '@/app/components/Player/Player';
 import {
   Barbarian,
   BarbarianHandle,
 } from '@/app/components/Barbarian/Barbarian';
-import { World } from '@/app/components/World/World';
+import {
+  World,
+  INITIAL_PLATFORM_POSITIONS,
+} from '@/app/components/World/World';
+import { BoulderRewardPopup } from '@/app/components/BoulderRewardPopup';
+import { OrientationGuard } from '@/app/components/OrientationGuard';
 import { useKeyboardControls } from '@/app/components/Player/hooks/useKeyboardControls';
 import { Controls } from '@/app/components/Player/Controls';
 import { DebugGui } from '@/app/components/DebugGui';
 import { HealthBar } from '@/app/components/Player/HealthBar';
 import { GameOver } from '@/app/components/GameOver';
+import { ScoreDisplay } from '@/app/components/ScoreDisplay';
+import { LevelAnnouncement } from '@/app/components/LevelAnnouncement';
 import { useDebugSettings } from '@/app/components/hooks/useDebugSettings';
 import * as THREE from 'three';
 import { ENVIRONMENT_DEFAULTS, GAME_DEFAULTS } from '@/app/constants';
@@ -25,6 +31,18 @@ import type {
   ClientBarbarianState,
   BarbarianDecision,
 } from '@/app/ai/sharedTypes';
+
+const GRASS_LEFT_X =
+  -((ENVIRONMENT_DEFAULTS.groundBlock.screenFillCount - 1) / 2) *
+  ENVIRONMENT_DEFAULTS.groundBlock.width; // −10.8
+
+const GRASS_TOTAL_BLOCKS =
+  ENVIRONMENT_DEFAULTS.groundBlock.screenFillCount +
+  ENVIRONMENT_DEFAULTS.groundBlock.extraCount; // 30
+
+const GRASS_RIGHT_X =
+  GRASS_LEFT_X +
+  (GRASS_TOTAL_BLOCKS - 1) * ENVIRONMENT_DEFAULTS.groundBlock.width; // 145.8
 
 /** Initial spawn position per barbarian — spread along Z so they don't overlap. */
 function createInitialBarbarians(): Record<string, [number, number, number]> {
@@ -44,9 +62,26 @@ export default function Home() {
     Record<string, [number, number, number]>
   >(createInitialBarbarians);
   const [playerHP, setPlayerHP] = useState(GAME_DEFAULTS.PLAYER_MAX_HP);
+  const [score, setScore] = useState(0);
   const [debugGuiHidden, setDebugGuiHidden] = useState(true);
+  const level = Math.floor(score / 10) + 1;
+  const targetBarbarianCount = Math.floor((level - 1) / 3) + 1;
   const barbarianGroupsRef = useRef<Map<string, THREE.Object3D>>(new Map());
   const barbarianRefsRef = useRef<Map<string, BarbarianHandle>>(new Map());
+  const boulderTargetsRef = useRef<Map<string, THREE.Object3D>>(new Map());
+  const [boulderHps, setBoulderHps] = useState<Record<string, number>>(() =>
+    Object.fromEntries(
+      INITIAL_PLATFORM_POSITIONS.map((_, i) => [
+        `boulder-${i}`,
+        GAME_DEFAULTS.BOULDER_HP,
+      ]),
+    ),
+  );
+  const [showBoulderReward, setShowBoulderReward] = useState(false);
+  const activeBoulderIds = useMemo(
+    () => new Set(Object.keys(boulderHps)),
+    [boulderHps],
+  );
 
   // ── Shared refs for AI client ──────────────────────────────────────────────
   const playerPositionRef = useRef(new THREE.Vector3());
@@ -57,15 +92,19 @@ export default function Home() {
     Record<string, BarbarianDecision | null>
   >({});
   const aiClientRef = useRef<BarbarianAIClient | null>(null);
+  const targetBarbarianCountRef = useRef(1);
 
   // Keep playerHPRef in sync with React state
   useEffect(() => {
     playerHPRef.current = playerHP;
   }, [playerHP]);
 
+  useEffect(() => {
+    targetBarbarianCountRef.current = targetBarbarianCount;
+  }, [targetBarbarianCount]);
+
   // Start the AI client once on mount, clean up on unmount
   useEffect(() => {
-    const half = ENVIRONMENT_DEFAULTS.groundDim / 2;
     const client = new BarbarianAIClient({
       serverUrl: process.env.NEXT_PUBLIC_WS_URL ?? 'ws://localhost:8765',
       playerStateRef,
@@ -73,8 +112,14 @@ export default function Home() {
       barbarianStatesRef,
       barbarianDecisionsRef,
       getEnvironment: () => ({
-        worldBounds: { minX: -half, maxX: half, minZ: -half, maxZ: half },
+        worldBounds: {
+          minX: GRASS_LEFT_X,
+          maxX: GRASS_RIGHT_X,
+          minZ: -5,
+          maxZ: 5,
+        },
         groundY: 0,
+        targetBarbarianCount: targetBarbarianCountRef.current,
       }),
       onSpawn: (spawn) => {
         setBarbarians((prev) => ({
@@ -106,6 +151,7 @@ export default function Home() {
       );
       return newBarbarians;
     });
+    setScore((prev) => prev + 2);
   }, []);
 
   const handlePlayerHit = useCallback(() => {
@@ -126,6 +172,36 @@ export default function Home() {
   const handleSwordHit = useCallback((barbarianId: string) => {
     barbarianRefsRef.current.get(barbarianId)?.takeDamage();
   }, []);
+
+  const handleBoulderRegister = useCallback(
+    (id: string, mesh: THREE.Object3D) => {
+      boulderTargetsRef.current.set(id, mesh);
+    },
+    [],
+  );
+
+  const handleBoulderUnregister = useCallback((id: string) => {
+    boulderTargetsRef.current.delete(id);
+  }, []);
+
+  const handleBoulderHit = useCallback((boulderId: string) => {
+    setBoulderHps((prev) => {
+      const hp = prev[boulderId];
+      if (hp === undefined || hp <= 0) return prev;
+      if (hp - 1 <= 0) {
+        const { [boulderId]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [boulderId]: hp - 1 };
+    });
+  }, []);
+
+  const prevBoulderCountRef = useRef(INITIAL_PLATFORM_POSITIONS.length);
+  useEffect(() => {
+    const count = Object.keys(boulderHps).length;
+    if (count < prevBoulderCountRef.current) setShowBoulderReward(true);
+    prevBoulderCountRef.current = count;
+  }, [boulderHps]);
 
   const barbarianComponents = useMemo(() => {
     return Object.entries(barbarians).map(([id, initialPosition]) => (
@@ -171,31 +247,33 @@ export default function Home() {
           position={ENVIRONMENT_DEFAULTS.directionalLight.position}
           intensity={ENVIRONMENT_DEFAULTS.directionalLight.intensity}
         />
-        <Physics gravity={[0, 0, 0]} debug={settings.debugMode}>
+        <Physics gravity={[0, -9.81, 0]} debug={settings.debugMode}>
           {barbarianComponents}
           <Player
             keys={keys}
             onHit={handlePlayerHit}
             onSwordHit={handleSwordHit}
             barbarianTargets={barbarianGroupsRef}
+            boulderTargets={boulderTargetsRef}
+            onBoulderHit={handleBoulderHit}
             settings={settings}
             playerPositionRef={playerPositionRef}
             playerStateRef={playerStateRef}
           />
+          <World
+            playerPositionRef={playerPositionRef}
+            onBoulderRegister={handleBoulderRegister}
+            onBoulderUnregister={handleBoulderUnregister}
+            activeBoulderIds={activeBoulderIds}
+          />
         </Physics>
-        <World />
-        <OrbitControls
-          enableZoom={ENVIRONMENT_DEFAULTS.orbitControls.enableZoom}
-          enablePan={ENVIRONMENT_DEFAULTS.orbitControls.enablePan}
-          enableRotate={ENVIRONMENT_DEFAULTS.orbitControls.enableRotate}
-        />
       </Canvas>
       <Controls updateKey={updateKey} />
       <Button
         onClick={() => setDebugGuiHidden((prev) => !prev)}
         color="gray"
         size="xs"
-        className="absolute top-4 right-4"
+        className="absolute top-14 right-4"
       >
         Debug Settings
       </Button>
@@ -205,7 +283,11 @@ export default function Home() {
         hidden={debugGuiHidden}
       />
       <HealthBar currentHP={playerHP} maxHP={GAME_DEFAULTS.PLAYER_MAX_HP} />
+      <ScoreDisplay score={score} level={level} />
+      <LevelAnnouncement level={level} />
       <GameOver show={playerHP <= 0} />
+      <BoulderRewardPopup show={showBoulderReward} onClose={() => setShowBoulderReward(false)} />
+      <OrientationGuard />
     </div>
   );
 }
