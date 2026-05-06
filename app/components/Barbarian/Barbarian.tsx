@@ -15,6 +15,7 @@ import {
   CapsuleCollider,
   RigidBody,
   RapierRigidBody,
+  BallCollider,
   interactionGroups,
 } from '@react-three/rapier';
 import * as THREE from 'three';
@@ -36,10 +37,12 @@ import {
   BoneVertexMap,
 } from '@/app/utils';
 import type {
+  BarbarianAction,
   ClientBarbarianState,
   BarbarianDecision,
 } from '@/app/ai/sharedTypes';
 import { applyAction, decisionChanged } from '@/app/ai/ActionApplier';
+import { INITIAL_PLATFORM_POSITIONS } from '@/app/components/World/World';
 
 // Collision groups:
 //   0 = player body sensors    — only triggered by group 3
@@ -49,7 +52,7 @@ import { applyAction, decisionChanged } from '@/app/ai/ActionApplier';
 //   4 = solid character bodies — collide only with each other (physical push-apart)
 const BARBARIAN_BODY_GROUPS = interactionGroups([2], [1]);
 const BARBARIAN_HAND_GROUPS = interactionGroups([3], [0]);
-const SOLID_BODY_GROUPS = interactionGroups([4], [4]);
+const BARBARIAN_GROUND_GROUPS = interactionGroups([5], [4]);
 
 export interface BarbarianHandle {
   takeDamage: () => void;
@@ -101,10 +104,6 @@ export const Barbarian = forwardRef<BarbarianHandle, BarbarianProps>(
     const [isWalking, setIsWalking] = useState(false);
     const [isAttacking, setIsAttacking] = useState(false);
     const [isJumping, setIsJumping] = useState(false);
-    const [isBlocking, setIsBlocking] = useState(false);
-    const [isRightBlocking, setIsRightBlocking] = useState(false);
-    const [isKicking, setIsKicking] = useState(false);
-    const [isDucking, setIsDucking] = useState(false);
     const [direction, setDirection] = useState<number>(-1); // 1 = right, -1 = left
     const wasWalkingRef = useRef(false);
     const yVelocityRef = useRef<number>(0);
@@ -150,14 +149,6 @@ export const Barbarian = forwardRef<BarbarianHandle, BarbarianProps>(
       useFBX(BARBARIAN_DEFAULTS.ANIMATIONS.NORMAL),
     );
     const jumpAnim = getAnimation(useFBX(BARBARIAN_DEFAULTS.ANIMATIONS.JUMP));
-    const leftBlockAnim = getAnimation(
-      useFBX(BARBARIAN_DEFAULTS.ANIMATIONS.LEFT_BLOCK),
-    );
-    const rightBlockAnim = getAnimation(
-      useFBX(BARBARIAN_DEFAULTS.ANIMATIONS.RIGHT_BLOCK),
-    );
-    const kickAnim = getAnimation(useFBX(BARBARIAN_DEFAULTS.ANIMATIONS.KICK));
-    const duckAnim = getAnimation(useFBX(BARBARIAN_DEFAULTS.ANIMATIONS.DUCK));
 
     const mixer = useRef<THREE.AnimationMixer | null>(null);
 
@@ -197,121 +188,54 @@ export const Barbarian = forwardRef<BarbarianHandle, BarbarianProps>(
       }
     }, [model, scene, settings.debugMode]);
 
-    // Get the current animation clip based on state (attack/jump > kick > right block > left block > duck > walk > idle)
+    // Get the current animation clip based on state (jump > attack > walk > idle)
     const currentAnimation = useMemo(() => {
       if (isJumping) return jumpAnim;
       if (isAttacking) return normalAnim;
-      if (isKicking) return kickAnim;
-      if (isRightBlocking) return rightBlockAnim;
-      if (isBlocking) return leftBlockAnim;
-      if (isDucking) return duckAnim;
       if (isWalking) return walkAnim;
       return idleAnim;
     }, [
       isAttacking,
       isJumping,
-      isKicking,
-      isRightBlocking,
-      isBlocking,
-      isDucking,
       isWalking,
       normalAnim,
       jumpAnim,
-      kickAnim,
-      rightBlockAnim,
-      leftBlockAnim,
-      duckAnim,
       walkAnim,
       idleAnim,
     ]);
 
     // Simple patrol behavior: toggle walking every barbarianWalkDurationMS and change direction
     useEffect(() => {
+      if (!settings.enableBarbarianWalk) return;
       const interval = setInterval(() => {
         setIsWalking((prev) => {
-          if (!settings.enableBarbarianWalk) return false;
           if (!prev && !wasWalkingRef.current) {
-            // Starting to walk, change direction
             setDirection((d) => d * -1);
           }
           wasWalkingRef.current = !prev;
           return !prev;
         });
       }, settings.barbarianWalkDurationMS);
-
       return () => clearInterval(interval);
     }, [settings.enableBarbarianWalk, settings.barbarianWalkDurationMS]);
 
     // Attack behavior: toggle attacking every attackSpeed
     useEffect(() => {
+      if (!settings.enableBarbarianAttack) return;
       const interval = setInterval(() => {
-        setIsAttacking((prev) => {
-          if (!settings.enableBarbarianAttack) return false;
-          return !prev;
-        });
+        setIsAttacking((prev) => !prev);
       }, settings.attackSpeed);
-
       return () => clearInterval(interval);
     }, [settings.enableBarbarianAttack, settings.attackSpeed]);
 
     // Jump behavior: trigger jump every jumpDurationMS
     useEffect(() => {
+      if (!settings.enableBarbarianJump) return;
       const interval = setInterval(() => {
-        if (settings.enableBarbarianJump) {
-          jumpPendingRef.current = true;
-        }
+        jumpPendingRef.current = true;
       }, settings.jumpDurationMS);
-
       return () => clearInterval(interval);
     }, [settings.enableBarbarianJump, settings.jumpDurationMS]);
-
-    // Left block behavior: toggle blocking every blockDurationMS
-    useEffect(() => {
-      const interval = setInterval(() => {
-        setIsBlocking((prev) => {
-          if (!settings.enableBarbarianLeftBlock) return false;
-          return !prev;
-        });
-      }, settings.blockDurationMS);
-
-      return () => clearInterval(interval);
-    }, [settings.enableBarbarianLeftBlock, settings.blockDurationMS]);
-
-    // Right block behavior: toggle right blocking every rightBlockDurationMS
-    useEffect(() => {
-      const interval = setInterval(() => {
-        setIsRightBlocking((prev) => {
-          if (!settings.enableBarbarianRightBlock) return false;
-          return !prev;
-        });
-      }, settings.rightBlockDurationMS);
-
-      return () => clearInterval(interval);
-    }, [settings.enableBarbarianRightBlock, settings.rightBlockDurationMS]);
-
-    // Kick behavior: toggle kicking every kickSpeed
-    useEffect(() => {
-      const interval = setInterval(() => {
-        setIsKicking((prev) => {
-          if (!settings.enableBarbarianKick) return false;
-          return !prev;
-        });
-      }, settings.kickSpeed);
-
-      return () => clearInterval(interval);
-    }, [settings.enableBarbarianKick, settings.kickSpeed]);
-
-    // Duck behavior: toggle ducking every duckDurationMS
-    useEffect(() => {
-      const interval = setInterval(() => {
-        setIsDucking((prev) => {
-          if (!settings.enableBarbarianDuck) return false;
-          return !prev;
-        });
-      }, settings.duckDurationMS);
-
-      return () => clearInterval(interval);
-    }, [settings.enableBarbarianDuck, settings.duckDurationMS]);
 
     useEffect(() => {
       // Clean up previous mixer
@@ -410,10 +334,6 @@ export const Barbarian = forwardRef<BarbarianHandle, BarbarianProps>(
           applyAction(decision.action, decision.direction, {
             setIsAttacking,
             setIsWalking,
-            setIsKicking,
-            setIsBlocking,
-            setIsRightBlocking,
-            setIsDucking,
             setDirection,
             setJumpPending: () => {
               jumpPendingRef.current = true;
@@ -494,6 +414,18 @@ export const Barbarian = forwardRef<BarbarianHandle, BarbarianProps>(
         const moveSpeed = SHARED_DEFAULTS.MOVE_SPEED;
         const velocity = { x: 0, y: 0, z: 0 };
 
+        // Jump over boulders in the way
+        if (isWalking && !isAttacking && isGroundedRef.current && !jumpPendingRef.current) {
+          const t = rigidBodyRef.current.translation();
+          for (const bx of INITIAL_PLATFORM_POSITIONS) {
+            const dx = bx - t.x;
+            if (direction > 0 ? (dx > 0 && dx < 2) : (dx < 0 && dx > -2)) {
+              jumpPendingRef.current = true;
+              break;
+            }
+          }
+        }
+
         // Trigger jump while grounded
         if (jumpPendingRef.current && isGroundedRef.current) {
           jumpPendingRef.current = false;
@@ -522,15 +454,8 @@ export const Barbarian = forwardRef<BarbarianHandle, BarbarianProps>(
 
         velocity.y = yVelocityRef.current;
 
-        // Block movement during attacks, kicks, or blocks - these take priority
-        if (
-          isWalking &&
-          !isAttacking &&
-          !isKicking &&
-          !isRightBlocking &&
-          !isBlocking &&
-          !isDucking
-        ) {
+        const isActionBlocking = isAttacking;
+        if (isWalking && !isActionBlocking) {
           velocity.x = direction * moveSpeed;
 
           // Set rotation based on direction
@@ -549,15 +474,8 @@ export const Barbarian = forwardRef<BarbarianHandle, BarbarianProps>(
             );
             lastRotationRef.current = Math.PI / 2;
           }
-        } else if (
-          !isWalking ||
-          isAttacking ||
-          isKicking ||
-          isRightBlocking ||
-          isBlocking ||
-          isDucking
-        ) {
-          // When idle, maintain last rotation
+        } else if (!isWalking || isActionBlocking) {
+          // When idle or attacking, maintain last rotation
           const halfAngle = lastRotationRef.current / 2;
           rigidBodyRef.current.setRotation(
             { x: 0, y: Math.sin(halfAngle), z: 0, w: Math.cos(halfAngle) },
@@ -571,21 +489,11 @@ export const Barbarian = forwardRef<BarbarianHandle, BarbarianProps>(
         if (barbarianStatesRef) {
           const t = rigidBodyRef.current.translation();
           const v = rigidBodyRef.current.linvel?.() ?? { x: 0, y: 0, z: 0 };
-          const currentAction = isAttacking
+          const currentAction: BarbarianAction = isAttacking
             ? 'ATTACK'
-            : isWalking
-              ? 'CHASE'
-              : isJumping
-                ? 'JUMP'
-                : isKicking
-                  ? 'KICK'
-                  : isBlocking
-                    ? 'LEFT_BLOCK'
-                    : isRightBlocking
-                      ? 'RIGHT_BLOCK'
-                      : isDucking
-                        ? 'DUCK'
-                        : 'IDLE';
+            : isJumping
+              ? 'JUMP'
+              : 'CHASE';
           barbarianStatesRef.current[id] = {
             id,
             position: { x: t.x, y: t.y, z: t.z },
@@ -599,15 +507,7 @@ export const Barbarian = forwardRef<BarbarianHandle, BarbarianProps>(
         }
 
         // Follow player position when walking (if AI not driving direction)
-        if (
-          playerPositionRef?.current &&
-          isWalking &&
-          !isAttacking &&
-          !isKicking &&
-          !isBlocking &&
-          !isRightBlocking &&
-          !isDucking
-        ) {
+        if (playerPositionRef?.current && isWalking && !isActionBlocking) {
           const t = rigidBodyRef.current.translation();
           const dx = playerPositionRef.current.x - t.x;
           const dz = playerPositionRef.current.z - t.z;
@@ -662,14 +562,11 @@ export const Barbarian = forwardRef<BarbarianHandle, BarbarianProps>(
         enabledRotations={[false, false, false]}
         colliders={false}
       >
-        {/* Solid body — group 4, physically blocks movement between characters */}
-        <CapsuleCollider
-          args={[
-            SHARED_DEFAULTS.COLLIDERS.BODY.halfHeight,
-            SHARED_DEFAULTS.COLLIDERS.BODY.radius,
-          ]}
-          position={[...SHARED_DEFAULTS.COLLIDERS.BODY.position]}
-          collisionGroups={SOLID_BODY_GROUPS}
+        {/* Ground sphere — group 5, only collides with environment (group 4) */}
+        <BallCollider
+          args={[SHARED_DEFAULTS.COLLIDERS.GROUND_SPHERE.radius]}
+          position={[...SHARED_DEFAULTS.COLLIDERS.GROUND_SPHERE.position]}
+          collisionGroups={BARBARIAN_GROUND_GROUPS}
         />
         {/* Torso capsule — group 2, only triggered by player sword (group 1) */}
         <CapsuleCollider
@@ -695,14 +592,22 @@ export const Barbarian = forwardRef<BarbarianHandle, BarbarianProps>(
         />
         {/* Hand capsule — group 3, only triggers player body (group 0) */}
         {isAttacking && (
-          <CapsuleCollider
-            args={[
-              BARBARIAN_DEFAULTS.COLLIDERS.HAND.halfHeight,
-              BARBARIAN_DEFAULTS.COLLIDERS.HAND.radius,
-            ]}
-            position={handPosition}
-            collisionGroups={BARBARIAN_HAND_GROUPS}
-          />
+          <>
+            <CapsuleCollider
+              args={[
+                BARBARIAN_DEFAULTS.COLLIDERS.HAND.halfHeight,
+                BARBARIAN_DEFAULTS.COLLIDERS.HAND.radius,
+              ]}
+              position={handPosition}
+              collisionGroups={BARBARIAN_HAND_GROUPS}
+            />
+            <mesh position={handPosition}>
+              <icosahedronGeometry
+                args={[BARBARIAN_DEFAULTS.COLLIDERS.HAND.radius, 1]}
+              />
+              <meshStandardMaterial color="#778899" />
+            </mesh>
+          </>
         )}
         {/* HP blocks floating above head */}
         <group

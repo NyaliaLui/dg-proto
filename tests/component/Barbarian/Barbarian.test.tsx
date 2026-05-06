@@ -129,6 +129,7 @@ jest.mock('@react-three/rapier', () => {
       }));
       return <group position={position}>{children}</group>;
     }),
+    BallCollider: () => null,
     CapsuleCollider: ({
       onIntersectionEnter,
     }: {
@@ -375,13 +376,6 @@ describe('Barbarian Component', () => {
       });
       expect(countHpBlocks(renderer!)).toBe(
         GAME_DEFAULTS.INITIAL_BARBARIAN_HP - 1,
-      );
-
-      await act(async () => {
-        hitHandler();
-      });
-      expect(countHpBlocks(renderer!)).toBe(
-        GAME_DEFAULTS.INITIAL_BARBARIAN_HP - 2,
       );
     });
 
@@ -926,295 +920,6 @@ describe('Barbarian Component', () => {
     });
   });
 
-  describe('Left Block', () => {
-    beforeEach(() => {
-      mockSetLinvel.mockClear();
-      mockSetRotation.mockClear();
-    });
-
-    it('should stop horizontal movement when enableBarbarianLeftBlock is enabled', async () => {
-      const blockWhileWalkingSettings: DebugSettings = {
-        debugMode: false,
-        enableBarbarianWalk: true,
-        barbarianWalkDurationMS: 10,
-        enableBarbarianAttack: false,
-        attackSpeed: 1500,
-        enableBarbarianJump: false,
-        jumpDurationMS: 1000,
-        enableBarbarianLeftBlock: true,
-        blockDurationMS: 10,
-        enableBarbarianRightBlock: false,
-        rightBlockDurationMS: 320,
-        enableBarbarianKick: false,
-        kickSpeed: 320,
-        enableBarbarianDuck: false,
-        duckDurationMS: 320,
-      };
-
-      let renderer: ReactThreeTestRenderer;
-      await act(async () => {
-        renderer = await create(
-          <Barbarian
-            id="test-barbarian"
-            settings={blockWhileWalkingSettings}
-          />,
-        );
-      });
-
-      // Advance timers to trigger both walk and block intervals
-      await act(async () => {
-        jest.advanceTimersByTime(25);
-      });
-
-      mockSetLinvel.mockClear();
-      await act(async () => {
-        await renderer!.advanceFrames(1, 1 / 60);
-      });
-
-      // When blocking, horizontal velocity should be zero
-      const allZeroHorizontal = mockSetLinvel.mock.calls.every(
-        (call) => call[0].x === 0 && call[0].z === 0,
-      );
-      expect(allZeroHorizontal).toBe(true);
-    });
-
-    it('should not block when enableBarbarianLeftBlock is false', async () => {
-      const noBlockSettings: DebugSettings = {
-        debugMode: false,
-        enableBarbarianWalk: true,
-        barbarianWalkDurationMS: 10,
-        enableBarbarianAttack: false,
-        attackSpeed: 1500,
-        enableBarbarianJump: false,
-        jumpDurationMS: 1000,
-        enableBarbarianLeftBlock: false,
-        blockDurationMS: 10,
-        enableBarbarianRightBlock: false,
-        rightBlockDurationMS: 320,
-        enableBarbarianKick: false,
-        kickSpeed: 320,
-        enableBarbarianDuck: false,
-        duckDurationMS: 320,
-      };
-
-      let renderer: ReactThreeTestRenderer;
-      await act(async () => {
-        renderer = await create(
-          <Barbarian id="test-barbarian" settings={noBlockSettings} />,
-        );
-      });
-
-      // Advance timers — block interval fires but enableBarbarianLeftBlock is false
-      // Advance 15ms so walk interval fires once at 10ms (isWalking=true) without
-      // firing a second time at 20ms (which would toggle it back off)
-      await act(async () => {
-        jest.advanceTimersByTime(15);
-      });
-
-      mockSetLinvel.mockClear();
-      await act(async () => {
-        await renderer!.advanceFrames(1, 1 / 60);
-      });
-
-      // Walking should still apply horizontal velocity since block is disabled
-      const hasHorizontalMovement = mockSetLinvel.mock.calls.some(
-        (call) => call[0].x !== 0,
-      );
-      expect(hasHorizontalMovement).toBe(true);
-    });
-  });
-
-  describe('Kick', () => {
-    beforeEach(() => {
-      mockSetLinvel.mockClear();
-      mockSetRotation.mockClear();
-    });
-
-    it('should stop horizontal movement when enableBarbarianKick is enabled', async () => {
-      const kickWhileWalkingSettings: DebugSettings = {
-        debugMode: false,
-        enableBarbarianWalk: true,
-        barbarianWalkDurationMS: 10,
-        enableBarbarianAttack: false,
-        attackSpeed: 1500,
-        enableBarbarianJump: false,
-        jumpDurationMS: 1000,
-        enableBarbarianLeftBlock: false,
-        blockDurationMS: 320,
-        enableBarbarianRightBlock: false,
-        rightBlockDurationMS: 320,
-        enableBarbarianKick: true,
-        kickSpeed: 10,
-        enableBarbarianDuck: false,
-        duckDurationMS: 320,
-      };
-
-      let renderer: ReactThreeTestRenderer;
-      await act(async () => {
-        renderer = await create(
-          <Barbarian id="test-barbarian" settings={kickWhileWalkingSettings} />,
-        );
-      });
-
-      // Advance timers to trigger both walk and kick intervals
-      await act(async () => {
-        jest.advanceTimersByTime(25);
-      });
-
-      mockSetLinvel.mockClear();
-      await act(async () => {
-        await renderer!.advanceFrames(1, 1 / 60);
-      });
-
-      // When kicking, horizontal velocity should be zero
-      const allZeroHorizontal = mockSetLinvel.mock.calls.every(
-        (call) => call[0].x === 0 && call[0].z === 0,
-      );
-      expect(allZeroHorizontal).toBe(true);
-    });
-
-    it('should not kick when enableBarbarianKick is false', async () => {
-      const noKickSettings: DebugSettings = {
-        debugMode: false,
-        enableBarbarianWalk: true,
-        barbarianWalkDurationMS: 10,
-        enableBarbarianAttack: false,
-        attackSpeed: 1500,
-        enableBarbarianJump: false,
-        jumpDurationMS: 1000,
-        enableBarbarianLeftBlock: false,
-        blockDurationMS: 320,
-        enableBarbarianRightBlock: false,
-        rightBlockDurationMS: 320,
-        enableBarbarianKick: false,
-        kickSpeed: 10,
-        enableBarbarianDuck: false,
-        duckDurationMS: 320,
-      };
-
-      let renderer: ReactThreeTestRenderer;
-      await act(async () => {
-        renderer = await create(
-          <Barbarian id="test-barbarian" settings={noKickSettings} />,
-        );
-      });
-
-      // Advance 15ms so walk interval fires once at 10ms (isWalking=true) without
-      // firing a second time at 20ms (which would toggle it back off)
-      await act(async () => {
-        jest.advanceTimersByTime(15);
-      });
-
-      mockSetLinvel.mockClear();
-      await act(async () => {
-        await renderer!.advanceFrames(1, 1 / 60);
-      });
-
-      // Walking should still apply horizontal velocity since kick is disabled
-      const hasHorizontalMovement = mockSetLinvel.mock.calls.some(
-        (call) => call[0].x !== 0,
-      );
-      expect(hasHorizontalMovement).toBe(true);
-    });
-  });
-
-  describe('Right Block', () => {
-    beforeEach(() => {
-      mockSetLinvel.mockClear();
-      mockSetRotation.mockClear();
-    });
-
-    it('should stop horizontal movement when enableBarbarianRightBlock is enabled', async () => {
-      const rightBlockWhileWalkingSettings: DebugSettings = {
-        debugMode: false,
-        enableBarbarianWalk: true,
-        barbarianWalkDurationMS: 10,
-        enableBarbarianAttack: false,
-        attackSpeed: 1500,
-        enableBarbarianJump: false,
-        jumpDurationMS: 1000,
-        enableBarbarianLeftBlock: false,
-        blockDurationMS: 320,
-        enableBarbarianRightBlock: true,
-        rightBlockDurationMS: 10,
-        enableBarbarianKick: false,
-        kickSpeed: 320,
-        enableBarbarianDuck: false,
-        duckDurationMS: 320,
-      };
-
-      let renderer: ReactThreeTestRenderer;
-      await act(async () => {
-        renderer = await create(
-          <Barbarian
-            id="test-barbarian"
-            settings={rightBlockWhileWalkingSettings}
-          />,
-        );
-      });
-
-      // Advance timers to trigger both walk and right block intervals
-      await act(async () => {
-        jest.advanceTimersByTime(25);
-      });
-
-      mockSetLinvel.mockClear();
-      await act(async () => {
-        await renderer!.advanceFrames(1, 1 / 60);
-      });
-
-      // When right blocking, horizontal velocity should be zero
-      const allZeroHorizontal = mockSetLinvel.mock.calls.every(
-        (call) => call[0].x === 0 && call[0].z === 0,
-      );
-      expect(allZeroHorizontal).toBe(true);
-    });
-
-    it('should not right block when enableBarbarianRightBlock is false', async () => {
-      const noRightBlockSettings: DebugSettings = {
-        debugMode: false,
-        enableBarbarianWalk: true,
-        barbarianWalkDurationMS: 10,
-        enableBarbarianAttack: false,
-        attackSpeed: 1500,
-        enableBarbarianJump: false,
-        jumpDurationMS: 1000,
-        enableBarbarianLeftBlock: false,
-        blockDurationMS: 320,
-        enableBarbarianRightBlock: false,
-        rightBlockDurationMS: 10,
-        enableBarbarianKick: false,
-        kickSpeed: 320,
-        enableBarbarianDuck: false,
-        duckDurationMS: 320,
-      };
-
-      let renderer: ReactThreeTestRenderer;
-      await act(async () => {
-        renderer = await create(
-          <Barbarian id="test-barbarian" settings={noRightBlockSettings} />,
-        );
-      });
-
-      // Advance 15ms so walk interval fires once at 10ms (isWalking=true) without
-      // firing a second time at 20ms (which would toggle it back off)
-      await act(async () => {
-        jest.advanceTimersByTime(15);
-      });
-
-      mockSetLinvel.mockClear();
-      await act(async () => {
-        await renderer!.advanceFrames(1, 1 / 60);
-      });
-
-      // Walking should still apply horizontal velocity since right block is disabled
-      const hasHorizontalMovement = mockSetLinvel.mock.calls.some(
-        (call) => call[0].x !== 0,
-      );
-      expect(hasHorizontalMovement).toBe(true);
-    });
-  });
-
   describe('Registration', () => {
     it('should call onRegister with id and model on mount', async () => {
       const mockOnRegister = jest.fn();
@@ -1300,6 +1005,7 @@ describe('Barbarian Component', () => {
       expect(countHpBlocks()).toBe(GAME_DEFAULTS.INITIAL_BARBARIAN_HP - 1);
     });
 
+
     it('should call onDeath when takeDamage reduces HP to zero', async () => {
       const ref = createRef<BarbarianHandle>();
       const mockOnDeath = jest.fn();
@@ -1321,100 +1027,6 @@ describe('Barbarian Component', () => {
       });
 
       expect(mockOnDeath).toHaveBeenCalledWith('test-barbarian');
-    });
-  });
-
-  describe('Duck', () => {
-    beforeEach(() => {
-      mockSetLinvel.mockClear();
-      mockSetRotation.mockClear();
-    });
-
-    it('should stop horizontal movement when enableBarbarianDuck is enabled', async () => {
-      const duckWhileWalkingSettings: DebugSettings = {
-        debugMode: false,
-        enableBarbarianWalk: true,
-        barbarianWalkDurationMS: 10,
-        enableBarbarianAttack: false,
-        attackSpeed: 1500,
-        enableBarbarianJump: false,
-        jumpDurationMS: 1000,
-        enableBarbarianLeftBlock: false,
-        blockDurationMS: 320,
-        enableBarbarianRightBlock: false,
-        rightBlockDurationMS: 320,
-        enableBarbarianKick: false,
-        kickSpeed: 320,
-        enableBarbarianDuck: true,
-        duckDurationMS: 10,
-      };
-
-      let renderer: ReactThreeTestRenderer;
-      await act(async () => {
-        renderer = await create(
-          <Barbarian id="test-barbarian" settings={duckWhileWalkingSettings} />,
-        );
-      });
-
-      // Advance timers to trigger both walk and duck intervals
-      await act(async () => {
-        jest.advanceTimersByTime(25);
-      });
-
-      mockSetLinvel.mockClear();
-      await act(async () => {
-        await renderer!.advanceFrames(1, 1 / 60);
-      });
-
-      // When ducking, horizontal velocity should be zero
-      const allZeroHorizontal = mockSetLinvel.mock.calls.every(
-        (call) => call[0].x === 0 && call[0].z === 0,
-      );
-      expect(allZeroHorizontal).toBe(true);
-    });
-
-    it('should not duck when enableBarbarianDuck is false', async () => {
-      const noDuckSettings: DebugSettings = {
-        debugMode: false,
-        enableBarbarianWalk: true,
-        barbarianWalkDurationMS: 10,
-        enableBarbarianAttack: false,
-        attackSpeed: 1500,
-        enableBarbarianJump: false,
-        jumpDurationMS: 1000,
-        enableBarbarianLeftBlock: false,
-        blockDurationMS: 320,
-        enableBarbarianRightBlock: false,
-        rightBlockDurationMS: 320,
-        enableBarbarianKick: false,
-        kickSpeed: 320,
-        enableBarbarianDuck: false,
-        duckDurationMS: 10,
-      };
-
-      let renderer: ReactThreeTestRenderer;
-      await act(async () => {
-        renderer = await create(
-          <Barbarian id="test-barbarian" settings={noDuckSettings} />,
-        );
-      });
-
-      // Advance 15ms so walk interval fires once at 10ms (isWalking=true) without
-      // firing a second time at 20ms (which would toggle it back off)
-      await act(async () => {
-        jest.advanceTimersByTime(15);
-      });
-
-      mockSetLinvel.mockClear();
-      await act(async () => {
-        await renderer!.advanceFrames(1, 1 / 60);
-      });
-
-      // Walking should still apply horizontal velocity since duck is disabled
-      const hasHorizontalMovement = mockSetLinvel.mock.calls.some(
-        (call) => call[0].x !== 0,
-      );
-      expect(hasHorizontalMovement).toBe(true);
     });
   });
 
@@ -1493,10 +1105,9 @@ describe('Barbarian Component', () => {
         );
       });
 
-      // After state settles (4 frames), barbarian should be chasing, not idle.
       await advanceNFrames(renderer!, 4);
 
-      expect(barbarianStatesRef.current['b1']?.currentAction).not.toBe('IDLE');
+      expect(barbarianStatesRef.current['b1']?.currentAction).toBe('CHASE');
     });
 
     it('holds attack for MIN_ATTACK_DURATION_MS when player steps back', async () => {
@@ -1536,42 +1147,6 @@ describe('Barbarian Component', () => {
       expect(barbarianStatesRef.current['b1']?.currentAction).toBe('CHASE');
     });
 
-    it('defers to server KICK decision during strategic pause', async () => {
-      const playerPositionRef = { current: new Vector3(0.5, 0, 0) };
-      const barbarianStatesRef: {
-        current: Record<string, ClientBarbarianState>;
-      } = { current: {} };
-      const barbarianDecisionsRef = {
-        current: {
-          b1: {
-            barbarianId: 'b1',
-            action: 'KICK' as const,
-            direction: 1,
-            durationMs: 400,
-            strategyTag: 'test',
-          },
-        },
-      };
-      let renderer: ReactThreeTestRenderer;
-      await act(async () => {
-        renderer = await create(
-          <Barbarian
-            id="b1"
-            settings={defaultSettings}
-            playerPositionRef={playerPositionRef}
-            barbarianStatesRef={barbarianStatesRef}
-            barbarianDecisionsRef={barbarianDecisionsRef}
-          />,
-        );
-      });
-
-      // Frame 1: server applies KICK + stamps strategicActionStartRef; utility AI deferred.
-      // Frame 2: isKicking=true committed; barbarian publishes 'KICK'.
-      await advanceNFrames(renderer!, 2);
-
-      expect(barbarianStatesRef.current['b1']?.currentAction).toBe('KICK');
-    });
-
     it('does not run when playerPositionRef is absent', async () => {
       const barbarianStatesRef: {
         current: Record<string, ClientBarbarianState>;
@@ -1587,10 +1162,10 @@ describe('Barbarian Component', () => {
         );
       });
 
-      // Without playerPositionRef the utility AI block is unreachable; stays idle.
+      // Without playerPositionRef the utility AI block is unreachable; defaults to CHASE.
       await advanceNFrames(renderer!, 5);
 
-      expect(barbarianStatesRef.current['b1']?.currentAction).toBe('IDLE');
+      expect(barbarianStatesRef.current['b1']?.currentAction).toBe('CHASE');
     });
   });
 });
